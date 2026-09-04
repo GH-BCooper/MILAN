@@ -52,7 +52,7 @@ Create these in this order. Keep every key in a scratch file; you will paste the
 
 1. **GitHub** — create an empty **private** repo named `milan`. Do not initialise it with a README;
    Claude Code will scaffold into an empty folder and push.
-2. **Supabase** (https://supabase.com) — new project, region **Mumbai / ap-south-1**, Postgres 16.
+2. **Supabase** (https://supabase.com) — new project, region **Mumbai / ap-south-1**, Postgres 17.
    Save: Project URL, `anon` key, `service_role` key, and the **connection string** (use the
    *Session pooler* / port 5432 string for migrations, and the *Transaction pooler* / 6543 string for the app).
    - In **Database → Extensions**, enable: `vector`, `pg_trgm`, `pgcrypto`, `unaccent`.

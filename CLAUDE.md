@@ -65,7 +65,7 @@ These are correctness requirements, not preferences. If a change would break one
 | Charts | **Recharts** |
 | Auth | **Better Auth** with the organisation plugin, role-based |
 | ORM / validation | **Drizzle ORM** + **Zod** (one schema, shared contracts) |
-| Database | **Supabase PostgreSQL 16** — rows, vectors (`pgvector` HNSW), FTS + `pg_trgm`, deadlines |
+| Database | **Supabase PostgreSQL 17** — rows, vectors (`pgvector` HNSW), FTS + `pg_trgm`, deadlines |
 | Storage | **Supabase Storage**, every object keyed by its SHA-256 content hash |
 | LLM | **Gemini 2.5 Flash** (structured JSON) → **Groq** fallback → **deterministic rules** |
 | Embeddings | 768-d, cached on input hash, stored in `pgvector` |
