@@ -1,0 +1,16 @@
+[PLACEHOLDER TRANSCRIPT — replace with the real Hindi recording and its ground-truth transcript]
+
+Speaker: Sunita Devi, Basia block, Gumla district.
+
+Hindi (as spoken):
+मेरा नाम सुनीता देवी है। हमारे गाँव के पास नदी का बांध बीच से फट गया है। हर बारिश में
+पानी सीधे खेतों में घुस जाता है और ऊपर की मिट्टी बह जाती है। पिछले साल दो घर भी गिर
+गए थे। हमने कई बार कहा लेकिन अब तक किसी ने मरम्मत नहीं की।
+
+English gloss:
+My name is Sunita Devi. The river embankment near our village has cracked through the
+middle. Every monsoon the water runs straight into the fields and the topsoil washes
+away. Two houses collapsed last year. We have asked many times but nobody has repaired
+it yet.
+
+Duration: ~18 seconds (target for the real recording).

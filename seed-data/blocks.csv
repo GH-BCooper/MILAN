@@ -1,0 +1,9 @@
+code,district_code,name,name_hi,lat,lng,vulnerability_index
+GUM-BAS,GUM,Basia,बसिया,23.1050,84.3900,0.78
+GUM-RAI,GUM,Raidih,रायडीह,22.9800,84.5600,0.74
+RAN-BUN,RAN,Bundu,बुंडू,23.1600,85.5900,0.44
+RAN-TAM,RAN,Tamar,तमाड़,23.0500,85.6400,0.49
+DHN-BAG,DHN,Baghmara,बाघमारा,23.7300,86.3400,0.61
+DHN-NIR,DHN,Nirsa,निरसा,23.7900,86.7000,0.66
+KHU-MUR,KHU,Murhu,मुरहू,23.0100,85.2900,0.71
+SIM-BAN,SIM,Bano,बानो,22.8300,84.7500,0.69

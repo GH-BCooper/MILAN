@@ -1,0 +1,9 @@
+org_slug,department,lab_name,specialisation_tags,faculty_name,faculty_designation,declared_capacity,capacity_from,capacity_to,active
+bit-sindri,Civil Engineering,Geotechnical & Embankment Lab,embankment;slope-stability;soil-mechanics;flood-protection,Dr Anil Marand,Associate Professor,4,2026-01-01,2026-12-31,true
+bit-sindri,Environmental Engineering,Water Quality Lab,water-quality;fluoride;filtration;groundwater,Dr Rekha Toppo,Assistant Professor,3,2026-01-01,2026-12-31,true
+bit-sindri,Mechanical Engineering,Rural Machines Workshop,low-cost-machines;pumps;fabrication,Dr S Ekka,Professor,2,2026-01-01,2026-09-30,true
+ranchi-univ,Geography,Hazard Mapping Unit,gis;landslide;hazard-mapping;remote-sensing,Dr P Munda,Associate Professor,5,2026-01-01,2026-12-31,true
+ranchi-univ,Computer Science,Applied Data Lab,data-analysis;dashboards;survey-tools,Dr N Horo,Assistant Professor,4,2026-01-01,2026-12-31,true
+ranchi-univ,Botany,Agro-Ecology Group,crop-resilience;drought;soil-health,Dr K Lakra,Professor,3,2026-02-01,2026-11-30,true
+gumla-poly,Civil Engineering,Diploma Survey Lab,survey;small-structures;check-dams,Prof R Bhagat,Lecturer,3,2026-01-01,2026-12-31,true
+gumla-poly,Electrical Engineering,Solar Micro-grid Bench,solar;micro-grid;rural-electrification,Prof M Kandulna,Lecturer,2,2026-01-01,2026-08-31,false
