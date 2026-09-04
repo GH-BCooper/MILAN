@@ -17,7 +17,8 @@
     "auth:generate": "better-auth generate",
     "ai:smoke": "tsx --conditions=react-server scripts/ai-smoke.mts",
     "pipeline:run": "tsx --conditions=react-server scripts/pipeline.mts",
-    "pipeline:replay": "tsx --conditions=react-server scripts/pipeline.mts"
+    "pipeline:replay": "tsx --conditions=react-server scripts/pipeline.mts",
+    "s3:matrix": "tsx --conditions=react-server scripts/similarity-matrix.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

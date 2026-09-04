@@ -154,6 +154,14 @@ for (const target of targets) {
     if (s2?.note && /held for a human/i.test(s2.note)) {
       process.stdout.write(`      S2: ${s2.note}\n`);
     }
+    // S3 and S5 only speak up when they did something: a merge, a systemic
+    // roll-up, an anomaly flag, or the human gate holding a challenge back.
+    const s3 = seen.get("S3");
+    if (s3?.note && /Merged|systemic|anomaly/i.test(s3.note)) {
+      process.stdout.write(`      S3: ${s3.note}\n`);
+    }
+    const s5 = seen.get("S5");
+    if (s5?.note) process.stdout.write(`      S5: ${s5.note}\n`);
   }
 }
 

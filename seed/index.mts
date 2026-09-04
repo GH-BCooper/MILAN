@@ -765,8 +765,16 @@ async function main() {
     // leaves /stats with no history to show. See seed-data/README.md.
     const seedStatus = (row.seed_status?.trim() || "SUBMITTED") as "SUBMITTED" | "CLOSED" | "CITIZEN_VERIFIED";
     // Three rows are backdated so /stats has real history to show on stage.
+    //
+    // The rest are staggered a minute apart in file order rather than all
+    // sharing one timestamp. Twenty-five citizens did not report in the same
+    // millisecond, and S3 needs the ordering to be real: a merge always keeps
+    // the OLDER report as the survivor, so identical timestamps would make it a
+    // coin toss which of the three Basia reports is credited as the originator.
     const createdAt =
-      seedStatus === "SUBMITTED" ? now : new Date(now.getTime() - 210 * 86_400_000 + index * 86_400_000);
+      seedStatus === "SUBMITTED"
+        ? new Date(now.getTime() - (challengeRows.length - index) * 60_000)
+        : new Date(now.getTime() - 210 * 86_400_000 + index * 86_400_000);
 
     const existing = await db
       .select({ id: challenges.id, trackingId: challenges.trackingId })

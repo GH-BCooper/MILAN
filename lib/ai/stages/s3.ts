@@ -106,6 +106,7 @@ export interface Candidate {
   reporterName: string | null;
   lat: string | null;
   lng: string | null;
+  createdAt: Date;
   similarity: number;
 }
 
@@ -158,6 +159,7 @@ export async function findCandidates(challenge: {
       reporterName: challenges.reporterName,
       lat: challenges.lat,
       lng: challenges.lng,
+      createdAt: challenges.createdAt,
       similarity: sql<number>`1 - (${challenges.embedding} <=> ${literal}::vector)`,
     })
     .from(challenges)
@@ -188,6 +190,7 @@ export async function findCandidates(challenge: {
     reporterName: r.reporterName,
     lat: r.lat,
     lng: r.lng,
+    createdAt: r.createdAt,
     similarity: Number(r.similarity),
   }));
 }
@@ -322,22 +325,20 @@ export async function mergeInto(args: {
 
     // Both reporters are credited. This is the whole point of a merge: the
     // second person to notice a problem is not a nuisance, they are evidence.
-    await tx.insert(creditEdges).values([
-      {
-        challengeId: survivor.id,
-        toUserId: loser.reporterId,
-        relation: "CORROBORATOR",
-        declaredRole: loser.reporterName ?? "Anonymous reporter",
-        createdAt: at,
-      },
-      {
-        challengeId: loser.id,
-        toUserId: loser.reporterId,
-        relation: "ORIGINATOR",
-        declaredRole: loser.reporterName ?? "Anonymous reporter",
-        createdAt: at,
-      },
-    ]);
+    //
+    // Only ONE edge is written here — the corroborator edge on the survivor.
+    // The merged report already carries its own ORIGINATOR edge from the moment
+    // it was submitted, and that edge is never touched: the person who reported
+    // it is still the originator of their own report, on their own page,
+    // permanently. Writing a second one would double the entry and imply the
+    // merge created a credit that already existed.
+    await tx.insert(creditEdges).values({
+      challengeId: survivor.id,
+      toUserId: loser.reporterId,
+      relation: "CORROBORATOR",
+      declaredRole: loser.reporterName ?? "Anonymous reporter",
+      createdAt: at,
+    });
 
     await tx.insert(ledgerEntries).values({
       challengeId: loser.id,
@@ -486,6 +487,124 @@ export async function rollUp(args: {
     blockCode: args.blockCode,
     corroborationsRolledUp: totalCorroborations,
   };
+}
+
+/**
+ * Look for a systemic pattern worth rolling up.
+ *
+ * Scope is the district: three or more challenges that are near each other in
+ * meaning, spread across two or more blocks, none of them already under a
+ * parent. One village reporting three things is a village. Three villages
+ * reporting the same thing is a system, and a system is what a research team
+ * can actually take on.
+ *
+ * Returns the children, or null when the pattern is not there. It is called on
+ * every S3 run and it is expected to return null most of the time — a roll-up
+ * that fired easily would be a roll-up nobody could trust.
+ */
+export async function findRollupCandidates(challenge: {
+  id: string;
+  districtCode: string | null;
+  blockCode: string | null;
+  embedding: number[];
+}): Promise<Array<{
+  id: string;
+  trackingId: string;
+  title: string;
+  corroborationCount: number;
+  blockCode: string | null;
+  lat: string | null;
+  lng: string | null;
+  domain: string | null;
+  hazard: string | null;
+  similarity: number;
+}> | null> {
+  if (!challenge.districtCode || challenge.embedding.length === 0) return null;
+  const literal = toVectorLiteral(challenge.embedding);
+
+  const rows = await db
+    .select({
+      id: challenges.id,
+      trackingId: challenges.trackingId,
+      title: challenges.title,
+      corroborationCount: challenges.corroborationCount,
+      blockCode: challenges.blockCode,
+      lat: challenges.lat,
+      lng: challenges.lng,
+      domain: challenges.domain,
+      hazard: challenges.hazard,
+      isParent: challenges.isParent,
+      parentId: challenges.parentId,
+      status: challenges.status,
+      similarity: sql<number>`1 - (${challenges.embedding} <=> ${literal}::vector)`,
+    })
+    .from(challenges)
+    .where(and(eq(challenges.districtCode, challenge.districtCode), isNotNull(challenges.embedding)))
+    .orderBy(sql`${challenges.embedding} <=> ${literal}::vector`)
+    .limit(20);
+
+  const children = rows.filter(
+    (r) =>
+      !r.isParent &&
+      r.parentId === null &&
+      r.status !== "MERGED" &&
+      r.status !== "REJECTED_UNSAFE" &&
+      r.status !== "FORWARDED_EXTERNAL" &&
+      Number(r.similarity) >= ROLLUP.minSimilarity,
+  );
+
+  if (children.length < ROLLUP.minChildren) return null;
+  const places = new Set(children.map((c) => c.blockCode ?? "unknown"));
+  if (places.size < ROLLUP.minDistinctPlaces) return null;
+  // The challenge that triggered the check must be one of the children.
+  if (!children.some((c) => c.id === challenge.id)) return null;
+
+  return children.map((c) => ({
+    id: c.id,
+    trackingId: c.trackingId,
+    title: c.title,
+    corroborationCount: c.corroborationCount,
+    blockCode: c.blockCode,
+    lat: c.lat,
+    lng: c.lng,
+    domain: c.domain,
+    hazard: c.hazard,
+    similarity: Number(c.similarity),
+  }));
+}
+
+/**
+ * Name the parent after what the children actually share, not after whichever
+ * one happened to trigger the check. Three reports about water, farming and
+ * heat in a drought district share the hazard, not the domain, and calling the
+ * cluster "healthcare" because the last report was a health report would be a
+ * label nobody could defend.
+ */
+export function describeCluster(
+  children: Array<{ domain: string | null; hazard: string | null; blockCode: string | null }>,
+  districtName: string,
+): string {
+  const blocks = new Set(children.map((c) => c.blockCode ?? "?")).size;
+  const hazards = mode(children.map((c) => c.hazard).filter((h): h is string => !!h && h !== "NONE"));
+  const domains = mode(children.map((c) => c.domain).filter((d): d is string => !!d));
+
+  const shared =
+    hazards && hazards.share >= 0.5
+      ? `${hazards.value.replaceAll("_", " ").toLowerCase()} exposure`
+      : domains && domains.share >= 0.5
+        ? `${domains.value.replaceAll("_", " ").toLowerCase()} problems`
+        : "related problems";
+
+  return `${districtName}: ${shared} reported across ${blocks} blocks`;
+}
+
+function mode(values: string[]): { value: string; share: number } | null {
+  if (values.length === 0) return null;
+  const counts = new Map<string, number>();
+  for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
+  let winner: [string, number] | null = null;
+  for (const entry of counts) if (!winner || entry[1] > winner[1]) winner = entry;
+  return winner ? { value: winner[0], share: winner[1] / values.length } : null;
 }
 
 /* ------------------------------------------------------- anti-brigading scan */

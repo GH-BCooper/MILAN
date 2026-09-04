@@ -41,7 +41,10 @@ import {
   adjudicate,
   bandFor,
   findCandidates,
+  describeCluster,
+  findRollupCandidates,
   mergeInto,
+  rollUp,
   scanForBrigading,
   type Candidate,
 } from "./stages/s3";
@@ -454,6 +457,35 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
 
   const flags = merged ? [] : await scanForBrigading(c.id);
 
+  // The roll-up. Only looked for when this report was not itself a duplicate:
+  // a merged report is already part of something bigger.
+  let rolledUp: Awaited<ReturnType<typeof rollUp>> = null;
+  if (!merged) {
+    const children = await findRollupCandidates({
+      id: c.id,
+      districtCode: c.districtCode,
+      blockCode: c.blockCode,
+      embedding,
+    });
+    if (children && c.blockCode) {
+      rolledUp = await rollUp({
+        blockCode: c.blockCode,
+        districtCode: c.districtCode,
+        children,
+        domain: c.domain,
+        hazard: c.hazard,
+        title: describeCluster(children, ctx.districtName ?? c.districtCode ?? "This district"),
+        body:
+          `${children.length} separate citizen reports across ` +
+          `${new Set(children.map((x) => x.blockCode)).size} blocks of ${ctx.districtName ?? c.districtCode} ` +
+          `describe the same underlying problem:\n\n` +
+          children.map((x) => `- ${x.trackingId}: ${x.title}`).join("\n") +
+          `\n\nEach of those reports keeps its own page, its own reporter and its own credit chain. ` +
+          `This parent exists so a research team can address the cause rather than one instance of it.`,
+      });
+    }
+  }
+
   if (!merged) await advance(ctx, "CLUSTERED", "No duplicate above the merge threshold.");
 
   await emit({
@@ -461,10 +493,13 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
     stage: "S3",
     status: "done",
     at: clockNow().toISOString(),
-    result: { comparisons, merged, anomalies: flags, thresholds: S3_THRESHOLDS },
+    result: { comparisons, merged, rolledUp, anomalies: flags, thresholds: S3_THRESHOLDS },
     decision: merged
       ? `Merged into ${merged.into} at cosine ${merged.similarity.toFixed(3)}. Both reporters credited; ${merged.into} now shows ${merged.count} reports.`
       : `No duplicate above ${S3_THRESHOLDS.autoMerge}. ${candidates.length} nearby report(s) compared.` +
+        (rolledUp
+          ? ` Created the systemic parent ${rolledUp.parentTrackingId} over ${rolledUp.childTrackingIds.length} reports; the children keep their own pages.`
+          : "") +
         (flags.length > 0 ? ` ${flags.length} corroboration anomaly flag(s) raised.` : ""),
     meta: adjudicationMeta,
   });
@@ -479,6 +514,21 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
  */
 function mergeable(ctx: Ctx, candidate: Candidate): boolean {
   if (candidate.id === ctx.challenge.parentId) return false;
+
+  // The FIRST person to report a problem is its originator, and a merge must
+  // never take that away from them just because their neighbour's report
+  // happened to run through the pipeline first. So a challenge only ever merges
+  // into an OLDER one; the older report is always the survivor, whatever order
+  // `--all` walks the table in.
+  const theirs = candidate.createdAt.getTime();
+  const ours = ctx.challenge.createdAt.getTime();
+  // Tracking IDs are sequential within a district, so they break a tie the same
+  // way every run. Without this, two reports written in the same second would
+  // merge in whichever direction the batch happened to reach first.
+  if (theirs > ours || (theirs === ours && candidate.trackingId > ctx.challenge.trackingId)) {
+    return false;
+  }
+
   return !["MERGED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "WITHDRAWN", "CLOSED"].includes(
     candidate.status,
   );
