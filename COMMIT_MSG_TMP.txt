@@ -1,27 +1,32 @@
-phase1/task4+5: auth, role guards, middleware and the seed script
+phase1/task6: the six-step intake wizard
 
-Auth (task 1.4)
-- Better Auth 1.7 with email+password and the organisation plugin, Drizzle
-  adapter over the same database. No self-serve org creation: HEI and industry
-  registrants pick from the seeded list.
-- lib/auth/guards.ts: requireUser, requireRole, requireDistrict, requireOrgMember.
-  ADMIN is deliberately not a wildcard on requireRole - implicit superuser access
-  is how audit trails get holes in them.
-- middleware.ts gates /me /hei /industry /gov /admin /demo on the session cookie
-  only. It is UX; the server guard in each page is the real check, and the file
-  says so.
-- account.issuer added: Better Auth 1.7 scopes account identity by issuer, and
-  the published @better-auth/cli is still on 1.4 so it does not emit the column.
-  The field list was read from better-auth's own table definitions instead.
+/submit is a six-step wizard: text with a language toggle, optional photos,
+location, scale, framing, review. State lives in one reducer and is written to
+localStorage on every change under milan:draft:<id>, so a dropped connection
+does not cost a citizen four screens of typing.
 
-Seed (task 1.5)
-- seed/index.mts, idempotent, with --reset. Reads only seed-data/*.csv, never
-  invents a row, warns on every empty column, and prints the demo accounts.
-- Tracking IDs come from the real nextTrackingId helper.
-- seed-data/ is PLACEHOLDER data pending the real Jharkhand dataset. What is
-  real and what is invented is tabulated in seed-data/README.md, and the script
-  prints a replace-me reminder on every run.
+- Photos are uploaded through the server, NOT by presigned direct upload as the
+  build file suggested. EXIF stripping has to happen somewhere the citizen
+  cannot skip; a direct upload would put the camera's GPS in our storage first.
+  sharp re-encodes without a metadata block and the object key is the SHA-256 of
+  the resulting bytes.
+- Face and plate blurring is not implemented. The UI says so to the citizen and
+  challenge_media.faces_blurred records false rather than claiming otherwise.
+- Location: geolocation, a MapLibre pin, and district/block dropdowns that
+  override both. Resolution is nearest-centroid, not point-in-polygon, and
+  lib/geo/nearest.ts says so and says why.
+- The map degrades to markers on a blank canvas when NEXT_PUBLIC_PMTILES_URL is
+  unset or the archive is unreachable. Nothing on the demo path may depend on a
+  tile server answering.
+- Rate limit: 5 submissions/hour by IP and user, counted in audit_log because an
+  in-memory counter on serverless does not exist.
+- /api/intake and /api/intake/media call the same server action, for non-browser
+  clients and for the verification harness.
 
-Verification: scripts/verify-roles.mjs, 16/16 against a live server.
+Verification: scripts/verify-submit.mjs, 23/23. It writes real GPS EXIF into a
+fixture JPEG, uploads it, downloads the stored object back and proves the EXIF
+is gone.
+  Hindi:   JH-2026-GUM-0003
+  English: JH-2026-LAT-0002
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
