@@ -1,41 +1,48 @@
-hei_code,department,lab_name,specialisation_tags,faculty_name,faculty_designation,declared_capacity,capacity_from,capacity_to
-BITS,Civil Engineering,Geotechnical Laboratory,"embankment;slope stability;soil mechanics;flood protection",Dr A K Sinha,Professor,4,2026-01-01,2026-12-31
-BITS,Civil Engineering,Water Resources Laboratory,"hydrology;drainage;check dam;river training",Dr S Mahato,Associate Professor,3,2026-01-01,2026-12-31
-BITS,Mechanical Engineering,Thermal Systems Laboratory,"solar thermal;cold storage;heat stress",Dr R P Verma,Professor,3,2026-01-01,2026-12-31
-BITS,Environmental Engineering,Water Quality Laboratory,"water quality;fluoride;iron removal;arsenic",Dr M Kujur,Assistant Professor,4,2026-01-01,2026-12-31
-NITJ,Civil Engineering,Structural Engineering Laboratory,"structural health;retrofitting;masonry;seismic",Dr P Bhattacharya,Professor,4,2026-01-01,2026-12-31
-NITJ,Computer Science and Engineering,Data Systems Laboratory,"early warning;sensor networks;iot;data analytics",Dr N Kumari,Associate Professor,5,2026-01-01,2026-12-31
-NITJ,Electrical Engineering,Power Systems Laboratory,"microgrid;solar pv;rural electrification",Dr V Ranjan,Professor,3,2026-01-01,2026-12-31
-NITJ,Metallurgical Engineering,Materials Characterisation Laboratory,"corrosion;materials;mine waste",Dr S Oraon,Assistant Professor,2,2026-01-01,2026-12-31
-IITD,Mining Engineering,Rock Mechanics Laboratory,"mining subsidence;ground control;abandoned mines;overburden",Dr A Ghosh,Professor,4,2026-01-01,2026-12-31
-IITD,Environmental Science and Engineering,Air Quality Laboratory,"air quality;particulate matter;mine fire;emissions",Dr K Prasad,Associate Professor,4,2026-01-01,2026-12-31
-IITD,Civil Engineering,Geohazards Laboratory,"landslide;slope monitoring;remote sensing",Dr T Hansda,Assistant Professor,3,2026-01-01,2026-12-31
-IITD,Applied Geology,Hydrogeology Laboratory,"groundwater;aquifer mapping;borewell;recharge",Dr J Tirkey,Professor,3,2026-01-01,2026-12-31
-IITD,Computer Science and Engineering,AI and Systems Laboratory,"machine learning;computer vision;forecasting",Dr R Anand,Associate Professor,5,2026-01-01,2026-12-31
-BITM,Civil Engineering,Transportation Engineering Laboratory,"rural roads;culverts;road safety;connectivity",Dr S Prakash,Professor,3,2026-01-01,2026-12-31
-BITM,Bioengineering,Public Health Laboratory,"epidemic;vector control;sanitation;water borne disease",Dr A Minz,Associate Professor,4,2026-01-01,2026-12-31
-BITM,Electronics and Communication,Embedded Systems Laboratory,"low cost sensors;lora;early warning;telemetry",Dr P Kispotta,Assistant Professor,4,2026-01-01,2026-12-31
-BITM,Computer Science and Engineering,Geospatial Laboratory,"gis;satellite imagery;flood mapping;land use",Dr D Munda,Professor,4,2026-01-01,2026-12-31
-BITM,Chemical Engineering,Process Engineering Laboratory,"water treatment;effluent;fluoride removal",Dr S Toppo,Associate Professor,3,2026-01-01,2026-12-31
-CUJH,Environmental Sciences,Ecology Laboratory,"forest fire;biodiversity;afforestation;carbon",Dr L Ekka,Associate Professor,3,2026-01-01,2026-12-31
-CUJH,Water Engineering and Management,Watershed Laboratory,"watershed;drought;irrigation;rainwater harvesting",Dr B Horo,Professor,4,2026-01-01,2026-12-31
-CUJH,Geoinformatics,Remote Sensing Laboratory,"gis;change detection;drought monitoring",Dr N Barla,Assistant Professor,3,2026-01-01,2026-12-31
-CUJH,Life Sciences,Nutrition Laboratory,"malnutrition;food security;anganwadi",Dr S Lakra,Assistant Professor,2,2026-01-01,2026-12-31
-RANU,Geology,Applied Geology Laboratory,"groundwater;mineral;subsidence",Dr A Kerketta,Professor,3,2026-01-01,2026-12-31
-RANU,Zoology,Vector Biology Laboratory,"malaria;dengue;vector control;epidemic",Dr P Bara,Associate Professor,3,2026-01-01,2026-12-31
-RANU,Botany,Plant Sciences Laboratory,"crop resilience;drought tolerant crops;seed",Dr M Tigga,Professor,2,2026-01-01,2026-12-31
-RANU,Physics,Instrumentation Laboratory,"low cost instrumentation;rain gauge;sensors",Dr S Gari,Assistant Professor,2,2026-01-01,2026-12-31
-VBUH,Geography,Disaster Studies Laboratory,"hazard mapping;vulnerability assessment;preparedness",Dr R Chourasia,Professor,3,2026-01-01,2026-12-31
-VBUH,Chemistry,Water Chemistry Laboratory,"water quality;heavy metals;testing kits",Dr N Sahu,Associate Professor,3,2026-01-01,2026-12-31
-VBUH,Computer Applications,Applied Computing Laboratory,"mobile apps;offline first;data collection",Dr V Kumar,Assistant Professor,3,2026-01-01,2026-12-31
-XISS,Rural Management,Community Systems Unit,"community mobilisation;shg;livelihoods;participatory mapping",Dr A Xalxo,Professor,4,2026-01-01,2026-12-31
-XISS,Sustainable Development,Climate Adaptation Unit,"climate adaptation;heatwave;livelihood resilience",Dr M Dungdung,Associate Professor,3,2026-01-01,2026-12-31
-XISS,Human Resource Management,Frontline Workforce Unit,"asha workers;training;last mile delivery",Dr S Purty,Assistant Professor,2,2026-01-01,2026-12-31
-SKMU,Geology,Earth Sciences Laboratory,"riverbank erosion;flood plain;sedimentation",Dr K Marandi,Professor,3,2026-01-01,2026-12-31
-SKMU,Environmental Science,Environment Laboratory,"water quality;sanitation;solid waste",Dr B Soren,Associate Professor,3,2026-01-01,2026-12-31
-SKMU,Computer Science,Information Systems Laboratory,"data collection;dashboards;reporting",Dr A Hembrom,Assistant Professor,2,2026-01-01,2026-12-31
-NPUM,Botany,Agro Ecology Laboratory,"drought;millets;soil health;agroforestry",Dr R Pandey,Professor,3,2026-01-01,2026-12-31
-NPUM,Geography,Regional Planning Laboratory,"drought mapping;migration;land degradation",Dr S Ram,Associate Professor,3,2026-01-01,2026-12-31
-NPUM,Chemistry,Analytical Laboratory,"water testing;fluoride;field kits",Dr P Yadav,Assistant Professor,2,2026-01-01,2026-12-31
-NITJ,Production Engineering,Manufacturing Systems Laboratory,"low cost fabrication;assistive devices;prototyping",Dr G Mahato,Associate Professor,3,2026-01-01,2026-12-31
-IITD,Fuel Minerals and Metallurgical Engineering,Mine Fire Laboratory,"mine fire;coal seam;thermal imaging",Dr H Singh,Professor,3,2026-01-01,2026-12-31
+hei_code,department,lab_name,specialisation_tags,faculty_name,faculty_designation,declared_capacity,capacity_window
+BITSINDRI,Civil Engineering,Hydraulics and Water Resources Laboratory,flood|embankment|river-training|hydrology|open-channel|water|flood-resilience,Prof. Prafulla Kumar Sharma,Professor & Head,3,2026-08-01..2026-12-31
+BITSINDRI,Civil Engineering,Geotechnical Engineering Laboratory,geotechnical|soil-mechanics|embankment|slope-stability|seepage|foundation|landslide|flood,Dr. Ran Vijay Singh,Professor,2,2026-08-01..2026-12-31
+BITSINDRI,Civil Engineering,Structural Engineering Laboratory,structural|masonry|crack-monitoring|rural-housing|mining-subsidence|building-damage,Dr. Jitu Kujur,Associate Professor,2,2026-08-01..2026-12-31
+BITSINDRI,Civil Engineering,Environmental Engineering Laboratory,water-quality|wastewater|drinking-water|fluoride|sanitation|water,Dr. Maya Rajnarayan Ray,Associate Professor,2,2026-08-01..2026-12-31
+BITSINDRI,Mining Engineering,Rock Mechanics Laboratory,mining-subsidence|rock-mechanics|ground-control|abandoned-mines|mine-fire|coal,,Head of Department,1,2026-08-01..2026-12-31
+BITSINDRI,Electronics and Communication Engineering,Embedded Systems and IoT Laboratory,iot|low-cost-sensors|early-warning|telemetry|lora|crack-monitoring|water-level,,Head of Department,2,2026-08-01..2026-12-31
+IITISM,Mining Engineering,Rock Mechanics and Ground Control Laboratory,mining-subsidence|subsidence-prediction|ground-control|numerical-modelling|abandoned-mines|coal|jharia,Prof. Bhaskara Behera,Assistant Professor,2,2026-08-01..2026-12-31
+IITISM,Mining Engineering,Mine Surveying and Subsidence Monitoring,mining-subsidence|insar|surveying|deformation-monitoring|dangerous-workings|coal,Prof. Dheeraj Kumar,Professor (HAG),1,2026-08-01..2026-12-31
+IITISM,Environmental Science and Engineering,Centre for Mining Environment,mine-environment|air-quality|coal-dust|mine-fire|land-reclamation|environment|health,Prof. Biswajit Paul,Professor & Head (Centre for Mining Environment),2,2026-08-01..2026-12-31
+IITISM,Environmental Science and Engineering,Air and Water Quality Laboratory,air-pollution|coal-dust|water-quality|heavy-metals|remote-sensing|gis|environment|mining,Prof. Manish Kumar Jain,Professor,2,2026-08-01..2026-12-31
+IITISM,Civil Engineering,Geotechnical Engineering Laboratory,geotechnical|slope-stability|landslide|embankment|soil-stabilisation|ground-improvement|flood,Prof. Sarat Kumar Das,Professor,2,2026-08-01..2026-12-31
+IITISM,Civil Engineering,Water Resources and Hydrology Laboratory,hydrology|flood|drought|rainfall-runoff|climate|water|hydro-informatics,Prof. Kironmala Chanda,Associate Professor,1,2026-08-01..2026-12-31
+IITISM,Civil Engineering,Transportation and Geosynthetics Laboratory,geosynthetics|rural-roads|slope-protection|erosion-control|landslide|accessibility,Prof. Sowmiya Chawla,Associate Professor,1,2026-10-01..2027-03-31
+IITISM,Applied Geology,Hydrogeology and Medical Geology Laboratory,groundwater|fluoride|hydrogeochemistry|drinking-water|health|water|drought,Prof. A. S. Venkatesh,Professor,1,2026-08-01..2026-12-31
+BITMESRA,Civil and Environmental Engineering,Hydraulics and Groundwater Modelling Laboratory,groundwater|hydrology|open-channel|minewater|water-sustainability|drought|water|climate,Dr. Anand Kumar Sinha,Professor & Dean,2,2026-08-01..2026-12-31
+BITMESRA,Civil and Environmental Engineering,Geotechnical Engineering Laboratory,slope-stability|geotechnical|earthquake|numerical-modelling|landslide|embankment|eco-materials,Dr. Siddhartha Sengupta,Associate Professor,2,2026-08-01..2026-12-31
+BITMESRA,Civil and Environmental Engineering,Environmental Remote Sensing and Wetland Laboratory,remote-sensing|wetland|land-degradation|climate|flood-mapping|environment|gis,Dr. Kirti Avishek,Associate Professor,2,2026-08-01..2026-12-31
+BITMESRA,Civil and Environmental Engineering,Water and Wastewater Treatment Laboratory,water-treatment|drinking-water|fluoride|iron-removal|sanitation|water-quality|water,Dr. R. Naresh Kumar,Associate Professor,1,2026-08-01..2026-12-31
+BITMESRA,Civil and Environmental Engineering,Soil Mechanics and Environmental Engineering Laboratory,soil-mechanics|environment|sanitation|solid-waste|geotechnical,Dr. Bindhu Lal,Professor & Head,1,2026-08-01..2026-12-31
+BITMESRA,Remote Sensing,Geoinformatics and Disaster Mapping Laboratory,remote-sensing|gis|forest-fire|drought|flood-mapping|lulc|early-warning|environment,Dr. C. Jeganathan,Professor & Head,2,2026-08-01..2026-12-31
+NITJSR,Civil Engineering,Geotechnical Engineering Laboratory,geotechnical|ground-improvement|reinforced-soil|embankment|slope-stability|landslide|flood,Prof. Anil Kumar Choudhary,Professor,2,2026-08-01..2026-12-31
+NITJSR,Civil Engineering,Computational Geomechanics Group,slope-stability|landslide|reliability|numerical-modelling|mining-subsidence|geotechnical,Dr. Subhadeep Metya,Assistant Professor,1,2026-08-01..2026-12-31
+NITJSR,Civil Engineering,Water Resources Engineering Laboratory,hydrology|flood|water-resources|river|watershed|drought|water|climate,Dr. Chintalacheruvu Madhusudana Rao,Associate Professor,2,2026-08-01..2026-12-31
+NITJSR,Civil Engineering,Hydrology and Fuzzy Systems Group,hydrology|flood-forecasting|drought-index|water|rainfall|early-warning,Dr. Sangeeta Kumari,Assistant Professor,1,2026-08-01..2026-12-31
+NITJSR,Civil Engineering,Environmental Geotechnology Laboratory,mine-tailings|environmental-geotechnics|contamination|mining|water-quality|environment,Dr. Somenath Mondal,Assistant Professor,1,2027-01-01..2027-06-30
+CUJ,Geoinformatics,Geospatial Hydrology and Disaster Management Laboratory,remote-sensing|gis|hydrology|flood|disaster-management|water-resources|forest|glaciology,Prof. A. C. Pandey,Professor & Dean (SNRM),2,2026-08-01..2026-12-31
+CUJ,Geoinformatics,GeoAI and Drought Monitoring Group,drought|forest-fire|land-degradation|remote-sensing|machine-learning|geoai|agriculture|climate,Dr. Bikash Ranjan Parida,Associate Professor & Head,2,2026-08-01..2026-12-31
+CUJ,Geoinformatics,Hydrometeorological Extremes Group,heatwave|hydrometeorology|extremes|surface-water|climate|flood|drought|rural-planning,Dr. Shanti Shwarup Mahto,Assistant Professor,1,2026-08-01..2026-12-31
+CUJ,Water Engineering and Management,Water Engineering and Management Laboratory,water-management|watershed|irrigation|groundwater-recharge|drought|water|rural-water-supply,Dr. Ajai Singh,Associate Professor & Head,2,2026-08-01..2026-12-31
+CUJ,Environmental Sciences,Environmental Sciences Laboratory,phytoremediation|mine-reclamation|soil-contamination|environment|air-quality|fly-ash,Dr. Kuldeep Bauddh,Assistant Professor,1,2026-08-01..2026-12-31
+BAU,Soil and Water Conservation Engineering,Soil and Water Conservation Engineering Laboratory,soil-conservation|watershed|check-dam|rainwater-harvesting|drought|erosion|agriculture|water,Er. D. K. Rusia,Assistant Professor cum Senior Scientist & Head,2,2026-08-01..2026-12-31
+BAU,Irrigation and Drainage Engineering,Irrigation and Drainage Engineering Laboratory,irrigation|drip|lift-irrigation|drainage|groundwater|drought|agriculture|water,,Head of Department,2,2026-08-01..2026-12-31
+BAU,Agronomy,Dryland and Rainfed Farming Research Unit,rainfed-farming|drought-tolerant-varieties|kharif|paddy|crop-planning|agriculture|drought|livelihoods,,Head of Department,3,2026-08-01..2026-12-31
+BAU,Agricultural Physics and Meteorology,Agrometeorology Observatory,agrometeorology|weather-advisory|heatwave|drought|rainfall|climate|agriculture|early-warning,,Head of Department,1,2026-08-01..2026-12-31
+BAU,Forestry,Forest Ecology and Non-Timber Forest Produce Unit,forest-fire|ntfp|mahua|lac|human-wildlife-conflict|forestry|livelihoods|environment,,Dean (Faculty of Forestry),2,2026-08-01..2026-12-31
+BAU,Agricultural Extension Education,Krishi Vigyan Kendra Network Cell,extension|farmer-training|tribal-farming|livelihoods|agriculture|community-mobilisation,,Head of Department,2,2026-08-01..2026-12-31
+XISS,Rural Management,Rural Management Programme,rural-management|livelihoods|community-mobilisation|shg|tribal-development|natural-resource-management|panchayat|public-service,Dr. Himadri Sinha,Professor & Head,3,2026-08-01..2026-12-31
+XISS,Rural Management,Sustainable Agriculture and NRM Field Practicum,sustainable-agriculture|watershed|livelihoods|drought|migration|agriculture|community-mobilisation,,Faculty Coordinator,2,2026-08-01..2026-12-31
+RU,Geology,Hydrogeology and Environmental Geology Laboratory,hydrogeology|groundwater|fluoride|environmental-geology|water|drought|geo-informatics,Prof. Bijay Singh,Professor & Head,1,2026-08-01..2026-12-31
+RU,Geography,Regional Planning and Disaster Geography Unit,disaster-geography|regional-planning|urban-flooding|urban-infra|gis|flood|accessibility,Dr. Jitendra Shukla,Associate Professor,2,2026-08-01..2026-12-31
+RIMS,Preventive and Social Medicine,Integrated Disease Surveillance and Field Epidemiology Unit,epidemic|malaria|disease-surveillance|public-health|heat-illness|heatwave|fluorosis|healthcare|water-borne-disease,Prof. (Dr.) Vivek Kashyap,Professor & Head,2,2026-08-01..2026-12-31
+VBU,Geology,Geology Laboratory,geology|mica|abandoned-mines|groundwater|mining-subsidence|environment,Dr. S. K. Sinha,Associate Professor,1,2026-08-01..2026-12-31
+VBU,Geography,Geography and Environmental Studies Unit,geography|rural-development|drought|migration|livelihoods|gis|environment,Dr. J. Bhagat,Associate Professor & Head,1,2026-08-01..2026-12-31
+NPU,Geography,Department of Geography,drought|palamu|groundwater|heatwave|migration|rural-water-supply|geography|agriculture,,Head of Department,2,2026-08-01..2026-12-31
+NPU,Economics,Department of Economics,livelihoods|migration|rural-economy|drought|mgnrega|public-service,,Head of Department,1,2026-08-01..2026-12-31
+SKMU,Santali,Department of Santali,santali|ol-chiki|tribal-language|community-outreach|education|translation,,Head of Department,1,2026-08-01..2026-12-31
+SKMU,Geography,Department of Geography,santhal-pargana|drought|hill-water-supply|paharia|geography|water|accessibility,,Head of Department,1,2026-08-01..2026-12-31

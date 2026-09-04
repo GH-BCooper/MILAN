@@ -96,6 +96,36 @@ function num(value: string | undefined): string | null {
   return Number.isFinite(Number(v)) ? v : null;
 }
 
+/**
+ * The two enums the dataset supplies per row. Kept as literal tuples so a value
+ * that is not in the database enum is caught here, with the CSV line number,
+ * rather than as an opaque insert error 200 rows later.
+ */
+const DOMAIN_VALUES = [
+  "EDUCATION",
+  "HEALTHCARE",
+  "AGRICULTURE",
+  "WATER",
+  "SANITATION",
+  "ENVIRONMENT",
+  "LIVELIHOODS",
+  "ACCESSIBILITY",
+  "URBAN_INFRA",
+  "PUBLIC_SERVICE",
+] as const;
+const HAZARD_VALUES = [
+  "FLOOD",
+  "DROUGHT",
+  "LANDSLIDE",
+  "HEATWAVE",
+  "MINING_SUBSIDENCE",
+  "EPIDEMIC",
+  "FOREST_FIRE",
+  "NONE",
+] as const;
+const DOMAINS: ReadonlySet<string> = new Set(DOMAIN_VALUES);
+const HAZARDS: ReadonlySet<string> = new Set(HAZARD_VALUES);
+
 /** People affected is captured as a bucket; we store the midpoint. */
 const BUCKET_MIDPOINT: Record<string, number> = {
   "1-10": 5,
@@ -145,7 +175,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     name: "Head of Civil Engineering, BIT Sindri",
     role: "HEI_MEMBER",
     orgSlug: "bit-sindri",
-    districtCode: "DHA",
+    districtCode: "DHN",
     note: "claims routed challenges",
   },
   {
@@ -160,7 +190,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     name: "CSR Lead, Tata Steel Foundation",
     role: "INDUSTRY",
     orgSlug: "tata-steel-foundation",
-    districtCode: "EAS",
+    districtCode: "ESB",
     note: "expresses industry interest",
   },
   {
@@ -198,60 +228,139 @@ async function main() {
 
   /* ---------------------------------------------------------- geography */
 
-  const districtRows = readCsv<Record<string, string>>("districts.csv");
-  for (const d of districtRows) {
-    await db
-      .insert(districts)
-      .values({
-        code: d.code.trim(),
-        name: d.name.trim(),
-        nameHi: optional(d.name_hi),
-        lat: num(d.lat),
-        lng: num(d.lng),
-        vulnerabilityIndex: num(d.vulnerability_index),
-      })
-      .onConflictDoUpdate({
-        target: districts.code,
-        set: {
-          name: d.name.trim(),
-          nameHi: optional(d.name_hi),
-          lat: num(d.lat),
-          lng: num(d.lng),
-          vulnerabilityIndex: num(d.vulnerability_index),
-        },
-      });
+  /**
+   * Geography comes from one denormalised file: seed-data/districts.csv has a
+   * row per block, carrying the district's code, name and vulnerability index
+   * beside the block's own name and centroid.
+   *
+   * Two consequences, both deliberate:
+   *   - The district centroid is not a column. It is derived as the mean of its
+   *     blocks' centroids and counted as derived in the run summary. We do not
+   *     invent a coordinate and then present it as if it were surveyed.
+   *   - A block inherits its district's vulnerability index, because the file
+   *     carries one index per district. Block-level indices are a Phase 3 input.
+   *
+   * seed-data/blocks.csv is no longer read. It described the 2026-09-04
+   * placeholder geography and its district codes no longer exist.
+   */
+  const geographyRows = readCsv<Record<string, string>>("districts.csv");
+
+  interface DistrictAccumulator {
+    code: string;
+    name: string;
+    nameHi: string | null;
+    vulnerabilityIndex: string | null;
+    lats: number[];
+    lngs: number[];
+  }
+  interface BlockRow {
+    code: string;
+    districtCode: string;
+    name: string;
+    lat: string | null;
+    lng: string | null;
+    vulnerabilityIndex: string | null;
   }
 
-  const districtCodes = new Set(districtRows.map((d) => d.code.trim()));
+  const districtAccumulators = new Map<string, DistrictAccumulator>();
+  const blockRows: BlockRow[] = [];
 
-  const blockRows = readCsv<Record<string, string>>("blocks.csv");
-  for (const b of blockRows) {
-    if (!districtCodes.has(b.district_code.trim())) {
-      warn(`blocks.csv: block ${b.code} points at unknown district ${b.district_code} — skipped`);
+  for (const [i, r] of geographyRows.entries()) {
+    const line = i + 2; // header is line 1
+    const code = r.district_code?.trim();
+    const name = r.district_name?.trim();
+    if (!code || !name) {
+      warn(`districts.csv line ${line}: missing district_code or district_name — row skipped`);
       continue;
     }
+
+    let acc = districtAccumulators.get(code);
+    if (!acc) {
+      acc = {
+        code,
+        name,
+        nameHi: optional(r.district_name_hi),
+        vulnerabilityIndex: num(r.vulnerability_index),
+        lats: [],
+        lngs: [],
+      };
+      districtAccumulators.set(code, acc);
+    }
+
+    const lat = num(r.lat);
+    const lng = num(r.lng);
+    if (lat !== null) acc.lats.push(Number(lat));
+    if (lng !== null) acc.lngs.push(Number(lng));
+
+    const blockCode = r.block_code?.trim();
+    const blockName = r.block_name?.trim();
+    if (!blockCode) continue; // a district-only row is legitimate
+    if (!blockName) {
+      warn(`districts.csv line ${line}: block ${blockCode} has no block_name — block skipped`);
+      continue;
+    }
+    blockRows.push({
+      code: blockCode,
+      districtCode: code,
+      name: blockName,
+      lat,
+      lng,
+      vulnerabilityIndex: acc.vulnerabilityIndex,
+    });
+  }
+
+  /** Mean of the supplied block centroids, to the schema's 6 decimal places. */
+  function meanCoordinate(values: number[]): string | null {
+    if (values.length === 0) return null;
+    return (values.reduce((a, b) => a + b, 0) / values.length).toFixed(6);
+  }
+
+  let derivedCentroids = 0;
+  for (const acc of districtAccumulators.values()) {
+    const lat = meanCoordinate(acc.lats);
+    const lng = meanCoordinate(acc.lngs);
+    if (lat !== null) derivedCentroids += 1;
+    if (acc.vulnerabilityIndex === null) {
+      warn(`districts.csv: ${acc.code} has no vulnerability_index — left null`);
+    }
+    const values = {
+      name: acc.name,
+      nameHi: acc.nameHi,
+      lat,
+      lng,
+      vulnerabilityIndex: acc.vulnerabilityIndex,
+    };
+    await db
+      .insert(districts)
+      .values({ code: acc.code, ...values })
+      .onConflictDoUpdate({ target: districts.code, set: values });
+  }
+
+  const districtCodes = new Set(districtAccumulators.keys());
+
+  // The file carries no Devanagari block names, so block name_hi is null for
+  // every row. Said once here rather than 249 times.
+  if (blockRows.length) warn(`districts.csv: no block_name_hi column — ${blockRows.length} blocks have no Devanagari name`);
+
+  const seenBlockCodes = new Set<string>();
+  for (const b of blockRows) {
+    if (seenBlockCodes.has(b.code)) {
+      warn(`districts.csv: duplicate block code ${b.code} — later row ignored`);
+      continue;
+    }
+    seenBlockCodes.add(b.code);
+    const values = {
+      districtCode: b.districtCode,
+      name: b.name,
+      nameHi: null,
+      lat: b.lat,
+      lng: b.lng,
+      vulnerabilityIndex: b.vulnerabilityIndex,
+    };
     await db
       .insert(blocks)
-      .values({
-        code: b.code.trim(),
-        districtCode: b.district_code.trim(),
-        name: b.name.trim(),
-        nameHi: optional(b.name_hi),
-        lat: num(b.lat),
-        lng: num(b.lng),
-        vulnerabilityIndex: num(b.vulnerability_index),
-      })
-      .onConflictDoUpdate({
-        target: blocks.code,
-        set: {
-          districtCode: b.district_code.trim(),
-          name: b.name.trim(),
-          nameHi: optional(b.name_hi),
-          lat: num(b.lat),
-          lng: num(b.lng),
-          vulnerabilityIndex: num(b.vulnerability_index),
-        },
-      });
+      .values({ code: b.code, ...values })
+      .onConflictDoUpdate({ target: blocks.code, set: values });
   }
 
   /* ------------------------------------------------------ organisations */
@@ -309,16 +418,51 @@ async function main() {
     return row.id;
   }
 
-  for (const h of heiRows) {
+  /**
+   * Neither heis.csv nor industry.csv carries a slug, but Better Auth's
+   * organisation plugin requires a unique one. It is derived from the name and
+   * de-duplicated, so it is stable across runs: the same name always yields the
+   * same slug, which is what makes the upserts idempotent.
+   */
+  function slugify(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/\(.*?\)/g, " ") // drop bracketed abbreviations: "... (CCL)"
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48);
+  }
+
+  const usedSlugs = new Set<string>();
+  function uniqueSlug(name: string): string {
+    const base = slugify(name) || "org";
+    let slug = base;
+    let n = 2;
+    while (usedSlugs.has(slug)) slug = `${base}-${n++}`;
+    usedSlugs.add(slug);
+    return slug;
+  }
+
+  const heiSlugByCode = new Map<string, string>();
+
+  for (const [i, h] of heiRows.entries()) {
+    const name = h.hei_name?.trim();
+    if (!name) {
+      warn(`heis.csv line ${i + 2}: no hei_name — row skipped`);
+      continue;
+    }
     const districtCode = h.district_code?.trim() || null;
     if (districtCode && !districtCodes.has(districtCode)) {
-      warn(`heis.csv: ${h.name} points at unknown district ${districtCode} — district left null`);
+      warn(`heis.csv: ${name} points at unknown district ${districtCode} — district left null`);
     }
+    const heiCode = nullable(h.hei_code, `heis.csv ${name}.hei_code`);
+    const slug = uniqueSlug(name);
+    if (heiCode) heiSlugByCode.set(heiCode, slug);
     await upsertOrg({
-      slug: h.slug.trim(),
-      name: h.name.trim(),
+      slug,
+      name,
       orgType: "HEI",
-      heiCode: nullable(h.hei_code, `heis.csv ${h.name}.hei_code`),
+      heiCode,
       districtCode: districtCode && districtCodes.has(districtCode) ? districtCode : null,
       lat: num(h.lat),
       lng: num(h.lng),
@@ -326,18 +470,47 @@ async function main() {
     });
   }
 
-  for (const f of industryRows) {
-    const districtCode = f.district_code?.trim() || null;
+  /**
+   * industry.csv describes a firm's CSR posture, not its campus: it has no
+   * coordinates and no website, and district_focus is a list. We store the
+   * first district as the firm's anchor and leave the rest for Phase 4's
+   * matching, rather than silently picking one and calling it the address.
+   */
+  for (const [i, f] of industryRows.entries()) {
+    const name = f.org_name?.trim();
+    if (!name) {
+      warn(`industry.csv line ${i + 2}: no org_name — row skipped`);
+      continue;
+    }
+    const focus = (f.district_focus ?? "")
+      .split("|")
+      .map((d) => d.trim())
+      .filter(Boolean);
+    const known = focus.filter((d) => districtCodes.has(d));
+    for (const d of focus.filter((d) => !districtCodes.has(d))) {
+      warn(`industry.csv: ${name} lists unknown district ${d} — ignored`);
+    }
+    if (known.length > 1) {
+      warn(`industry.csv: ${name} focuses on ${known.length} districts — anchored to ${known[0]}, the rest are not stored`);
+    }
     await upsertOrg({
-      slug: f.slug.trim(),
-      name: f.name.trim(),
+      slug: uniqueSlug(name),
+      name,
       orgType: "INDUSTRY",
       heiCode: null,
-      districtCode: districtCode && districtCodes.has(districtCode) ? districtCode : null,
-      lat: num(f.lat),
-      lng: num(f.lng),
-      website: optional(f.website),
+      districtCode: known[0] ?? null,
+      lat: null,
+      lng: null,
+      website: null,
     });
+  }
+
+  // Columns the schema has nowhere to put. Declared rather than dropped in silence.
+  if (heiRows.some((h) => h.type?.trim())) {
+    warn("heis.csv: the `type` column (CENTRAL_INSTITUTE etc.) has no schema column — not stored");
+  }
+  if (industryRows.some((f) => f.domain_interests?.trim() || f.csr_contact_title?.trim())) {
+    warn("industry.csv: `domain_interests` and `csr_contact_title` have no schema column — not stored, needed by Phase 4 matching");
   }
 
   /* --------------------------------------------------- demo user accounts */
@@ -431,9 +604,27 @@ async function main() {
 
   const capabilityRows = readCsv<Record<string, string>>("capabilities.csv");
   const heiIdByCode = new Map<string, string>();
-  for (const h of heiRows) {
-    const id = orgIdBySlug.get(h.slug.trim());
-    if (id) heiIdByCode.set(h.hei_code.trim(), id);
+  for (const [heiCode, slug] of heiSlugByCode) {
+    const id = orgIdBySlug.get(slug);
+    if (id) heiIdByCode.set(heiCode, id);
+  }
+
+  /**
+   * The dataset expresses the availability window as one column,
+   * `capacity_window` = "2026-08-01..2026-12-31". The placeholder file used
+   * separate capacity_from / capacity_to columns; both are accepted.
+   */
+  function capacityWindow(c: Record<string, string>): { from: string | null; to: string | null } {
+    const window = c.capacity_window?.trim();
+    if (window) {
+      const [from, to] = window.split("..").map((p) => p.trim());
+      if (!from || !to) {
+        warn(`capabilities.csv: ${c.hei_code}/${c.department} has an unreadable capacity_window "${window}"`);
+        return { from: null, to: null };
+      }
+      return { from, to };
+    }
+    return { from: optional(c.capacity_from), to: optional(c.capacity_to) };
   }
 
   let capabilityCount = 0;
@@ -444,8 +635,10 @@ async function main() {
       continue;
     }
 
+    // Tags are pipe-separated in the Jharkhand dataset; the placeholder file
+    // used semicolons. Accept both so an older CSV still loads.
     const tags = (c.specialisation_tags ?? "")
-      .split(";")
+      .split(/[|;]/)
       .map((t) => t.trim())
       .filter(Boolean);
     if (tags.length === 0) warn(`capabilities.csv: ${c.hei_code}/${c.department} has no specialisation tags`);
@@ -471,8 +664,8 @@ async function main() {
       facultyName: optional(c.faculty_name),
       facultyDesignation: optional(c.faculty_designation),
       declaredCapacity: Number(c.declared_capacity ?? 0) || 0,
-      capacityFrom: optional(c.capacity_from),
-      capacityTo: optional(c.capacity_to),
+      capacityFrom: capacityWindow(c).from,
+      capacityTo: capacityWindow(c).to,
       active: true,
     };
 
@@ -487,6 +680,12 @@ async function main() {
   /* ------------------------------------------------------------ challenges */
 
   const challengeRows = readCsv<Record<string, string>>("challenges.csv");
+  if (!challengeRows.some((r) => r.seed_status?.trim())) {
+    warn("challenges.csv: no seed_status column — every challenge seeds as SUBMITTED, so /stats has no history");
+  }
+  if (!challengeRows.some((r) => r.corroborations?.trim())) {
+    warn("challenges.csv: no corroborations column — every challenge seeds with a single reporter");
+  }
   const sunitaId = userIdByEmail.get("sunita@demo.milan.in") ?? null;
   const blockCodes = new Set(blockRows.map((b) => b.code.trim()));
 
@@ -509,13 +708,56 @@ async function main() {
     // When the citizen wrote in English, the English working copy is their own
     // words. body_original is never destroyed, and never translated away.
     const bodyEn = row.body_en?.trim() || (bodyLang === "en" ? row.body_original.trim() : null);
-    if (!bodyEn) warn(`challenges.csv row ${index + 2}: no English copy — Phase 2 S0 will translate`);
+    if (!bodyEn) warn(`challenges.csv row ${index + 2}: ${bodyLang} report has no English copy — Phase 2 S0 translates it`);
 
+    /**
+     * people_affected is a plain count in the Jharkhand dataset. The intake
+     * wizard still captures a bucket and stores its midpoint, so both are
+     * accepted here and a bucket label is resolved to the same midpoint the
+     * wizard would have written.
+     */
     const bucket = row.people_affected_bucket?.trim() ?? "";
     if (bucket && !(bucket in BUCKET_MIDPOINT)) {
       warn(`challenges.csv row ${index + 2}: unknown people_affected bucket "${bucket}"`);
     }
+    const peopleAffectedRaw = row.people_affected?.trim();
+    let peopleAffected: number | null = bucket ? (BUCKET_MIDPOINT[bucket] ?? null) : null;
+    if (peopleAffected === null && peopleAffectedRaw) {
+      const parsed = Number(peopleAffectedRaw);
+      if (Number.isFinite(parsed) && parsed >= 0) peopleAffected = Math.round(parsed);
+      else warn(`challenges.csv row ${index + 2}: unreadable people_affected "${peopleAffectedRaw}"`);
+    }
+    if (peopleAffected === null) warn(`challenges.csv row ${index + 2}: no people_affected — left null`);
 
+    /**
+     * domain and hazard are supplied by the dataset, and the hazard linkage is
+     * what makes a row a disaster-management item rather than a public-works
+     * item (CLAUDE.md invariant 1). Values are checked against the enums here
+     * so a typo fails loudly at seed time instead of at insert time.
+     */
+    const domain = optional(row.domain);
+    if (domain && !DOMAINS.has(domain)) {
+      warn(`challenges.csv row ${index + 2}: unknown domain "${domain}" — left null`);
+    }
+    const hazard = optional(row.hazard);
+    if (hazard && !HAZARDS.has(hazard)) {
+      warn(`challenges.csv row ${index + 2}: unknown hazard "${hazard}" — left null`);
+    }
+    if (!hazard) warn(`challenges.csv row ${index + 2}: no hazard linkage`);
+
+    /**
+     * severity_hint is seeded straight into `severity`. Phase 2's S1 recomputes
+     * it; until then this is what /gov/gate and the priority panel read, and
+     * >= 0.7 is the human-gate threshold (CLAUDE.md invariant 5).
+     */
+    const severity = num(row.severity_hint);
+    if (severity !== null && (Number(severity) < 0 || Number(severity) > 1)) {
+      warn(`challenges.csv row ${index + 2}: severity_hint ${severity} is outside 0..1`);
+    }
+
+    // seed_status and corroborations are optional columns. Absent, every row
+    // seeds as a fresh SUBMITTED report with no corroborators — honest, but it
+    // leaves /stats with no history to show. See seed-data/README.md.
     const seedStatus = (row.seed_status?.trim() || "SUBMITTED") as "SUBMITTED" | "CLOSED" | "CITIZEN_VERIFIED";
     // Three rows are backdated so /stats has real history to show on stage.
     const createdAt =
@@ -537,7 +779,10 @@ async function main() {
       blockCode: blockCode && blockCodes.has(blockCode) ? blockCode : null,
       lat: num(row.lat),
       lng: num(row.lng),
-      peopleAffected: BUCKET_MIDPOINT[bucket] ?? null,
+      peopleAffected,
+      domain: domain && DOMAINS.has(domain) ? (domain as (typeof DOMAIN_VALUES)[number]) : null,
+      hazard: hazard && HAZARDS.has(hazard) ? (hazard as (typeof HAZARD_VALUES)[number]) : null,
+      severity,
       recurrence: optional(row.recurrence),
       urgencySelfReport: Number(row.urgency_self_report ?? 0) || null,
       reporterName: optional(row.reporter_name),
@@ -668,6 +913,11 @@ async function main() {
     UNION ALL SELECT 'challenge_media', count(*)::int FROM challenge_media
   `);
 
+  // Say plainly which coordinates the file supplied and which we computed.
+  console.log(
+    `\nGeography: ${districtAccumulators.size} districts (${derivedCentroids} centroids derived ` +
+      `as the mean of their blocks), ${seenBlockCodes.size} blocks from districts.csv`,
+  );
   console.log("\nRow counts");
   console.log("-".repeat(40));
   for (const r of counts) console.log(`${String(r.table).padEnd(20)} ${String(r.n).padStart(6)}`);
@@ -688,9 +938,11 @@ async function main() {
     `\nSeeded in ${((Date.now() - started) / 1000).toFixed(1)}s ` +
       `(capabilities processed: ${capabilityCount}, corroborations added: ${corroborationCount}, media added: ${mediaCount})`,
   );
+  // The dataset is the team's own. What is still outstanding is narrower, so
+  // the reminder names it rather than crying wolf on every run.
   console.log(
-    "\nREMINDER: seed-data/ is placeholder data generated by Claude. " +
-      "Replace it with the real Jharkhand dataset before the demo — see seed-data/README.md.",
+    "\nREMINDER: the Hindi and Santali reports have not been checked by a native " +
+      "speaker (PHASE_1_LEARN.md 7.3), and seed-data/voice-note.mp3 is still empty.",
   );
 }
 

@@ -1,25 +1,264 @@
-code,name,name_hi,lat,lng,vulnerability_index
-BOK,Bokaro,बोकारो,23.6693,86.1511,0.58
-CHA,Chatra,चतरा,24.2065,84.8710,0.66
-DEO,Deoghar,देवघर,24.4823,86.6997,0.61
-DHA,Dhanbad,धनबाद,23.7957,86.4304,0.72
-DUM,Dumka,दुमका,24.2676,87.2497,0.69
-GAR,Garhwa,गढ़वा,24.1610,83.8080,0.74
-GID,Giridih,गिरिडीह,24.1840,86.3000,0.65
-GOD,Godda,गोड्डा,24.8270,87.2130,0.67
-GUM,Gumla,गुमला,23.0444,84.5385,0.71
-HAZ,Hazaribagh,हजारीबाग,23.9925,85.3637,0.60
-JAM,Jamtara,जामताड़ा,23.9600,86.8000,0.63
-KHU,Khunti,खूंटी,23.0710,85.2790,0.70
-KOD,Koderma,कोडरमा,24.4670,85.5940,0.59
-LAT,Latehar,लातेहार,23.7440,84.5000,0.75
-LOH,Lohardaga,लोहरदगा,23.4330,84.6830,0.68
-PAK,Pakur,पाकुड़,24.6390,87.8480,0.72
-PAL,Palamu,पलामू,24.0350,84.0670,0.76
-EAS,Purbi Singhbhum,पूर्वी सिंहभूम,22.8046,86.2029,0.55
-RAM,Ramgarh,रामगढ़,23.6300,85.5200,0.57
-RAN,Ranchi,रांची,23.3441,85.3096,0.52
-SAH,Sahibganj,साहिबगंज,25.2400,87.6440,0.78
-SER,Seraikela Kharsawan,सरायकेला खरसावां,22.7000,85.9300,0.62
-SIM,Simdega,सिमडेगा,22.6150,84.5150,0.70
-WES,Pashchimi Singhbhum,पश्चिमी सिंहभूम,22.5600,85.8200,0.73
+district_code,district_name,district_name_hi,block_code,block_name,lat,lng,vulnerability_index
+RAN,Ranchi,रांची,RAN-ANG,Angara,23.380,85.520,0.42
+RAN,Ranchi,रांची,RAN-BER,Bero,23.290,84.980,0.42
+RAN,Ranchi,रांची,RAN-BUN,Bundu,23.160,85.590,0.42
+RAN,Ranchi,रांची,RAN-BUR,Burmu,23.570,85.200,0.45
+RAN,Ranchi,रांची,RAN-CHA,Chanho,23.440,85.070,0.42
+RAN,Ranchi,रांची,RAN-ITK,Itki,23.300,85.130,0.42
+RAN,Ranchi,रांची,RAN-KAN,Kanke,23.430,85.320,0.34
+RAN,Ranchi,रांची,RAN-KHE,Khelari,23.660,85.020,0.47
+RAN,Ranchi,रांची,RAN-LAP,Lapung,23.150,85.010,0.47
+RAN,Ranchi,रांची,RAN-MAN,Mandar,23.450,85.050,0.42
+RAN,Ranchi,रांची,RAN-NAM,Namkum,23.330,85.400,0.34
+RAN,Ranchi,रांची,RAN-NAG,Nagri,23.350,85.220,0.37
+RAN,Ranchi,रांची,RAN-ORM,Ormanjhi,23.510,85.450,0.42
+RAN,Ranchi,रांची,RAN-RAH,Rahe,23.120,85.470,0.45
+RAN,Ranchi,रांची,RAN-RAT,Ratu,23.400,85.200,0.37
+RAN,Ranchi,रांची,RAN-SIL,Silli,23.370,85.790,0.45
+RAN,Ranchi,रांची,RAN-SON,Sonahatu,23.200,85.650,0.45
+RAN,Ranchi,रांची,RAN-TAM,Tamar,23.050,85.650,0.50
+KHU,Khunti,खूंटी,KHU-KHU,Khunti,23.070,85.280,0.57
+KHU,Khunti,खूंटी,KHU-KAR,Karra,23.130,85.130,0.62
+KHU,Khunti,खूंटी,KHU-TOR,Torpa,22.930,85.090,0.65
+KHU,Khunti,खूंटी,KHU-MUR,Murhu,22.980,85.370,0.65
+KHU,Khunti,खूंटी,KHU-RAN,Rania,22.870,85.030,0.67
+KHU,Khunti,खूंटी,KHU-ARK,Arki,22.900,85.450,0.67
+GUM,Gumla,गुमला,GUM-GUM,Gumla,23.040,84.540,0.64
+GUM,Gumla,गुमला,GUM-SIS,Sisai,23.200,84.750,0.72
+GUM,Gumla,गुमला,GUM-BHA,Bharno,23.260,84.880,0.72
+GUM,Gumla,गुमला,GUM-GHA,Ghaghra,23.200,84.500,0.75
+GUM,Gumla,गुमला,GUM-BIS,Bishunpur,23.340,84.380,0.80
+GUM,Gumla,गुमला,GUM-CHA,Chainpur,22.990,84.300,0.75
+GUM,Gumla,गुमला,GUM-DUM,Dumri,22.860,84.280,0.77
+GUM,Gumla,गुमला,GUM-RAI,Raidih,22.920,84.470,0.80
+GUM,Gumla,गुमला,GUM-PAL,Palkot,22.870,84.650,0.75
+GUM,Gumla,गुमला,GUM-BAS,Basia,22.780,84.750,0.75
+GUM,Gumla,गुमला,GUM-KAM,Kamdara,22.830,84.900,0.75
+GUM,Gumla,गुमला,GUM-AEJ,Albert Ekka (Jari),22.700,84.300,0.80
+SIM,Simdega,सिमडेगा,SIM-SIM,Simdega,22.620,84.510,0.62
+SIM,Simdega,सिमडेगा,SIM-KOL,Kolebira,22.750,84.680,0.70
+SIM,Simdega,सिमडेगा,SIM-JAL,Jaldega,22.520,84.600,0.73
+SIM,Simdega,सिमडेगा,SIM-BAN,Bano,22.660,84.880,0.75
+SIM,Simdega,सिमडेगा,SIM-THE,Thethaitangar,22.400,84.500,0.73
+SIM,Simdega,सिमडेगा,SIM-BOL,Bolba,22.420,84.350,0.73
+SIM,Simdega,सिमडेगा,SIM-KUR,Kurdeg,22.470,84.400,0.73
+SIM,Simdega,सिमडेगा,SIM-KER,Kersai,22.720,84.420,0.70
+SIM,Simdega,सिमडेगा,SIM-PAK,Pakartanr,22.560,84.420,0.70
+SIM,Simdega,सिमडेगा,SIM-BSJ,Bansjor,22.500,84.750,0.73
+LOH,Lohardaga,लोहरदगा,LOH-LOH,Lohardaga,23.430,84.680,0.52
+LOH,Lohardaga,लोहरदगा,LOH-KUR,Kuru,23.470,84.850,0.60
+LOH,Lohardaga,लोहरदगा,LOH-BHA,Bhandra,23.400,84.830,0.60
+LOH,Lohardaga,लोहरदगा,LOH-SEN,Senha,23.350,84.600,0.63
+LOH,Lohardaga,लोहरदगा,LOH-KIS,Kisko,23.480,84.550,0.65
+LOH,Lohardaga,लोहरदगा,LOH-KAI,Kairo,23.550,84.720,0.60
+LOH,Lohardaga,लोहरदगा,LOH-PES,Peshrar,23.530,84.450,0.68
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-GOL,Golmuri-cum-Jugsalai,22.780,86.200,0.33
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-POT,Potka,22.660,86.250,0.48
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-PAT,Patamda,22.930,86.360,0.48
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-BOR,Boram,22.950,86.200,0.45
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-GHA,Ghatshila,22.590,86.470,0.48
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-MUS,Musabani,22.520,86.460,0.53
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-DUM,Dumaria,22.450,86.620,0.53
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-DHA,Dhalbhumgarh,22.520,86.650,0.48
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-CHK,Chakulia,22.480,86.720,0.48
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-BAH,Baharagora,22.280,86.720,0.50
+ESB,East Singhbhum,पूर्वी सिंहभूम,ESB-GUR,Gurabandha,22.400,86.550,0.53
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-CHB,Chaibasa (Sadar),22.550,85.800,0.68
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-JHI,Jhinkpani,22.450,85.780,0.76
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-TON,Tonto,22.450,85.650,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-KHU,Khuntpani,22.620,85.680,0.76
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-TAN,Tantnagar,22.450,85.920,0.76
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-MAN,Manjhari,22.320,85.900,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-KUM,Kumardungi,22.250,85.800,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-MAJ,Majhgaon,22.320,85.750,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-HAT,Hatgamharia,22.420,85.600,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-NOA,Noamundi,22.160,85.500,0.81
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-JAG,Jagannathpur,22.220,85.650,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-MNP,Manoharpur,22.380,85.200,0.84
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-ANA,Anandpur,22.250,85.200,0.84
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-GOI,Goilkera,22.620,85.380,0.81
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-SON,Sonua,22.720,85.450,0.79
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-BAN,Bandgaon,22.850,85.350,0.81
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-CKP,Chakradharpur,22.700,85.630,0.73
+WSB,West Singhbhum,पश्चिमी सिंहभूम,WSB-GUD,Gudri,22.600,85.550,0.81
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-SER,Seraikela,22.700,85.930,0.50
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-KHA,Kharsawan,22.790,85.830,0.55
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-KUC,Kuchai,22.900,85.750,0.60
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-GAM,Gamharia,22.850,86.100,0.47
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-RAJ,Rajnagar,22.650,85.800,0.58
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-CHA,Chandil,22.960,86.050,0.60
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-ICH,Ichagarh,23.020,86.200,0.60
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-NIM,Nimdih,23.050,86.000,0.58
+SKH,Seraikela-Kharsawan,सरायकेला-खरसावां,SKH-KUK,Kukru,23.000,85.950,0.58
+DHN,Dhanbad,धनबाद,DHN-DHN,Dhanbad,23.800,86.430,0.57
+DHN,Dhanbad,धनबाद,DHN-JHA,Jharia,23.740,86.410,0.87
+DHN,Dhanbad,धनबाद,DHN-BAL,Baliapur,23.680,86.500,0.67
+DHN,Dhanbad,धनबाद,DHN-GOV,Govindpur,23.830,86.530,0.62
+DHN,Dhanbad,धनबाद,DHN-TUN,Tundi,23.980,86.420,0.67
+DHN,Dhanbad,धनबाद,DHN-PTU,Purbi Tundi,24.000,86.550,0.67
+DHN,Dhanbad,धनबाद,DHN-BAG,Baghmara,23.780,86.200,0.72
+DHN,Dhanbad,धनबाद,DHN-TOP,Topchanchi,23.900,86.200,0.62
+DHN,Dhanbad,धनबाद,DHN-NIR,Nirsa,23.780,86.700,0.67
+DHN,Dhanbad,धनबाद,DHN-KAL,Kaliasol,23.700,86.750,0.65
+DHN,Dhanbad,धनबाद,DHN-EGA,Egarkund,23.720,86.820,0.65
+BOK,Bokaro,बोकारो,BOK-CHS,Chas,23.630,86.170,0.42
+BOK,Bokaro,बोकारो,BOK-CHK,Chandankiyari,23.570,86.350,0.53
+BOK,Bokaro,बोकारो,BOK-BER,Bermo,23.790,85.950,0.60
+BOK,Bokaro,बोकारो,BOK-GOM,Gomia,23.800,85.830,0.58
+BOK,Bokaro,बोकारो,BOK-JAR,Jaridih,23.680,86.050,0.50
+BOK,Bokaro,बोकारो,BOK-KAS,Kasmar,23.550,85.850,0.53
+BOK,Bokaro,बोकारो,BOK-PET,Petarwar,23.550,85.950,0.53
+BOK,Bokaro,बोकारो,BOK-NAW,Nawadih,23.850,86.050,0.53
+BOK,Bokaro,बोकारो,BOK-CHP,Chandrapura,23.740,86.200,0.53
+GIR,Giridih,गिरिडीह,GIR-GIR,Giridih,24.180,86.310,0.52
+GIR,Giridih,गिरिडीह,GIR-GAN,Gandey,24.170,86.200,0.60
+GIR,Giridih,गिरिडीह,GIR-BEN,Bengabad,24.200,86.450,0.60
+GIR,Giridih,गिरिडीह,GIR-JAM,Jamua,24.270,86.150,0.63
+GIR,Giridih,गिरिडीह,GIR-DEO,Deori,24.250,86.550,0.63
+GIR,Giridih,गिरिडीह,GIR-DHA,Dhanwar,24.400,85.980,0.63
+GIR,Giridih,गिरिडीह,GIR-TIS,Tisri,24.380,86.300,0.70
+GIR,Giridih,गिरिडीह,GIR-GAW,Gawan,24.450,86.200,0.68
+GIR,Giridih,गिरिडीह,GIR-BAG,Bagodar,24.080,85.850,0.60
+GIR,Giridih,गिरिडीह,GIR-BIR,Birni,24.050,86.000,0.63
+GIR,Giridih,गिरिडीह,GIR-DUM,Dumri,23.950,86.000,0.63
+GIR,Giridih,गिरिडीह,GIR-PIR,Pirtanr,24.000,86.200,0.68
+GIR,Giridih,गिरिडीह,GIR-SAR,Sariya,24.150,85.900,0.60
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-SAD,Hazaribagh Sadar,23.990,85.360,0.44
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-KTS,Katkamsandi,24.020,85.220,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-KTD,Katkamdag,23.950,85.300,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-ICH,Ichak,24.100,85.420,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-BAR,Barhi,24.300,85.420,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-PAD,Padma,24.100,85.550,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-CHA,Chauparan,24.390,85.250,0.55
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-BKT,Barkatha,24.280,85.720,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-CHL,Chalkusa,24.250,85.600,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-BIS,Bishnugarh,23.850,85.720,0.55
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-BKG,Barkagaon,23.870,85.220,0.62
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-KER,Keredari,23.930,85.100,0.62
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-CHU,Churchu,23.850,85.550,0.55
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-DAR,Daru,24.050,85.400,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-TAT,Tatijharia,23.920,85.600,0.52
+HAZ,Hazaribagh,हज़ारीबाग,HAZ-DAD,Dadi,23.800,85.400,0.57
+RAM,Ramgarh,रामगढ़,RAM-RAM,Ramgarh,23.630,85.520,0.45
+RAM,Ramgarh,रामगढ़,RAM-PAT,Patratu,23.670,85.280,0.53
+RAM,Ramgarh,रामगढ़,RAM-MAN,Mandu,23.750,85.600,0.60
+RAM,Ramgarh,रामगढ़,RAM-GOL,Gola,23.530,85.680,0.50
+RAM,Ramgarh,रामगढ़,RAM-CHI,Chitarpur,23.600,85.620,0.53
+RAM,Ramgarh,रामगढ़,RAM-DUL,Dulmi,23.550,85.580,0.50
+KOD,Koderma,कोडरमा,KOD-KOD,Koderma,24.470,85.590,0.47
+KOD,Koderma,कोडरमा,KOD-JAI,Jainagar,24.350,85.620,0.52
+KOD,Koderma,कोडरमा,KOD-MAR,Markacho,24.400,85.800,0.55
+KOD,Koderma,कोडरमा,KOD-SAT,Satgawan,24.430,85.950,0.57
+KOD,Koderma,कोडरमा,KOD-DOM,Domchanch,24.500,85.680,0.55
+KOD,Koderma,कोडरमा,KOD-CHA,Chandwara,24.420,85.500,0.52
+CHA,Chatra,चतरा,CHA-CHA,Chatra,24.210,84.870,0.60
+CHA,Chatra,चतरा,CHA-HUN,Hunterganj,24.430,84.800,0.71
+CHA,Chatra,चतरा,CHA-PRA,Pratappur,24.500,84.600,0.73
+CHA,Chatra,चतरा,CHA-SIM,Simaria,24.030,84.970,0.71
+CHA,Chatra,चतरा,CHA-TAN,Tandwa,23.870,85.000,0.78
+CHA,Chatra,चतरा,CHA-KUN,Kunda,24.350,84.650,0.76
+CHA,Chatra,चतरा,CHA-LAW,Lawalong,24.120,84.680,0.76
+CHA,Chatra,चतरा,CHA-GID,Gidhaur,24.150,84.950,0.68
+CHA,Chatra,चतरा,CHA-MAY,Mayurhand,24.100,85.150,0.68
+CHA,Chatra,चतरा,CHA-PAT,Pathalgada,24.020,85.100,0.68
+CHA,Chatra,चतरा,CHA-KAN,Kanhachatti,24.150,84.780,0.71
+CHA,Chatra,चतरा,CHA-ITK,Itkhori,24.270,85.130,0.68
+PAL,Palamu,पलामू,PAL-MED,Medininagar,24.030,84.070,0.70
+PAL,Palamu,पलामू,PAL-CHA,Chainpur,24.050,83.980,0.80
+PAL,Palamu,पलामू,PAL-SAT,Satbarwa,23.900,84.200,0.83
+PAL,Palamu,पलामू,PAL-LES,Lesliganj,24.050,84.250,0.80
+PAL,Palamu,पलामू,PAL-PAN,Panki,23.900,84.550,0.83
+PAL,Palamu,पलामू,PAL-MAN,Manatu,23.800,84.550,0.85
+PAL,Palamu,पलामू,PAL-CHH,Chhatarpur,24.320,84.150,0.83
+PAL,Palamu,पलामू,PAL-HUS,Hussainabad,24.530,84.000,0.83
+PAL,Palamu,पलामू,PAL-HAI,Haidernagar,24.500,84.100,0.83
+PAL,Palamu,पलामू,PAL-MOH,Mohammadganj,24.450,84.200,0.80
+PAL,Palamu,पलामू,PAL-PTN,Patan,24.200,84.350,0.83
+PAL,Palamu,पलामू,PAL-BIS,Bishrampur,24.270,84.000,0.80
+PAL,Palamu,पलामू,PAL-UNT,Untari Road,24.300,84.050,0.80
+PAL,Palamu,पलामू,PAL-TAR,Tarhasi,24.150,84.500,0.83
+PAL,Palamu,पलामू,PAL-PDU,Pandu,24.400,84.350,0.83
+PAL,Palamu,पलामू,PAL-NAW,Nawa Bazar,24.200,84.150,0.80
+PAL,Palamu,पलामू,PAL-PAD,Padwa,24.150,84.020,0.80
+PAL,Palamu,पलामू,PAL-NDB,Nawdiha Bazar,24.250,84.500,0.83
+PAL,Palamu,पलामू,PAL-PIP,Pipra,24.450,84.280,0.80
+PAL,Palamu,पलामू,PAL-HAR,Hariharganj,24.550,84.300,0.80
+PAL,Palamu,पलामू,PAL-RMG,Ramgarh,23.750,84.550,0.85
+GAR,Garhwa,गढ़वा,GAR-GAR,Garhwa,24.160,83.810,0.74
+GAR,Garhwa,गढ़वा,GAR-MER,Meral,24.180,83.700,0.82
+GAR,Garhwa,गढ़वा,GAR-RNK,Ranka,23.980,83.720,0.87
+GAR,Garhwa,गढ़वा,GAR-BHA,Bhandaria,23.750,83.850,0.90
+GAR,Garhwa,गढ़वा,GAR-BHW,Bhawnathpur,24.350,83.550,0.85
+GAR,Garhwa,गढ़वा,GAR-MAJ,Majhiaon,24.300,83.650,0.82
+GAR,Garhwa,गढ़वा,GAR-KAN,Kandi,24.420,83.750,0.82
+GAR,Garhwa,गढ़वा,GAR-NGU,Nagar Untari,24.300,83.420,0.82
+GAR,Garhwa,गढ़वा,GAR-DHU,Dhurki,23.850,83.650,0.90
+GAR,Garhwa,गढ़वा,GAR-CHI,Chinia,23.930,83.880,0.87
+GAR,Garhwa,गढ़वा,GAR-DAN,Danda,24.200,83.900,0.82
+GAR,Garhwa,गढ़वा,GAR-BAR,Bardiha,24.020,83.580,0.87
+GAR,Garhwa,गढ़वा,GAR-RMN,Ramna,24.280,83.850,0.82
+GAR,Garhwa,गढ़वा,GAR-KET,Ketar,24.400,83.500,0.85
+GAR,Garhwa,गढ़वा,GAR-KHA,Kharaundhi,24.400,83.650,0.82
+GAR,Garhwa,गढ़वा,GAR-SAG,Sagma,24.150,83.600,0.85
+GAR,Garhwa,गढ़वा,GAR-RKD,Ramkanda,23.880,83.750,0.90
+GAR,Garhwa,गढ़वा,GAR-DDI,Dandai,24.050,83.800,0.82
+GAR,Garhwa,गढ़वा,GAR-BIS,Bishunpura,24.150,83.950,0.82
+LAT,Latehar,लातेहार,LAT-LAT,Latehar,23.740,84.500,0.72
+LAT,Latehar,लातेहार,LAT-CHA,Chandwa,23.650,84.750,0.80
+LAT,Latehar,लातेहार,LAT-BAL,Balumath,23.820,84.780,0.80
+LAT,Latehar,लातेहार,LAT-BAR,Barwadih,23.850,84.120,0.85
+LAT,Latehar,लातेहार,LAT-MAN,Manika,23.880,84.320,0.85
+LAT,Latehar,लातेहार,LAT-GAR,Garu,23.620,84.180,0.90
+LAT,Latehar,लातेहार,LAT-MAH,Mahuadanr,23.400,84.100,0.90
+LAT,Latehar,लातेहार,LAT-HER,Herhanj,23.600,84.600,0.80
+LAT,Latehar,लातेहार,LAT-BRY,Bariyatu,23.700,84.680,0.80
+DEO,Deoghar,देवघर,DEO-DEO,Deoghar,24.480,86.700,0.45
+DEO,Deoghar,देवघर,DEO-MOH,Mohanpur,24.550,86.780,0.55
+DEO,Deoghar,देवघर,DEO-SAR,Sarwan,24.700,86.720,0.58
+DEO,Deoghar,देवघर,DEO-MAD,Madhupur,24.270,86.650,0.52
+DEO,Deoghar,देवघर,DEO-KAR,Karon,24.220,86.850,0.58
+DEO,Deoghar,देवघर,DEO-SRT,Sarath,24.320,86.950,0.58
+DEO,Deoghar,देवघर,DEO-PAL,Palojori,24.200,86.980,0.60
+DEO,Deoghar,देवघर,DEO-DEV,Devipur,24.420,86.880,0.55
+DEO,Deoghar,देवघर,DEO-MAR,Margomunda,24.280,86.550,0.58
+DEO,Deoghar,देवघर,DEO-SON,Sonaraithari,24.600,86.900,0.58
+DUM,Dumka,दुमका,DUM-DUM,Dumka,24.270,87.250,0.60
+DUM,Dumka,दुमका,DUM-JAM,Jama,24.400,87.200,0.68
+DUM,Dumka,दुमका,DUM-JAR,Jarmundi,24.420,87.020,0.68
+DUM,Dumka,दुमका,DUM-SAR,Saraiyahat,24.520,87.020,0.68
+DUM,Dumka,दुमका,DUM-RAM,Ramgarh,24.550,87.200,0.71
+DUM,Dumka,दुमका,DUM-GOP,Gopikandar,24.500,87.420,0.78
+DUM,Dumka,दुमका,DUM-KAT,Kathikund,24.400,87.450,0.76
+DUM,Dumka,दुमका,DUM-SHI,Shikaripara,24.180,87.530,0.73
+DUM,Dumka,दुमका,DUM-RAN,Ranishwar,24.050,87.550,0.71
+DUM,Dumka,दुमका,DUM-MAS,Masalia,24.100,87.300,0.71
+JAM,Jamtara,जामताड़ा,JAM-JAM,Jamtara,23.960,86.800,0.47
+JAM,Jamtara,जामताड़ा,JAM-NAL,Nala,23.850,86.980,0.58
+JAM,Jamtara,जामताड़ा,JAM-KUN,Kundhit,23.850,87.200,0.58
+JAM,Jamtara,जामताड़ा,JAM-NAR,Narayanpur,24.100,86.900,0.55
+JAM,Jamtara,जामताड़ा,JAM-KAR,Karmatanr,24.020,86.980,0.55
+JAM,Jamtara,जामताड़ा,JAM-FAT,Fatehpur,24.120,87.100,0.58
+GOD,Godda,गोड्डा,GOD-GOD,Godda,24.830,87.210,0.64
+GOD,Godda,गोड्डा,GOD-MAH,Mahagama,25.050,87.320,0.75
+GOD,Godda,गोड्डा,GOD-MEH,Meharma,25.100,87.420,0.75
+GOD,Godda,गोड्डा,GOD-PAT,Pathargama,24.900,87.100,0.72
+GOD,Godda,गोड्डा,GOD-BOA,Boarijore,25.000,87.550,0.82
+GOD,Godda,गोड्डा,GOD-SUN,Sunderpahari,24.850,87.450,0.87
+GOD,Godda,गोड्डा,GOD-POR,Poraiyahat,24.680,87.120,0.72
+GOD,Godda,गोड्डा,GOD-THA,Thakurgangti,25.050,87.200,0.72
+GOD,Godda,गोड्डा,GOD-BAS,Basantrai,24.950,87.280,0.72
+PAK,Pakur,पाकुड़,PAK-PAK,Pakur,24.630,87.850,0.70
+PAK,Pakur,पाकुड़,PAK-HIR,Hiranpur,24.720,87.750,0.81
+PAK,Pakur,पाकुड़,PAK-LIT,Littipara,24.650,87.600,0.88
+PAK,Pakur,पाकुड़,PAK-AMR,Amrapara,24.520,87.620,0.88
+PAK,Pakur,पाकुड़,PAK-MAH,Maheshpur,24.500,87.800,0.81
+PAK,Pakur,पाकुड़,PAK-PKU,Pakuria,24.400,87.700,0.81
+SAH,Sahibganj,साहिबगंज,SAH-SAH,Sahibganj,25.250,87.630,0.74
+SAH,Sahibganj,साहिबगंज,SAH-RAJ,Rajmahal,25.050,87.830,0.92
+SAH,Sahibganj,साहिबगंज,SAH-BAR,Barhait,25.050,87.600,0.87
+SAH,Sahibganj,साहिबगंज,SAH-BOR,Borio,25.100,87.720,0.90
+SAH,Sahibganj,साहिबगंज,SAH-TAL,Taljhari,25.150,87.750,0.90
+SAH,Sahibganj,साहिबगंज,SAH-MAN,Mandro,25.200,87.550,0.85
+SAH,Sahibganj,साहिबगंज,SAH-BRW,Barharwa,24.850,87.780,0.82
+SAH,Sahibganj,साहिबगंज,SAH-PAT,Pathna,24.950,87.680,0.87
+SAH,Sahibganj,साहिबगंज,SAH-UDH,Udhwa,24.980,87.950,0.90

@@ -1,0 +1,13 @@
+VOICE NOTE — ground-truth transcript (seeded ASR path; replayed on stage, never live-transcribed)
+Speaker: Sunita Oraon, Basia block, Gumla (demo hero record)
+Target duration: 15–20 seconds. Record on a phone in a quiet room, arm's length.
+Attach to: the challenge titled "Crack spreading along the South Koel embankment near Basia".
+
+---- HINDI (read this exactly) ----
+मेरा नाम सुनीता उरांव है, मैं गुमला ज़िला के बसिया से बोल रही हूँ। हमारे टोला के बगल में कोयल नदी का मिट्टी का बांध है, उसमें पुलिया के पास दरार आ गई है। पिछले बरसात में एक हाथ की थी, अब पूरा हाथ अंदर चला जाता है और गांव की तरफ बढ़ रही है। जुलाई में पानी चढ़ा तो चालीस घर और स्कूल डूब जाएंगे। मुखिया को दो बार बताया, कोई देखने नहीं आया।
+
+---- ENGLISH TRANSLATION ----
+My name is Sunita Oraon, I am speaking from Basia in Gumla district. Next to our tola there is a mud embankment on the Koel river, and a crack has opened in it near the culvert. Last monsoon it was one hand wide; now my whole arm goes inside and it is growing towards the village side. If the water rises in July, forty houses and the school will go under. We told the mukhiya twice, nobody has come to look.
+
+---- ROMANISED HINDI (for the person recording, if needed) ----
+Mera naam Sunita Oraon hai, main Gumla zila ke Basia se bol rahi hoon. Hamare tola ke bagal mein Koel nadi ka mitti ka baandh hai, usmein puliya ke paas daraar aa gayi hai. Pichhle barsaat mein ek haath ki thi, ab poora haath andar chala jaata hai aur gaon ki taraf badh rahi hai. July mein paani chadha to chaalis ghar aur school doob jaayenge. Mukhiya ko do baar bataya, koi dekhne nahin aaya.

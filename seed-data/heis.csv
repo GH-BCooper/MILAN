@@ -1,11 +1,13 @@
-hei_code,name,slug,district_code,lat,lng,website
-BITS,BIT Sindri,bit-sindri,DHA,23.6600,86.4900,https://www.bitsindri.ac.in
-NITJ,National Institute of Technology Jamshedpur,nit-jamshedpur,EAS,22.7760,86.1440,https://www.nitjsr.ac.in
-IITD,IIT (ISM) Dhanbad,iit-ism-dhanbad,DHA,23.8143,86.4412,https://www.iitism.ac.in
-BITM,Birla Institute of Technology Mesra,bit-mesra,RAN,23.4120,85.4400,https://www.bitmesra.ac.in
-CUJH,Central University of Jharkhand,central-university-jharkhand,RAN,23.3000,85.2000,https://www.cuj.ac.in
-RANU,Ranchi University,ranchi-university,RAN,23.3600,85.3300,https://www.ranchiuniversity.ac.in
-VBUH,Vinoba Bhave University,vinoba-bhave-university,HAZ,23.9900,85.3600,https://www.vbu.ac.in
-XISS,Xavier Institute of Social Service,xiss-ranchi,RAN,23.3700,85.3300,https://www.xiss.ac.in
-SKMU,Sido Kanhu Murmu University,sido-kanhu-murmu-university,DUM,24.2700,87.2500,https://www.skmu.ac.in
-NPUM,Nilamber Pitamber University,nilamber-pitamber-university,PAL,24.0300,84.0700,https://www.npu.ac.in
+hei_code,hei_name,district_code,lat,lng,type,website
+IITISM,IIT (ISM) Dhanbad,DHN,23.8144,86.4412,CENTRAL_INSTITUTE,https://www.iitism.ac.in
+BITSINDRI,BIT Sindri,DHN,23.6567,86.4853,STATE_ENGG_COLLEGE,https://www.bitsindri.ac.in
+BITMESRA,Birla Institute of Technology Mesra,RAN,23.4125,85.4399,DEEMED_UNIVERSITY,https://www.bitmesra.ac.in
+NITJSR,NIT Jamshedpur,ESB,22.7767,86.1445,CENTRAL_INSTITUTE,https://www.nitjsr.ac.in
+RU,Ranchi University,RAN,23.3707,85.3378,STATE_UNIVERSITY,https://www.ranchiuniversity.ac.in
+CUJ,Central University of Jharkhand,RAN,23.4415,85.1755,CENTRAL_UNIVERSITY,https://www.cuj.ac.in
+BAU,Birsa Agricultural University,RAN,23.4419,85.3186,STATE_AGRI_UNIVERSITY,https://www.bauranchi.org
+XISS,Xavier Institute of Social Service Ranchi,RAN,23.3799,85.3252,AUTONOMOUS_INSTITUTE,https://www.xiss.ac.in
+NPU,Nilamber-Pitamber University Medininagar,PAL,24.0473,84.0668,STATE_UNIVERSITY,https://www.npu.ac.in
+VBU,Vinoba Bhave University Hazaribag,HAZ,23.9925,85.3540,STATE_UNIVERSITY,https://www.vbu.ac.in
+SKMU,Sido Kanhu Murmu University Dumka,DUM,24.2687,87.2511,STATE_UNIVERSITY,https://www.skmu.ac.in
+RIMS,Rajendra Institute of Medical Sciences Ranchi,RAN,23.3905,85.3411,STATE_MEDICAL_INSTITUTE,https://www.rimsranchi.ac.in

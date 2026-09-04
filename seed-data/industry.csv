@@ -1,7 +1,9 @@
-name,slug,district_code,lat,lng,website,sector
-Tata Steel Foundation,tata-steel-foundation,EAS,22.8046,86.2029,https://www.tatasteel.com,Steel and mining CSR
-Central Coalfields Limited,central-coalfields-limited,RAN,23.3441,85.3096,https://www.centralcoalfields.in,Coal mining
-Heavy Engineering Corporation,heavy-engineering-corporation,RAN,23.4000,85.3200,https://www.hecltd.com,Heavy engineering
-Usha Martin Limited,usha-martin,RAN,23.3200,85.3400,https://www.ushamartin.com,Wire ropes and specialty steel
-Hindustan Copper Limited,hindustan-copper,SER,22.7000,85.9300,https://www.hindustancopper.com,Copper mining
-Bharat Coking Coal Limited,bharat-coking-coal,DHA,23.7957,86.4304,https://www.bcclweb.in,Coking coal
+org_name,sector,district_focus,domain_interests,csr_contact_title
+Tata Steel Foundation,Steel,ESB|WSB|SKH,WATER|HEALTHCARE|LIVELIHOODS|EDUCATION|ENVIRONMENT,Chief Executive Officer
+Central Coalfields Limited (CCL),Coal Mining,RAM|HAZ|BOK|CHA|LAT|RAN,ENVIRONMENT|WATER|HEALTHCARE|LIVELIHOODS,General Manager (CSR)
+Bharat Coking Coal Limited (BCCL),Coal Mining,DHN|BOK,ENVIRONMENT|HEALTHCARE|URBAN_INFRA|WATER,General Manager (CSR & Community Development)
+Hindustan Copper Limited (Indian Copper Complex),Non-ferrous Mining,ESB,WATER|HEALTHCARE|EDUCATION|ENVIRONMENT,Deputy General Manager (CSR)
+Jindal Steel & Power Limited (JSPL),Steel & Power,SKH|GOD,EDUCATION|HEALTHCARE|LIVELIHOODS|WATER,Head - CSR (Jharkhand)
+Usha Martin Limited,Wire Rope & Steel,RAN|SKH|KHU,AGRICULTURE|LIVELIHOODS|WATER|EDUCATION,Head - Usha Martin Foundation
+Steel Authority of India Limited (Bokaro Steel Plant),Steel,BOK,HEALTHCARE|EDUCATION|WATER|SANITATION,Deputy General Manager (CSR)
+Damodar Valley Corporation (DVC),Power & Water,BOK|DHN|HAZ|KOD|GIR|RAM,WATER|ENVIRONMENT|AGRICULTURE|EDUCATION,Senior Manager (CSR)

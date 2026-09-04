@@ -53,8 +53,8 @@ const [{ id: indOrg }] = await sql`SELECT id FROM organization WHERE slug = 'tat
 
 const ROLES = [
   { role: "CITIZEN", districtCode: "GUM", orgId: null },
-  { role: "HEI_MEMBER", districtCode: "DHA", orgId: heiOrg },
-  { role: "INDUSTRY", districtCode: "EAS", orgId: indOrg },
+  { role: "HEI_MEMBER", districtCode: "DHN", orgId: heiOrg },
+  { role: "INDUSTRY", districtCode: "ESB", orgId: indOrg },
   { role: "GOVERNMENT", districtCode: "GUM", orgId: null },
   { role: "ADMIN", districtCode: null, orgId: null },
 ];
@@ -140,7 +140,7 @@ console.log(`\nGate checks\n${"-".repeat(60)}`);
       as a 500 from the error boundary. A refusal is the point; the status code
       is cosmetic and is tidied up when /gov gets its own error.tsx. */
 {
-  const res = await get("/gov/district/DHA", sessions.GOVERNMENT);
+  const res = await get("/gov/district/DHN", sessions.GOVERNMENT);
   record(
     "GOVERNMENT(GUM) cannot open the Dhanbad-scoped page",
     res.status !== 200,
