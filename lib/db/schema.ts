@@ -244,6 +244,7 @@ export const capabilities = pgTable(
     index("capabilities_org_idx").on(t.orgId),
     index("capabilities_tags_idx").using("gin", t.specialisationTags),
     index("capabilities_active_idx").on(t.active),
+    index("capabilities_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
   ],
 );
 
@@ -336,6 +337,10 @@ export const challenges = pgTable(
     index("challenges_cluster_idx").on(t.clusterId),
     index("challenges_search_idx").using("gin", t.searchTsv),
     index("challenges_title_trgm_idx").using("gin", sql`${t.title} gin_trgm_ops`),
+    // Phase 2. At 25 rows this changes nothing; the honest answer to "would this
+    // work at 250,000 challenges?" is "yes, and here is the index".
+    index("challenges_embedding_hnsw_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+    index("challenges_parent_idx").on(t.parentId),
   ],
 );
 
@@ -664,6 +669,67 @@ export const aiRuns = pgTable(
   ],
 );
 
+/**
+ * The AI response cache.
+ *
+ * Keyed on sha256(stage + prompt version + canonical input). Every stage is a
+ * pure function of its input, so an identical input can reuse an identical
+ * output — which is what makes the pipeline idempotent and the live trace safe
+ * to replay on stage without spending a token or risking the venue wifi.
+ *
+ * A cache hit still writes an `ai_runs` row with `provider: 'cache'`, so the
+ * trace never overstates what actually ran.
+ */
+export const aiCache = pgTable(
+  "ai_cache",
+  {
+    /** sha256(stage + version + canonical input JSON). */
+    key: char("key", { length: 64 }).primaryKey(),
+    stage: text("stage").notNull(),
+    version: text("version").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model"),
+    fallbackLevel: integer("fallback_level").notNull().default(0),
+    confidence: numeric("confidence", { precision: 4, scale: 3 }),
+    latencyMs: integer("latency_ms"),
+    output: jsonb("output").notNull(),
+    hits: integer("hits").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ai_cache_stage_idx").on(t.stage)],
+);
+
+/**
+ * Labelled training data, produced by humans correcting the machine.
+ *
+ * Every override at /admin/triage and every override at /gov/gate lands here
+ * with the model's proposal beside the human's correction and the mandatory
+ * reason. We do not fine-tune (no GPU budget, no labelled data — we say so on
+ * the slide); these rows are what the embedding kNN prior learns from, so the
+ * system improves from its own corrected history without retraining anything.
+ */
+export const trainingCorrections = pgTable(
+  "training_corrections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id").references(() => challenges.id, { onDelete: "cascade" }),
+    stage: text("stage").notNull(),
+    /** The exact text the model saw, so a correction can be replayed. */
+    inputText: text("input_text"),
+    inputHash: char("input_hash", { length: 64 }),
+    proposed: jsonb("proposed"),
+    corrected: jsonb("corrected"),
+    /** Never null in practice: the UI makes it mandatory. */
+    reason: text("reason"),
+    correctedBy: text("corrected_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("training_corrections_stage_idx").on(t.stage),
+    index("training_corrections_challenge_idx").on(t.challengeId),
+  ],
+);
+
 /** Every human override carries a mandatory reason and becomes labelled training data. */
 export const auditLog = pgTable(
   "audit_log",
@@ -720,4 +786,6 @@ export type SlaKind = (typeof slaKindEnum.enumValues)[number];
 export type LedgerKind = (typeof ledgerKindEnum.enumValues)[number];
 export type OrgType = (typeof orgTypeEnum.enumValues)[number];
 export type Challenge = typeof challenges.$inferSelect;
+export type Capability = typeof capabilities.$inferSelect;
+export type AiRun = typeof aiRuns.$inferSelect;
 export type NewChallenge = typeof challenges.$inferInsert;
