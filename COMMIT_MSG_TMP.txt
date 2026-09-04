@@ -1,32 +1,29 @@
-phase1/task6: the six-step intake wizard
+phase1/task7: public surfaces, and a connection-pool bug that wedged the server
 
-/submit is a six-step wizard: text with a language toggle, optional photos,
-location, scale, framing, review. State lives in one reducer and is written to
-localStorage on every change under milan:draft:<id>, so a dropped connection
-does not cost a citizen four screens of typing.
+Pages
+- /c/[trackingId]: lifecycle stepper, the citizen's original text and the
+  English working copy side by side at equal size and weight, media with content
+  hashes, corroboration, the credit chain, and a priority panel that says the
+  score arrives in Phase 2 rather than showing a zero.
+- /track: one input, no login. /challenges: MapLibre plus a server-rendered list
+  sharing one dataset, filters in the URL so a filtered view is a shareable link
+  that works without JS. /stats: live counts, impact reading CITIZEN_VERIFIED
+  and nothing else. /ledger and /bounties: honest stubs that state what already
+  works and what does not.
 
-- Photos are uploaded through the server, NOT by presigned direct upload as the
-  build file suggested. EXIF stripping has to happen somewhere the citizen
-  cannot skip; a direct upload would put the camera's GPS in our storage first.
-  sharp re-encodes without a metadata block and the object key is the SHA-256 of
-  the resulting bytes.
-- Face and plate blurring is not implemented. The UI says so to the citizen and
-  challenge_media.faces_blurred records false rather than claiming otherwise.
-- Location: geolocation, a MapLibre pin, and district/block dropdowns that
-  override both. Resolution is nearest-centroid, not point-in-polygon, and
-  lib/geo/nearest.ts says so and says why.
-- The map degrades to markers on a blank canvas when NEXT_PUBLIC_PMTILES_URL is
-  unset or the archive is unreachable. Nothing on the demo path may depend on a
-  tile server answering.
-- Rate limit: 5 submissions/hour by IP and user, counted in audit_log because an
-  in-memory counter on serverless does not exist.
-- /api/intake and /api/intake/media call the same server action, for non-browser
-  clients and for the verification harness.
+The pool bug
+  drizzle's postgres-js driver issues every statement through postgres.js
+  unsafe(), which is not pipelined. With the max:1 connection the usual
+  serverless advice recommends, two queries started concurrently deadlock, and
+  because the client is shared the instance then hangs on every later request.
+  /stats and /submit both wedged the server on first load.
 
-Verification: scripts/verify-submit.mjs, 23/23. It writes real GPS EXIF into a
-fixture JPEG, uploads it, downloads the stored object back and proves the EXIF
-is gone.
-  Hindi:   JH-2026-GUM-0003
-  English: JH-2026-LAT-0002
+  lib/db/index.ts now takes a real pool (DATABASE_POOL_MAX, default 8) against
+  the Supabase transaction pooler, which is what that pooler is for.
+  lib/db/raw.ts adds execRaw(), a serialising queue for raw analytics queries:
+  the pool is the fix, the queue is the seat belt.
+
+Verification: scripts/verify-routes.mjs, 19/19, every public route 200.
+Slowest route 416ms local. vitest 7/7.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

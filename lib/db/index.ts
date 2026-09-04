@@ -16,10 +16,27 @@ if (!url) throw new Error("DATABASE_URL is not set.");
 
 const globalForDb = globalThis as unknown as { milanSql?: ReturnType<typeof postgres> };
 
+/**
+ * Why this is not `max: 1`.
+ *
+ * The usual serverless advice is one connection per instance. That is wrong for
+ * us: drizzle's postgres-js driver issues every statement through postgres.js
+ * `unsafe()`, which is not pipelined. With a single connection, two queries
+ * started concurrently — `Promise.all([db.select(...), db.select(...)])`, which
+ * is the normal shape of a server component — deadlock, and because the client
+ * is shared the whole instance then hangs on every later request.
+ *
+ * That was not theoretical: `/stats` and `/submit` both wedged the server on
+ * first load until this was raised. A small pool against the Supabase
+ * transaction pooler is exactly what the transaction pooler is for.
+ */
+const poolSize = Number(process.env.DATABASE_POOL_MAX ?? 8);
+
 export const sql =
   globalForDb.milanSql ??
   postgres(url, {
-    max: 1,
+    max: Number.isFinite(poolSize) && poolSize > 0 ? poolSize : 8,
+    // The transaction pooler cannot hold a prepared statement across a checkout.
     prepare: false,
     // Supabase poolers close idle connections; do not fight them.
     idle_timeout: 20,
