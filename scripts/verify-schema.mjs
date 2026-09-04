@@ -1,0 +1,18 @@
+import { config } from "dotenv";
+import postgres from "postgres";
+config({ path: ".env.local" });
+const sql = postgres(process.env.DIRECT_URL, { max: 1, prepare: false });
+const tables = await sql`SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename`;
+console.log("TABLES (" + tables.length + "):");
+console.log(tables.map(r => r.tablename).join(", "));
+const ext = await sql`SELECT extname FROM pg_extension ORDER BY extname`;
+console.log("\nEXTENSIONS: " + ext.map(r=>r.extname).join(", "));
+const enums = await sql`SELECT t.typname, count(*)::int AS n FROM pg_type t JOIN pg_enum e ON e.enumtypid=t.oid GROUP BY 1 ORDER BY 1`;
+console.log("\nENUMS: " + enums.map(r=>`${r.typname}(${r.n})`).join(", "));
+const idx = await sql`SELECT count(*)::int AS n FROM pg_indexes WHERE schemaname='public'`;
+console.log("\nINDEXES: " + idx[0].n);
+const trg = await sql`SELECT tgname FROM pg_trigger WHERE NOT tgisinternal`;
+console.log("TRIGGERS: " + trg.map(r=>r.tgname).join(", "));
+const gen = await sql`SELECT column_name, generation_expression FROM information_schema.columns WHERE table_name='challenges' AND is_generated='ALWAYS'`;
+console.log("GENERATED: " + gen.map(r=>r.column_name).join(", "));
+await sql.end();

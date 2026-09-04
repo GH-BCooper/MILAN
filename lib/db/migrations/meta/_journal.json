@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788534756408,
+      "tag": "0000_milan_extensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788534788801,
+      "tag": "0001_ambitious_mister_fear",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788534810462,
+      "tag": "0002_ledger_append_only",
+      "breakpoints": true
+    }
+  ]
+}
