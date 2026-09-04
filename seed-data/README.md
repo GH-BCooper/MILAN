@@ -18,9 +18,10 @@ Still open before the demo, and not optional:
 
 1. **The Hindi has not been checked by a native speaker.** `PHASE_1_LEARN.md` §7.3
    makes this a blocking item. 7 reports are in Hindi and 1 in Santali (`sat`).
-2. **`challenges.csv` has no `seed_status` or `corroborations` column**, so every
-   challenge seeds as a fresh `SUBMITTED` report and `/stats` shows zeros. See
-   the contract below.
+2. **`seed_status` and `corroborations` were assigned by Claude on 2026-09-05**,
+   not by the team. They are demo staging, not field data: which three reports
+   have already been resolved, and how many extra people reported each problem.
+   Every other value in this file is the team's. Review them, or overwrite them.
 
 ## Column contracts
 
@@ -81,16 +82,21 @@ district codes no longer exist. `districts.csv` is the single geography source.
   bucket midpoint, which is what the intake wizard writes.
 - `recurrence` is one of `one-off`, `seasonal`, `yearly`, `constant`.
 
-**Two optional columns, currently absent:**
+**Two columns that are demo staging, assigned by Claude — see the note above:**
 
 - `seed_status` — `SUBMITTED` (the default) / `CLOSED` / `CITIZEN_VERIFIED`. Rows
-  that are not `SUBMITTED` are backdated so `/stats` has history to show on
-  stage. Without this column every row seeds as `SUBMITTED` and `/stats` renders
-  zeros.
-- `corroborations` — how many *extra* people reported the same thing. Without it
-  every challenge has a single reporter.
+  that are not `SUBMITTED` are backdated ~210 days so `/stats` has history to
+  show on stage. Three rows carry it:
+  - the Simdega footbridge and the Bokaro school are `CITIZEN_VERIFIED`, so the
+    impact counter reads 2. It increments at `CITIZEN_VERIFIED` and nowhere else.
+  - the Khunti lac study is `CLOSED` — concluded with an advisory, with no
+    physical work for a citizen to confirm.
+- `corroborations` — how many *extra* people reported the same thing, scaled to
+  the report's own `people_affected` and `recurrence`. Seeded rows are anonymous
+  (`user_id` null), so the `unique(challenge_id, user_id)` anti-brigading
+  constraint does not limit them.
 
-The run warns when either is missing.
+Both are optional. The run warns when either is missing.
 
 ### industry.csv
 `org_name,sector,district_focus,domain_interests,csr_contact_title`
