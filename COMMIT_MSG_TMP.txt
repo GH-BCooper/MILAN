@@ -1,0 +1,27 @@
+phase1/task4+5: auth, role guards, middleware and the seed script
+
+Auth (task 1.4)
+- Better Auth 1.7 with email+password and the organisation plugin, Drizzle
+  adapter over the same database. No self-serve org creation: HEI and industry
+  registrants pick from the seeded list.
+- lib/auth/guards.ts: requireUser, requireRole, requireDistrict, requireOrgMember.
+  ADMIN is deliberately not a wildcard on requireRole - implicit superuser access
+  is how audit trails get holes in them.
+- middleware.ts gates /me /hei /industry /gov /admin /demo on the session cookie
+  only. It is UX; the server guard in each page is the real check, and the file
+  says so.
+- account.issuer added: Better Auth 1.7 scopes account identity by issuer, and
+  the published @better-auth/cli is still on 1.4 so it does not emit the column.
+  The field list was read from better-auth's own table definitions instead.
+
+Seed (task 1.5)
+- seed/index.mts, idempotent, with --reset. Reads only seed-data/*.csv, never
+  invents a row, warns on every empty column, and prints the demo accounts.
+- Tracking IDs come from the real nextTrackingId helper.
+- seed-data/ is PLACEHOLDER data pending the real Jharkhand dataset. What is
+  real and what is invented is tabulated in seed-data/README.md, and the script
+  prints a replace-me reminder on every run.
+
+Verification: scripts/verify-roles.mjs, 16/16 against a live server.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>

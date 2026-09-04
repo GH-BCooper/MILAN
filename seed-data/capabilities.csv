@@ -1,0 +1,41 @@
+hei_code,department,lab_name,specialisation_tags,faculty_name,faculty_designation,declared_capacity,capacity_from,capacity_to
+BITS,Civil Engineering,Geotechnical Laboratory,"embankment;slope stability;soil mechanics;flood protection",Dr A K Sinha,Professor,4,2026-01-01,2026-12-31
+BITS,Civil Engineering,Water Resources Laboratory,"hydrology;drainage;check dam;river training",Dr S Mahato,Associate Professor,3,2026-01-01,2026-12-31
+BITS,Mechanical Engineering,Thermal Systems Laboratory,"solar thermal;cold storage;heat stress",Dr R P Verma,Professor,3,2026-01-01,2026-12-31
+BITS,Environmental Engineering,Water Quality Laboratory,"water quality;fluoride;iron removal;arsenic",Dr M Kujur,Assistant Professor,4,2026-01-01,2026-12-31
+NITJ,Civil Engineering,Structural Engineering Laboratory,"structural health;retrofitting;masonry;seismic",Dr P Bhattacharya,Professor,4,2026-01-01,2026-12-31
+NITJ,Computer Science and Engineering,Data Systems Laboratory,"early warning;sensor networks;iot;data analytics",Dr N Kumari,Associate Professor,5,2026-01-01,2026-12-31
+NITJ,Electrical Engineering,Power Systems Laboratory,"microgrid;solar pv;rural electrification",Dr V Ranjan,Professor,3,2026-01-01,2026-12-31
+NITJ,Metallurgical Engineering,Materials Characterisation Laboratory,"corrosion;materials;mine waste",Dr S Oraon,Assistant Professor,2,2026-01-01,2026-12-31
+IITD,Mining Engineering,Rock Mechanics Laboratory,"mining subsidence;ground control;abandoned mines;overburden",Dr A Ghosh,Professor,4,2026-01-01,2026-12-31
+IITD,Environmental Science and Engineering,Air Quality Laboratory,"air quality;particulate matter;mine fire;emissions",Dr K Prasad,Associate Professor,4,2026-01-01,2026-12-31
+IITD,Civil Engineering,Geohazards Laboratory,"landslide;slope monitoring;remote sensing",Dr T Hansda,Assistant Professor,3,2026-01-01,2026-12-31
+IITD,Applied Geology,Hydrogeology Laboratory,"groundwater;aquifer mapping;borewell;recharge",Dr J Tirkey,Professor,3,2026-01-01,2026-12-31
+IITD,Computer Science and Engineering,AI and Systems Laboratory,"machine learning;computer vision;forecasting",Dr R Anand,Associate Professor,5,2026-01-01,2026-12-31
+BITM,Civil Engineering,Transportation Engineering Laboratory,"rural roads;culverts;road safety;connectivity",Dr S Prakash,Professor,3,2026-01-01,2026-12-31
+BITM,Bioengineering,Public Health Laboratory,"epidemic;vector control;sanitation;water borne disease",Dr A Minz,Associate Professor,4,2026-01-01,2026-12-31
+BITM,Electronics and Communication,Embedded Systems Laboratory,"low cost sensors;lora;early warning;telemetry",Dr P Kispotta,Assistant Professor,4,2026-01-01,2026-12-31
+BITM,Computer Science and Engineering,Geospatial Laboratory,"gis;satellite imagery;flood mapping;land use",Dr D Munda,Professor,4,2026-01-01,2026-12-31
+BITM,Chemical Engineering,Process Engineering Laboratory,"water treatment;effluent;fluoride removal",Dr S Toppo,Associate Professor,3,2026-01-01,2026-12-31
+CUJH,Environmental Sciences,Ecology Laboratory,"forest fire;biodiversity;afforestation;carbon",Dr L Ekka,Associate Professor,3,2026-01-01,2026-12-31
+CUJH,Water Engineering and Management,Watershed Laboratory,"watershed;drought;irrigation;rainwater harvesting",Dr B Horo,Professor,4,2026-01-01,2026-12-31
+CUJH,Geoinformatics,Remote Sensing Laboratory,"gis;change detection;drought monitoring",Dr N Barla,Assistant Professor,3,2026-01-01,2026-12-31
+CUJH,Life Sciences,Nutrition Laboratory,"malnutrition;food security;anganwadi",Dr S Lakra,Assistant Professor,2,2026-01-01,2026-12-31
+RANU,Geology,Applied Geology Laboratory,"groundwater;mineral;subsidence",Dr A Kerketta,Professor,3,2026-01-01,2026-12-31
+RANU,Zoology,Vector Biology Laboratory,"malaria;dengue;vector control;epidemic",Dr P Bara,Associate Professor,3,2026-01-01,2026-12-31
+RANU,Botany,Plant Sciences Laboratory,"crop resilience;drought tolerant crops;seed",Dr M Tigga,Professor,2,2026-01-01,2026-12-31
+RANU,Physics,Instrumentation Laboratory,"low cost instrumentation;rain gauge;sensors",Dr S Gari,Assistant Professor,2,2026-01-01,2026-12-31
+VBUH,Geography,Disaster Studies Laboratory,"hazard mapping;vulnerability assessment;preparedness",Dr R Chourasia,Professor,3,2026-01-01,2026-12-31
+VBUH,Chemistry,Water Chemistry Laboratory,"water quality;heavy metals;testing kits",Dr N Sahu,Associate Professor,3,2026-01-01,2026-12-31
+VBUH,Computer Applications,Applied Computing Laboratory,"mobile apps;offline first;data collection",Dr V Kumar,Assistant Professor,3,2026-01-01,2026-12-31
+XISS,Rural Management,Community Systems Unit,"community mobilisation;shg;livelihoods;participatory mapping",Dr A Xalxo,Professor,4,2026-01-01,2026-12-31
+XISS,Sustainable Development,Climate Adaptation Unit,"climate adaptation;heatwave;livelihood resilience",Dr M Dungdung,Associate Professor,3,2026-01-01,2026-12-31
+XISS,Human Resource Management,Frontline Workforce Unit,"asha workers;training;last mile delivery",Dr S Purty,Assistant Professor,2,2026-01-01,2026-12-31
+SKMU,Geology,Earth Sciences Laboratory,"riverbank erosion;flood plain;sedimentation",Dr K Marandi,Professor,3,2026-01-01,2026-12-31
+SKMU,Environmental Science,Environment Laboratory,"water quality;sanitation;solid waste",Dr B Soren,Associate Professor,3,2026-01-01,2026-12-31
+SKMU,Computer Science,Information Systems Laboratory,"data collection;dashboards;reporting",Dr A Hembrom,Assistant Professor,2,2026-01-01,2026-12-31
+NPUM,Botany,Agro Ecology Laboratory,"drought;millets;soil health;agroforestry",Dr R Pandey,Professor,3,2026-01-01,2026-12-31
+NPUM,Geography,Regional Planning Laboratory,"drought mapping;migration;land degradation",Dr S Ram,Associate Professor,3,2026-01-01,2026-12-31
+NPUM,Chemistry,Analytical Laboratory,"water testing;fluoride;field kits",Dr P Yadav,Assistant Professor,2,2026-01-01,2026-12-31
+NITJ,Production Engineering,Manufacturing Systems Laboratory,"low cost fabrication;assistive devices;prototyping",Dr G Mahato,Associate Professor,3,2026-01-01,2026-12-31
+IITD,Fuel Minerals and Metallurgical Engineering,Mine Fire Laboratory,"mine fire;coal seam;thermal imaging",Dr H Singh,Professor,3,2026-01-01,2026-12-31

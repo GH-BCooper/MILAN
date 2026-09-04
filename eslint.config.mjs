@@ -15,6 +15,12 @@ const eslintConfig = [
     files: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
     ignores: ["lib/clock/**"],
     rules: {
+      // A deliberately unused parameter is spelled with a leading underscore,
+      // e.g. the deadlinesFor(_to) hook that Phase 3 fills in.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
       "no-restricted-syntax": [
         "error",
         {

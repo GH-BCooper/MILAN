@@ -22,6 +22,20 @@
       "when": 1788534810462,
       "tag": "0002_ledger_append_only",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788535585353,
+      "tag": "0003_low_agent_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788537365936,
+      "tag": "0004_heavy_sway",
+      "breakpoints": true
     }
   ]
 }

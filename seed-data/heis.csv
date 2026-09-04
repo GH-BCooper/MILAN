@@ -1,0 +1,11 @@
+hei_code,name,slug,district_code,lat,lng,website
+BITS,BIT Sindri,bit-sindri,DHA,23.6600,86.4900,https://www.bitsindri.ac.in
+NITJ,National Institute of Technology Jamshedpur,nit-jamshedpur,EAS,22.7760,86.1440,https://www.nitjsr.ac.in
+IITD,IIT (ISM) Dhanbad,iit-ism-dhanbad,DHA,23.8143,86.4412,https://www.iitism.ac.in
+BITM,Birla Institute of Technology Mesra,bit-mesra,RAN,23.4120,85.4400,https://www.bitmesra.ac.in
+CUJH,Central University of Jharkhand,central-university-jharkhand,RAN,23.3000,85.2000,https://www.cuj.ac.in
+RANU,Ranchi University,ranchi-university,RAN,23.3600,85.3300,https://www.ranchiuniversity.ac.in
+VBUH,Vinoba Bhave University,vinoba-bhave-university,HAZ,23.9900,85.3600,https://www.vbu.ac.in
+XISS,Xavier Institute of Social Service,xiss-ranchi,RAN,23.3700,85.3300,https://www.xiss.ac.in
+SKMU,Sido Kanhu Murmu University,sido-kanhu-murmu-university,DUM,24.2700,87.2500,https://www.skmu.ac.in
+NPUM,Nilamber Pitamber University,nilamber-pitamber-university,PAL,24.0300,84.0700,https://www.npu.ac.in

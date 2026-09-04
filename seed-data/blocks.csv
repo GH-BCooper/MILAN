@@ -1,0 +1,15 @@
+code,district_code,name,name_hi,lat,lng,vulnerability_index
+GUM-BAS,GUM,Basia,बसिया,22.9167,84.5833,0.74
+GUM-RAI,GUM,Raidih,रायडीह,23.0833,84.4500,0.72
+GUM-SIS,GUM,Sisai,सिसई,23.2000,84.7333,0.69
+DHA-BAG,DHA,Baghmara,बाघमारा,23.7833,86.3667,0.79
+DHA-NIR,DHA,Nirsa,निरसा,23.7833,86.7000,0.76
+DHA-GOV,DHA,Govindpur,गोविंदपुर,23.8500,86.5000,0.70
+RAN-KAN,RAN,Kanke,कांके,23.4333,85.3167,0.50
+RAN-ORM,RAN,Ormanjhi,ओरमांझी,23.5167,85.4667,0.55
+SAH-BAR,SAH,Barharwa,बरहरवा,24.8833,87.7833,0.80
+SAH-RAJ,SAH,Rajmahal,राजमहल,25.0500,87.8333,0.82
+PAL-CHA,PAL,Chainpur,चैनपुर,24.0333,84.0000,0.77
+LAT-MAN,LAT,Manika,मनिका,23.9000,84.2833,0.78
+WES-NOA,WES,Noamundi,नोआमुंडी,22.1667,85.5000,0.75
+EAS-POT,EAS,Potka,पोटका,22.6667,86.3333,0.57
