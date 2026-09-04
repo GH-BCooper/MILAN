@@ -40,3 +40,4 @@ next-env.d.ts
 backups/
 *.pmtiles
 .env*.local
+.env*
