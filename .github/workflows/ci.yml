@@ -35,9 +35,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # No `version:` here on purpose. package.json's "packageManager" field is
+      # pnpm@11.25.0, and action-setup refuses to start when the version is
+      # declared in both places. Letting it read packageManager also means CI
+      # and the laptop can never drift onto different pnpm majors.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 11
 
       - uses: actions/setup-node@v4
         with:
