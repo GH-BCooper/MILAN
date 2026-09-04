@@ -8,6 +8,7 @@
 import type { ZodType } from "zod";
 
 import { toJsonSchema } from "./jsonSchema";
+import { coolOff, isCoolingOff, pace, retryAfterSeconds } from "./throttle";
 import {
   ProviderFailure,
   extractJson,
@@ -53,7 +54,10 @@ export const geminiProvider: LLMProvider = {
   level: 0,
 
   available() {
-    return Boolean(process.env.GEMINI_API_KEY);
+    // A provider inside its post-429 cool-off is not available. The chain then
+    // drops a level immediately rather than spending its whole timeout budget
+    // rediscovering a rate limit it already hit.
+    return Boolean(process.env.GEMINI_API_KEY) && !isCoolingOff("gemini");
   },
 
   async complete<T>(args: CompleteArgs<T>): Promise<CompleteResult<T>> {
@@ -61,6 +65,7 @@ export const geminiProvider: LLMProvider = {
     if (!key) throw new ProviderFailure("gemini", "GEMINI_API_KEY is not set");
 
     const responseSchema = args.responseSchema ?? toJsonSchema(args.schema as ZodType<T>);
+    await pace("gemini");
     const started = Date.now();
 
     const value = await withTimeout("gemini", args.timeoutMs, async (signal) => {
@@ -90,6 +95,7 @@ export const geminiProvider: LLMProvider = {
 
       if (!response.ok) {
         const body = await response.text().catch(() => "");
+        if (response.status === 429) coolOff("gemini", retryAfterSeconds(response.headers));
         throw new ProviderFailure("gemini", `HTTP ${response.status}: ${body.slice(0, 200)}`);
       }
 

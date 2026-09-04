@@ -221,7 +221,12 @@ async function main() {
         ledger_entries, credit_edges, corroborations, challenge_media, challenges,
         capabilities, organisations_meta, user_profiles, member, account, session,
         organization, "user", blocks, districts, outbox, notifications, audit_log,
-        ai_runs, sla_deadlines
+        ai_runs, sla_deadlines,
+        -- Phase 2. ai_cache is deliberately NOT truncated: it is keyed on the
+        -- text of a stage's input, not on a challenge id, so it survives a
+        -- reseed and is what makes the demo path warm rather than expensive.
+        routes, projects, project_members, milestones, clusters, artifacts,
+        access_log, industry_interests, training_corrections
       RESTART IDENTITY CASCADE
     `);
   }

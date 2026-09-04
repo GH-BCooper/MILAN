@@ -63,3 +63,29 @@ export async function getObject(storageKey: string): Promise<Buffer | null> {
   if (error || !data) return null;
   return Buffer.from(await data.arrayBuffer());
 }
+
+/**
+ * Delete objects. Used by S1 when a report is rejected as unsafe: the media is
+ * purged, not merely unlinked, because "we kept a copy of the thing we refused
+ * to publish" is not a defensible answer.
+ *
+ * Returns the keys it removed. A storage outage is reported, never thrown --
+ * the rejection itself must still complete.
+ */
+export async function removeObjects(storageKeys: string[]): Promise<string[]> {
+  if (storageKeys.length === 0) return [];
+  const supabase = client();
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase.storage.from(MEDIA_BUCKET).remove(storageKeys);
+    if (error) {
+      console.error("[storage] purge failed", { keys: storageKeys.length, message: error.message });
+      return [];
+    }
+    return (data ?? []).map((o) => o.name);
+  } catch (e) {
+    console.error("[storage] purge threw", { message: (e as Error).message });
+    return [];
+  }
+}

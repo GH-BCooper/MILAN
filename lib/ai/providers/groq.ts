@@ -7,6 +7,7 @@
  * report to the user: it is a fall-through to level 2.
  */
 import { toJsonSchema } from "./jsonSchema";
+import { coolOff, isCoolingOff, pace, retryAfterSeconds } from "./throttle";
 import {
   ProviderFailure,
   extractJson,
@@ -25,7 +26,7 @@ export const groqProvider: LLMProvider = {
   level: 1,
 
   available() {
-    return Boolean(process.env.GROQ_API_KEY);
+    return Boolean(process.env.GROQ_API_KEY) && !isCoolingOff("groq");
   },
 
   async complete<T>(args: CompleteArgs<T>): Promise<CompleteResult<T>> {
@@ -33,6 +34,7 @@ export const groqProvider: LLMProvider = {
     if (!key) throw new ProviderFailure("groq", "GROQ_API_KEY is not set");
 
     const responseSchema = args.responseSchema ?? toJsonSchema(args.schema);
+    await pace("groq");
     const started = Date.now();
 
     const value = await withTimeout("groq", args.timeoutMs, async (signal) => {
@@ -60,6 +62,7 @@ export const groqProvider: LLMProvider = {
 
       if (!response.ok) {
         const body = await response.text().catch(() => "");
+        if (response.status === 429) coolOff("groq", retryAfterSeconds(response.headers));
         throw new ProviderFailure("groq", `HTTP ${response.status}: ${body.slice(0, 200)}`);
       }
 

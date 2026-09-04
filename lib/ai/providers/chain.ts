@@ -148,17 +148,25 @@ export async function runWithChain<T>(args: ChainArgs<T>): Promise<StageRun<T>> 
 
       await Promise.all([
         recordRun(args.challengeId ?? null, meta, result.value),
-        writeCache({
-          key: inputHash,
-          stage: args.stage,
-          version: args.version,
-          provider: provider.name,
-          model: result.model,
-          fallbackLevel: provider.level,
-          confidence,
-          latencyMs: result.latencyMs,
-          output: result.value,
-        }),
+        // Level 2 is never cached. A rules answer is deterministic and costs a
+        // millisecond to recompute, so caching it buys nothing -- and it would
+        // freeze a degradation permanently: one run during a rate limit would
+        // pin that challenge to the gazetteer for the life of the cache key.
+        // Caching only what a model actually produced means the next run gets
+        // another chance at a real answer.
+        provider.level === 2
+          ? Promise.resolve()
+          : writeCache({
+              key: inputHash,
+              stage: args.stage,
+              version: args.version,
+              provider: provider.name,
+              model: result.model,
+              fallbackLevel: provider.level,
+              confidence,
+              latencyMs: result.latencyMs,
+              output: result.value,
+            }),
       ]);
 
       return { value: result.value, meta };

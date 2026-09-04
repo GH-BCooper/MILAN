@@ -22,6 +22,7 @@ import { aiRuns } from "@/lib/db/schema";
 import { sha256 } from "../hash";
 import { readCache, writeCache } from "./cache";
 import type { FallbackLevel } from "../types";
+import { coolOff, isCoolingOff, pace, retryAfterSeconds } from "./throttle";
 import { ProviderFailure, withTimeout } from "./types";
 
 export const EMBED_DIMENSIONS = 768;
@@ -70,7 +71,7 @@ export async function embed(text: string, challengeId?: string | null): Promise<
   let model = GEMINI_MODEL;
   let level: FallbackLevel = 0;
 
-  if (process.env.GEMINI_API_KEY) {
+  if (process.env.GEMINI_API_KEY && !isCoolingOff("gemini-embed")) {
     try {
       vector = await geminiEmbed(clean, process.env.GEMINI_API_KEY);
     } catch (e) {
@@ -121,6 +122,7 @@ export async function embedMany(texts: string[], concurrency = 4): Promise<Embed
 /* ------------------------------------------------------------------ gemini */
 
 async function geminiEmbed(text: string, key: string): Promise<number[]> {
+  await pace("gemini-embed");
   return withTimeout("gemini-embed", TIMEOUT_MS, async (signal) => {
     const response = await fetch(`${ENDPOINT}/${GEMINI_MODEL}:embedContent?key=${key}`, {
       method: "POST",
@@ -137,6 +139,7 @@ async function geminiEmbed(text: string, key: string): Promise<number[]> {
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");
+      if (response.status === 429) coolOff("gemini-embed", retryAfterSeconds(response.headers));
       throw new ProviderFailure("gemini-embed", `HTTP ${response.status}: ${body.slice(0, 200)}`);
     }
 

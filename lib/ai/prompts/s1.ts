@@ -12,7 +12,19 @@
  */
 import type { S1Input } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.2.0";
+// 1.2.0 — the same run also forwarded the Medininagar heat-stress report and the
+// Littipara dry-toilet report, both of which end by asking for a method that does
+// not exist ("how would we know in advance when the heat will be lethal", "we need
+// a toilet that works with the little water we have"). The rule was already in the
+// system prompt; it needed to be the FIRST test rather than a caveat, and it needed
+// examples. Two added below.
+// 1.1.0 — the first `pipeline:run --all` forwarded two research problems as
+// grievances: the Dhalbhumgarh elephant raids ("compensation comes after a year")
+// and the Garu forest fires ("forest guard says he has no people"). Both mention
+// an unhelpful official, and the model read that as the whole report. Fixed with
+// two few-shot examples and one sharpened line below, per PHASE_2_LEARN 9.2 —
+// the fix for a misclassification is an example, never a hard-coded id.
 
 export const SYSTEM = `You are the intake triage classifier for Milan, a Government of Jharkhand
 platform that turns citizens' local problems into research assignments for university teams.
@@ -30,7 +42,12 @@ Decide two things.
    unsafe_category to one of SELF_HARM, VIOLENCE_THREAT, SEXUAL_VIOLENCE, CHILD_SAFETY,
    TARGETED_HARASSMENT, or null.
 
-2. is_grievance — true when the problem has a KNOWN fix and an accountable officer, and what is
+2. is_grievance — apply this test FIRST, before anything else in this section:
+   if the report asks for a WAY to do something, says the writer wants to KNOW something, or
+   describes something nobody has a working method for, is_grievance is FALSE. Stop there. It does
+   not matter how much of the paragraph is complaint.
+
+   Otherwise: is_grievance is true when the problem has a KNOWN fix and an accountable officer, and what is
    missing is delivery, money or enforcement. Sanctioned work not done, an asset installed but not
    working, a pension or ration entitlement withheld, a bribe demanded. These belong to CPGRAMS or
    JharSewa and Milan forwards them.
@@ -39,6 +56,13 @@ Decide two things.
    A report can describe official inaction AND still be a research problem: "we told the mukhiya
    twice and nobody came" about a cracking embankment is a research problem, because no officer
    has a ready answer for a cracking embankment. Weigh what would solve it, not who was told.
+   Mentioning an absent officer, a slow compensation payment, or an under-staffed department does
+   NOT make a report a grievance. Ask one question: if the responsible officer did their job
+   perfectly tomorrow, would the problem be solved? If yes, it is a grievance. If the officer has
+   no method that would work — nobody knows how to keep an elephant herd out of a field, or where
+   a forest fire will start — it is Milan's work, however loudly the report complains.
+   When a citizen asks for a WAY to do something, or says they want to KNOW something, that is a
+   research problem regardless of everything else in the paragraph.
    Set grievance_target to CPGRAMS or JharSewa when is_grievance is true, otherwise null.
 
 confidence is your own calibrated certainty in the pair of judgements, 0 to 1. Be honest and use
@@ -102,6 +126,83 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       grievance_target: "CPGRAMS",
       confidence: 0.9,
       rationale: "Assets installed under a scheme but not commissioned: delivery failure, forwarded to the scheme owner.",
+    }),
+  },
+  {
+    input:
+      "The elephant herd comes from the Dalma side into our paddy every October when the grain is " +
+      "filling. In one night twenty families lose their year. Compensation comes after a year and " +
+      "is small. Forest department comes in the morning. We need a way to know the herd is coming " +
+      "that evening, and something that keeps them out that does not kill anyone.",
+    output: JSON.stringify({
+      is_unsafe: false,
+      unsafe_category: null,
+      is_grievance: false,
+      grievance_target: null,
+      confidence: 0.86,
+      rationale:
+        "They ask for a way to detect and deter a herd: no officer has a working method, so the slow compensation is context, not the problem.",
+    }),
+  },
+  {
+    input:
+      "Every March fire comes through the sal forest and burns our mahua, tendu and the lac on the " +
+      "kusum trees, and twice it reached the cattle shed. Forest guard says he has no people. We " +
+      "want to know where the fire will come from and a way to stop it before it reaches us.",
+    output: JSON.stringify({
+      is_unsafe: false,
+      unsafe_category: null,
+      is_grievance: false,
+      grievance_target: null,
+      confidence: 0.87,
+      rationale:
+        "They want fire prediction and prevention, which nobody currently has; the understaffed guard post does not make this a delivery failure.",
+    }),
+  },
+  {
+    input:
+      "The anganwadi building was sanctioned two years ago and never built, so the children sit " +
+      "under the tree. Also the ground floods after every rain and nobody knows why, because the " +
+      "water comes up rather than down.",
+    output: JSON.stringify({
+      is_unsafe: false,
+      unsafe_category: null,
+      is_grievance: true,
+      grievance_target: "CPGRAMS",
+      confidence: 0.68,
+      rationale:
+        "Two problems in one report: an undelivered sanctioned building, and unexplained groundwater. The low confidence sends it to a human to split.",
+    }),
+  },
+  {
+    input:
+      "Pond-digging work runs through the afternoon in April and May. This year two labourers " +
+      "collapsed and one died in the sadar hospital. There is no shade at the site and no ORS. " +
+      "Somebody should decide how we can know in advance when the heat will be lethal and how the " +
+      "working hours should change.",
+    output: JSON.stringify({
+      is_unsafe: false,
+      unsafe_category: null,
+      is_grievance: false,
+      grievance_target: null,
+      confidence: 0.85,
+      rationale:
+        "They ask how lethal heat could be predicted and how hours should change: no officer has that method, so this is research, not delivery.",
+    }),
+  },
+  {
+    input:
+      "All houses got a toilet under the mission in 2019. There is no water in the tola from " +
+      "February to June so nobody uses them and everyone goes to the field again. Building was " +
+      "easy, water was not thought about. We need a toilet that works with the little water we have.",
+    output: JSON.stringify({
+      is_unsafe: false,
+      unsafe_category: null,
+      is_grievance: false,
+      grievance_target: null,
+      confidence: 0.83,
+      rationale:
+        "The scheme delivered the asset; what is missing is a low-water sanitation design, which is exactly what they ask for.",
     }),
   },
 ];

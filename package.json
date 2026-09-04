@@ -15,7 +15,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "auth:generate": "better-auth generate",
-    "ai:smoke": "tsx scripts/ai-smoke.mts"
+    "ai:smoke": "tsx --conditions=react-server scripts/ai-smoke.mts",
+    "pipeline:run": "tsx --conditions=react-server scripts/pipeline.mts",
+    "pipeline:replay": "tsx --conditions=react-server scripts/pipeline.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
