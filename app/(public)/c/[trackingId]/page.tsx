@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 
 import { CorroborateButton } from "@/components/corroborate-button";
+import { PipelineTrace } from "@/components/pipeline-trace";
+import { PriorityBreakdown, parseBreakdown } from "@/components/priority-breakdown";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
@@ -52,6 +54,7 @@ export default async function ChallengePage({
 
   if (!row) notFound();
   const c = row.challenge;
+  const breakdown = parseBreakdown(c.priorityBreakdown);
 
   const [media, credits] = await Promise.all([
     db.select().from(challengeMedia).where(eq(challengeMedia.challengeId, c.id)),
@@ -225,23 +228,29 @@ export default async function ChallengePage({
         </section>
 
         {/* Invariant 10: every number is clickable through to its derivation.
-            There is no score yet, so we say that rather than showing a zero. */}
-        <section className="mt-8" aria-labelledby="score-heading">
+            The breakdown is on the PUBLIC page with no login, because "no
+            citizen is deprioritised by a black box" is only true if the
+            arithmetic is where the citizen can read it. */}
+        <section className="mt-8" id="score" aria-labelledby="score-heading">
           <h2 id="score-heading" className="text-lg font-semibold">
             Priority score
           </h2>
-          {c.priorityScore ? (
-            <div className="mt-3 rounded-lg border border-border p-4">
-              <p className="text-3xl font-bold tabular-nums">{Number(c.priorityScore).toFixed(2)}</p>
+          {breakdown ? (
+            <div className="mt-3">
+              <PriorityBreakdown
+                score={breakdown}
+                trackingId={c.trackingId}
+                districtCode={c.districtCode}
+              />
             </div>
           ) : (
             <div className="mt-3 rounded-lg border border-dashed border-border bg-muted p-4">
-              <p className="text-sm font-medium">Scored in the AI pipeline</p>
+              <p className="text-sm font-medium">Not scored yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Severity, people affected, corroborations, hazard linkage, block vulnerability,
-                recurrence and official endorsement. Every term, its weight and its value will be
-                shown here, and the total will be clickable through to the arithmetic. Arrives in
-                Phase 2.
+                recurrence and official endorsement. Every term, its weight and its value are shown
+                here once the pipeline has run, and the total is clickable through to the
+                arithmetic.
               </p>
             </div>
           )}

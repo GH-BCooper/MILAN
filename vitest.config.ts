@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+    // `server-only` is a marker package: it throws unless the importer resolves
+    // it under React's "react-server" condition, which Next sets and Vitest does
+    // not. Adding the condition lets a test import a server module directly --
+    // which is the point, since the guardrail and the state machine are exactly
+    // the server code most worth testing.
+    conditions: ["react-server", "node", "import", "default"],
   },
   test: {
     environment: "node",
