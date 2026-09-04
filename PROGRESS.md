@@ -238,6 +238,12 @@ backups/phase1.sql  285 rows across 13 tables (gitignored)
 ```
 
 ### Start here next phase
+**Read `BACKLOG.md` first.** It is the human's task list — everything Phase 1 could not finish
+because it needs credentials, a phone, a microphone or a native Hindi speaker — written for a
+Claude session that has no memory of this one. Section 1 of that file blocks Phase 2; section 3
+lists the traps (the `DATABASE_POOL_MAX` deadlock, the deliberately skipped invariant test, the
+append-only ledger).
+
 **Before any Phase 2 code:** get the Vercel deployment live (Task 1.1 step 9) and add the CI
 repository secrets, then re-run all four verification scripts against the deployed URL with
 `VERIFY_BASE_URL=https://<the-url>`. Then replace `seed-data/*.csv` with the real Jharkhand

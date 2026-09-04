@@ -1,0 +1,20 @@
+docs: BACKLOG.md, the human's task list after Phase 1
+
+Written for a Claude session with no memory of the one that built Phase 1, and
+for Brett to work top to bottom.
+
+- Section 1 blocks Phase 2: deploy to Vercel with the exact env var table, add
+  the six CI repository secrets, re-run the four verification scripts against
+  the deployed URL.
+- Section 2 is everything visible on stage that a human has to do: replace the
+  placeholder seed data, record the voice note, get a native speaker to check
+  the Hindi, get a PMTiles basemap, test on a real phone, print the demo
+  credentials.
+- Section 3 is the traps: the repo moved to WSL ext4 and why, the
+  DATABASE_POOL_MAX=1 deadlock, why the invariant test is skipped on purpose,
+  and why ledger rows cannot be cleaned up.
+
+Also documents DATABASE_POOL_MAX and NEXT_PUBLIC_PMTILES_URL in .env.example,
+which were consumed by Phase 1 code but never listed there.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
