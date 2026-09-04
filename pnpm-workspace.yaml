@@ -1,0 +1,6 @@
+# Build scripts are opt-in under pnpm 11. esbuild backs vitest and tsx; sharp backs
+# next/image optimisation; unrs-resolver backs eslint module resolution.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
