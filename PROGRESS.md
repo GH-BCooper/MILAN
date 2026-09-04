@@ -327,9 +327,63 @@ pnpm seed            idempotent — identical counts on a second run
 ```
 
 ### Start here next phase
-Two things still gate Phase 2, both human:
-1. **Add the CI repository secrets** (BACKLOG §1.2) and confirm Build and Test actually ran.
-2. **Add `seed_status` and `corroborations` to `challenges.csv`**, then `pnpm seed --reset`.
-   The seeder already reads both columns and warns while they are missing.
+`seed_status` and `corroborations` are now in `challenges.csv` — assigned by Claude as demo
+staging, flagged as such in `seed-data/README.md`, and worth a review. `/stats` shows 2 verified
+impacts and 1 closed challenge.
+
+One thing still gates Phase 2, and it needs GitHub credentials this environment does not have:
+
+**Add the CI repository secrets** (BACKLOG §1.2). `bash scripts/set-ci-secrets.sh` after
+`gh auth login` sets all six, then confirm the run is green *and* that Build and Test actually ran
+rather than being skipped.
 
 Then execute `docs/PHASE_2_BUILD.md`, Task 2.1.
+
+
+---
+
+## Phase 1 — demo staging and handoff — completed 2026-09-05 03:35
+
+### Status
+`/stats` has history: 22 SUBMITTED, 2 CITIZEN_VERIFIED, 1 CLOSED, 183 corroborations across 25
+challenges. The impact counter reads 2. Everything is pushed and redeployed.
+
+### Tasks completed
+- [x] BACKLOG §2.1 remainder — `seed_status` and `corroborations` added to `challenges.csv`
+- [x] BACKLOG §2.7 — `docs/DEMO_CARD.md`, the printable demo card
+- [x] BACKLOG §2.8 — `backups/phase1-real-data.sql`, 649 rows across 13 tables
+- [x] `scripts/set-ci-secrets.sh` — reduces the one remaining blocking item to a single command
+- [x] BACKLOG.md updated to mark what is done and what is not
+
+### Decisions taken
+- `seed_status` and `corroborations` were **assigned by Claude, not by the team**, on explicit
+  instruction. They are demo staging — which three reports are already resolved, and how many
+  extra people reported each problem — and `seed-data/README.md` says so beside the team's own
+  values. Every other value in that file is the team's. The cost is that these two columns are the
+  one place a judge could ask "where did this number come from" and get "we staged it".
+- The two `CITIZEN_VERIFIED` rows are the Simdega footbridge and the Bokaro school: small,
+  tractable problems that a final-year civil project plausibly closes. The `CLOSED` row is the
+  Khunti lac study — concluded with an advisory, no physical work for a citizen to confirm.
+
+### Known issues
+- **CI secrets remain unset.** `gh` is not authenticated here and reading the stored Windows
+  credential is blocked, so this cannot be done from the Claude session. BACKLOG §1.2 — blocking.
+- `backups/` is gitignored, so `phase1-real-data.sql` exists **only on this laptop**. Copy it off.
+- The map still draws on a blank grey canvas (`NEXT_PUBLIC_PMTILES_URL` unset) — BACKLOG §2.5.
+- `voice-note.mp3` is still empty, so `challenge_media` is 0 — BACKLOG §2.2.
+- The Hindi (7 reports) and Santali (1) are still unchecked by a native speaker — BACKLOG §2.3.
+
+### Verification evidence
+```
+verify-routes.mjs    19/19   impact counter shows CITIZEN_VERIFIED count (2)
+verify-roles.mjs     16/16
+verify-submit.mjs    23/23
+pnpm build           exit 0
+pnpm vitest run      8 passed, 1 skipped
+pnpm seed            idempotent — identical counts on a second run
+backup               649 rows across 13 tables
+```
+
+### Start here next phase
+Run `bash scripts/set-ci-secrets.sh` (after `gh auth login`), confirm CI is green with Build and
+Test actually running, then execute `docs/PHASE_2_BUILD.md`, Task 2.1.

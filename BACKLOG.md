@@ -15,17 +15,24 @@ on stage. Work top to bottom.
 
 ## 0. Where things actually stand
 
-Phase 1 is **code-complete and verified locally, but not deployed.**
+> **Updated 2026-09-05.** Phase 1 is **deployed and running the real dataset.**
+> §1.1 and §1.3 are done, and so are §2.1, §2.7, §2.8 and §2.9.
+> **§1.2 (CI secrets) is the only blocking item left** — it needs GitHub
+> credentials, which the Claude session does not have. Run
+> `bash scripts/set-ci-secrets.sh` after `gh auth login`.
+> The remaining §2 items need a microphone, a phone, a native Hindi speaker or a
+> map extract, and none of them block Phase 2.
 
 | | |
 |---|---|
-| Repo | `~/milan` in WSL Ubuntu, pushed to `GH-BCooper/MILAN`, branch `main`, through commit `9c9a923` |
+| Repo | `~/milan` in WSL Ubuntu, pushed to `GH-BCooper/MILAN`, branch `main` |
 | Working tree | clean |
-| Build | `pnpm build` clean, 22 routes, zero type errors, zero lint warnings |
+| Build | `pnpm build` clean, zero type errors, zero lint warnings |
 | Tests | `pnpm vitest run` — 8 passed, 1 skipped (the skipped one is deliberate, see §3) |
-| Database | Supabase, migrated through `0004_heavy_sway`, seeded |
-| Deployed | **No.** This is the one acceptance item that is open. |
-| CI | Workflow pushed, **secrets not added**, run status unconfirmed |
+| Database | Supabase PostgreSQL 17.6, migrated through `0004_heavy_sway`, seeded with the real dataset |
+| Deployed | **Yes** — https://milan-ruddy-chi.vercel.app |
+| Verified against production | routes 19/19, roles 16/16, submit 23/23, schema clean |
+| CI | Workflow pushed, **secrets still not added** — §1.2 |
 
 Everything below is either "Claude could not do it" or "a human has to judge it".
 
@@ -33,7 +40,12 @@ Everything below is either "Claude could not do it" or "a human has to judge it"
 
 ## 1. BLOCKING — do these before Phase 2 starts
 
-### 1.1 Deploy to Vercel
+### 1.1 Deploy to Vercel — ✅ DONE
+
+> Live at https://milan-ruddy-chi.vercel.app. The first attempt failed because
+> `BETTER_AUTH_URL` was set to a bare hostname with no `https://` scheme; Better
+> Auth throws at import and, because `SiteHeader` is in every layout, that took
+> down every runtime-rendered route. Kept below for the next deploy.
 
 This is Task 1.1 step 9, the only unfinished item in the Phase 1 acceptance checklist. The reason
 the build file put it on day one is that *"it works on my machine"* discovered at hour 130 is the
@@ -70,7 +82,9 @@ never run anywhere but this laptop.
 > `BETTER_AUTH_URL` is the one that will silently break things. If you can reach `/login` but
 > signing in appears to do nothing, that variable is still pointing at localhost.
 
-### 1.2 Add the CI repository secrets
+### 1.2 Add the CI repository secrets — ⚠️ STILL OPEN, BLOCKING
+
+> `bash scripts/set-ci-secrets.sh` does all six for you after `gh auth login`.
 
 The workflow is at `.github/workflows/ci.yml` and is already pushed. It runs typecheck and lint
 unconditionally, but **skips build and test when `DATABASE_URL` is absent** — deliberately, so that
@@ -92,7 +106,9 @@ BETTER_AUTH_SECRET
 Then push any commit (or use **Actions → CI → Run workflow**) and confirm the run is green *and*
 that the "Build" and "Test" steps actually ran rather than being skipped.
 
-### 1.3 Re-run the four verification scripts against the deployed URL
+### 1.3 Re-run the four verification scripts against the deployed URL — ✅ DONE
+
+> 19/19, 16/16, 23/23, schema clean. Re-run them after any redeploy.
 
 Everything in Phase 1 was verified against a local production build. Verifying against Vercel
 proves the serverless runtime, the pooler and Supabase Storage all behave the same way. From
@@ -117,7 +133,15 @@ Check `DATABASE_POOL_MAX` on Vercel.
 
 ## 2. BEFORE THE DEMO — none of this blocks Phase 2, all of it is visible on stage
 
-### 2.1 ⚠️ Replace the seed data. It is mine, not real.
+### 2.1 Replace the seed data — ✅ DONE
+
+> The team's Jharkhand dataset is loaded: 24 districts, 263 blocks, 20
+> organisations, 47 capabilities, 25 challenges, 183 corroborations. The seeder
+> was adapted to its column shape; `seed-data/README.md` is the current contract.
+> Two columns — `seed_status` and `corroborations` — are demo staging assigned by
+> Claude, not field data. Review them.
+>
+> Still true, and still yours: §2.2, §2.3 and §2.4 below.
 
 **This is the highest-value item on the whole list and it is the one a judge is most likely to
 catch.** I generated `seed-data/*.csv` on 2026-09-04 because the real files were empty and you
@@ -208,7 +232,10 @@ Specifically walk through: `/submit` → type Hindi → take a photo with the ca
 finish → confirm you get a tracking ID in under 3 seconds → open `/c/<that id>` → confirm the photo
 is there and your Hindi is shown verbatim.
 
-### 2.7 Write the demo credentials on paper
+### 2.7 Write the demo credentials on paper — ✅ DONE
+
+> `docs/DEMO_CARD.md` — print it. Logins, the numbers on screen, the three
+> failure modes that have actually bitten us, and the declared stubs.
 
 `PHASE_1_LEARN.md` §7.5. On stage, nobody can remember a password. Password is `milan2026` unless
 you changed `SEED_DEMO_PASSWORD`.
@@ -223,7 +250,10 @@ you changed `SEED_DEMO_PASSWORD`.
 
 Password manager **and** a printed card.
 
-### 2.8 Take a backup after the real seed
+### 2.8 Take a backup after the real seed — ✅ DONE
+
+> `backups/phase1-real-data.sql`, 649 rows across 13 tables. `backups/` is
+> gitignored, so **copy it somewhere that is not this laptop.**
 
 ```bash
 cd ~/milan
@@ -242,7 +272,9 @@ WSL image is 16, which refuses to dump a newer server. `scripts/backup.mjs` read
 own connection instead, so it does not care about client versions. It dumps **data only** — run the
 migrations first.
 
-### 2.9 Fix one factual error in the deck
+### 2.9 Fix one factual error in the deck — ✅ DONE
+
+> `CLAUDE.md` and `docs/SETUP_GUIDE.md` now say Postgres 17. If a slide says 16, fix the slide.
 
 `CLAUDE.md` §3 says **"Supabase PostgreSQL 16"**. The database is actually **PostgreSQL 17.6**. If
 the slide says 16 and a judge checks, that is a small unforced error. Either correct the slide or
