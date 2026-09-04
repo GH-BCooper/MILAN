@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: typecheck, build, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # The test suite and the build both talk to the real database. These come
+      # from repository secrets; the workflow must never contain a value.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: http://localhost:3000
+      SMS_MODE: mock
+      DEMO_MODE: "true"
+      CLOCK_OFFSET_DAYS: "0"
+      NEXT_TELEMETRY_DISABLED: "1"
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      # `pnpm build` needs DATABASE_URL at module load, so it is gated on the
+      # secret being present. A fork PR has no secrets and must not fail for it.
+      - name: Build
+        if: env.DATABASE_URL != ''
+        run: pnpm build
+
+      - name: Test
+        if: env.DATABASE_URL != ''
+        run: pnpm vitest run
+
+      - name: Warn when secrets are unavailable
+        if: env.DATABASE_URL == ''
+        run: |
+          echo "::warning::DATABASE_URL is not set, so build and tests were skipped."
+          echo "This happens on pull requests from forks. Typecheck and lint still ran."
