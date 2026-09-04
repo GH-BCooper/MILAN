@@ -250,3 +250,86 @@ repository secrets, then re-run all four verification scripts against the deploy
 dataset, record `voice-note.mp3`, and run `pnpm seed --reset`.
 
 Then execute `docs/PHASE_2_BUILD.md`, Task 2.1.
+
+---
+
+## Phase 1 — deployment and real dataset — completed 2026-09-05 03:15
+
+Appended after the Phase 1 section above. Phase 1 was code-complete but undeployed and running on
+placeholder data; both are now closed.
+
+### Status
+Milan is live at **https://milan-ruddy-chi.vercel.app** and running the team's authored Jharkhand
+dataset. All four verification scripts pass against the deployed URL, not just a local build.
+
+### Tasks completed
+- [x] Task 1.1 step 9 — deploy to Vercel — live, all 19 routes 200
+- [x] BACKLOG §1.3 — verification against production — routes 19/19, roles 16/16, submit 23/23,
+      schema inventory clean (31 tables, `ledger_entries_append_only` present)
+- [x] BACKLOG §2.1 — real seed data loaded — seeder adapted to the new CSV shape
+- [x] BACKLOG §2.9 — Postgres version corrected to 17 in `CLAUDE.md` and `docs/SETUP_GUIDE.md`
+
+### Files created or changed
+- `seed/index.mts` — reads the new CSV shape: denormalised geography, derived slugs, derived
+  district centroids, pipe-separated tags, `capacity_window`, and the new domain/hazard/severity columns
+- `seed-data/README.md` — column contract rewritten to match the authored dataset
+- `scripts/verify-roles.mjs` — district codes DHA → DHN, EAS → ESB
+- `CLAUDE.md`, `docs/SETUP_GUIDE.md` — Postgres 16 → 17
+
+### Database
+- Migrations applied: unchanged, still `0004_heavy_sway`
+- Seed counts: districts=24, blocks=263, organisations=20, users=5, capabilities=47,
+  challenges=25, corroborations=0, credit_edges=25, ledger_entries=25, challenge_media=0
+- All 25 challenges carry `domain`, `hazard` and `severity`; 15 sit at or above the 0.7 human gate
+
+### Environment variables consumed this phase
+- `BETTER_AUTH_URL` — must be an absolute URL with its scheme. Set to a bare hostname it throws
+  `BetterAuthError: Invalid base URL` at import, and because `SiteHeader` is in every layout that
+  took down **every** runtime-rendered route while `/` (prerendered) kept working. This was the
+  cause of the first failed deployment.
+
+### Decisions taken
+- Adapted the seeder to the dataset rather than reshaping six CSVs — the authored data carries
+  more signal (`domain`, `hazard`, `severity_hint`) than the contract it replaced. Costs us a
+  seeder that is now specific to this file shape.
+- District centroids are derived as the mean of their blocks' centroids, since the file has no
+  district-level coordinate. The run prints how many were derived so it is never mistaken for
+  surveyed data.
+- `severity_hint` is seeded into `severity`. Phase 2's S1 recomputes it; until then it is what
+  `/gov/gate` and the priority panel read.
+- Blocks inherit their district's `vulnerability_index` — the file carries one index per district.
+  Block-level indices are a Phase 3 input.
+
+### Stubbed / deferred (must appear on the "declared stubs" slide)
+- `seed_status` and `corroborations` are absent from `challenges.csv`, so every challenge seeds as
+  `SUBMITTED` with a single reporter and `/stats` shows zeros. The team is adding both columns.
+- `seed-data/voice-note.mp3` is still empty, so `challenge_media` is 0.
+- Hindi (7 reports) and Santali (1 report) are unchecked by a native speaker.
+- `heis.type`, `industry.domain_interests` and `industry.csr_contact_title` have no schema column
+  and are not stored. Phase 4's industry matching needs `domain_interests`.
+- Firms with several districts in `district_focus` are anchored to the first; the rest are not stored.
+
+### Known issues
+- CI repository secrets are still unverified — `gh` is not authenticated in this environment.
+  Until they are added, CI skips build and test while reporting green. BACKLOG §1.2 — **blocking**.
+- `blocks.csv` is stale and no longer read. Left in place rather than deleted (CLAUDE.md §6.7).
+
+### Verification evidence
+```
+verify-routes.mjs    19/19   against https://milan-ruddy-chi.vercel.app
+verify-roles.mjs     16/16
+verify-submit.mjs    23/23   EXIF stripped, content-hash storage key verified
+pnpm build           exit 0
+pnpm typecheck       clean
+pnpm lint            clean
+pnpm vitest run      8 passed, 1 skipped (the deliberate invariant skip)
+pnpm seed            idempotent — identical counts on a second run
+```
+
+### Start here next phase
+Two things still gate Phase 2, both human:
+1. **Add the CI repository secrets** (BACKLOG §1.2) and confirm Build and Test actually ran.
+2. **Add `seed_status` and `corroborations` to `challenges.csv`**, then `pnpm seed --reset`.
+   The seeder already reads both columns and warns while they are missing.
+
+Then execute `docs/PHASE_2_BUILD.md`, Task 2.1.
