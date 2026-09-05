@@ -166,6 +166,13 @@ nobody believes CSR reports. This one an auditor can defend."
 ## If everything goes wrong
 
 - The deployed instance is down → run locally: `pnpm build && pnpm start`.
-- The internet is down → `docker compose up -d`, `cp .env.offline .env.local`, `pnpm demo:offline`.
-  Every AI stage returns at fallback level 2 and the trace says so. This is rehearsed.
+- The internet is down → `docker compose up -d`, `cp .env.local .env.online && cp .env.offline .env.local`,
+  `pnpm db:migrate && pnpm seed --reset && pnpm sla:backfill`, `pnpm build && pnpm demo:offline`.
+  **Rehearsed end to end:** 4/4 containers healthy, seeded in 2.9 s, all 13 demo beats passing, and
+  53 of 53 model calls at fallback level 2 with no call to any external service.
+  **One difference to expect:** the rule tier answers at 0.45 confidence and a level-2 answer never
+  overwrites a classification, so the hero challenge stops at SUBMITTED in the `/admin/triage` queue
+  instead of reaching the gate. Accept the proposal there, then carry on from 2:30. Say why out loud —
+  "offline it will not act on a 0.45-confidence guess, it asks a human" is a better beat than the one
+  it replaces. Restore afterwards with `cp .env.online .env.local`.
 - The database is unreachable → restore from `backups/phase3-demo.sql`; see README.

@@ -132,7 +132,14 @@ pnpm build && pnpm demo:offline            # http://localhost:3000
 ```
 
 `.env.offline` sets `AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
-`lib/ai/providers/rules.ts` and the trace panel says so in amber rather than erroring. Mail lands in
+`lib/ai/providers/rules.ts` and the trace panel says so in amber rather than erroring. This has been
+run end to end: 4/4 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
+and **53 of 53 model calls at level 2** with no call to Gemini, Groq, Supabase or Resend.
+
+One thing to expect offline: the rule tier answers at 0.45 confidence, and a level-2 answer never
+overwrites a classification — it is recorded as a proposal for a human. So an offline run leaves the
+hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the gate. Accept it there and
+the rest of the script proceeds. That is the invariant working, not a failure. Mail lands in
 Mailpit at `http://localhost:8025`; SMS and WhatsApp are already mock inboxes on `/demo`.
 
 Restore the online profile with `cp .env.online .env.local`.

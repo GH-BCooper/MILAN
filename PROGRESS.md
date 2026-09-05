@@ -806,12 +806,12 @@ behind an interface with a local no-op)
   `vercel.json` on Pro, or point a free external scheduler at `/api/cron/reaper` with `CRON_SECRET`.
   Deadlines are durable rows compared against `clock_now()`, so a late reaper fires everything that
   became due while it was not running, in `due_at` order. See `docs/CRON_SCHEDULE.md`.
-- **The offline stack is written but not executed on this machine** — *medium*. Docker is not
-  installed in this WSL distro (`docker` is not on the PATH), so `docker-compose.yml` and
-  `.env.offline` are unverified end to end. What **is** verified is the part that matters most:
-  `AI_PROVIDER_CHAIN=rules` returns **fallback level 2 for every stage**, proven again this phase,
-  which is CLAUDE.md invariant 8. Someone with Docker Desktop should run the four commands in the
-  README before stage day.
+- **Offline, the pipeline stops the hero challenge at SUBMITTED and sends it to `/admin/triage`** —
+  *by design, and worth rehearsing*. The rule tier answers at 0.45 confidence, and Phase 2 decided
+  that a level-2 answer never overwrites a classification and is recorded as a proposal for a human
+  instead. So an offline run reaches the triage queue rather than the gate, and the later demo beats
+  need an admin to accept the proposal at `/admin/triage` first. That is the invariant working, not a
+  failure — but the runbook's offline path should say so out loud.
 - **The reaper takes 30–40 s locally when many deadlines are due** — *low*. It is round trips from
   WSL to Supabase in Mumbai, not compute; each firing is its own transaction by design. On the
   deployed instance in `bom1` this is a few seconds. The `/demo` +21 button is the place it shows.
@@ -848,6 +848,19 @@ pnpm verify:perf            6/6 inside 2 s — /challenges 140ms, /c/[id] 223ms,
 pnpm verify:seedguard      clean
 AI_PROVIDER_CHAIN=rules pnpm ai:smoke
                            level 2 returned for every stage — invariant 8
+
+OFFLINE, EXECUTED — docker compose up -d, .env.offline, local Postgres 17+pgvector,
+MinIO, Ollama and Mailpit, no Supabase and no provider keys:
+  docker compose ps        4/4 healthy; the media bucket created by minio-init
+  pnpm db:migrate          all 11 migrations applied to the local database
+  pnpm seed --reset        2.9 s — districts=24, blocks=263, orgs=20, capabilities=47,
+                           challenges=25, corroborations=183
+  pnpm sla:backfill        24 deadlines opened, invariant orphans 0
+  pnpm build               clean
+  pnpm verify:demo         13/13 beats, 1.1 s total, against localhost
+  ai_runs                  53 calls, 53 at fallback level 2 — EMBED (local lexical
+                           projection) 48, S1_TRIAGE 1, S2_CLASSIFY 1, S5_REASON 3.
+                           Zero calls to Gemini, Groq, Supabase or Resend.
 
 backups/phase3-demo.sql    1073 rows across 24 tables, committed
 ```
