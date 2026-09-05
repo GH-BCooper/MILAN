@@ -1,0 +1,93 @@
+# The offline path.
+#
+# CLAUDE.md invariant 8: nothing on the demo path may depend on a live
+# third-party API succeeding. This file is that invariant made operational —
+# every external dependency Milan has, running on the laptop, so the whole demo
+# can be given with the wifi physically off.
+#
+#   docker compose up -d
+#   cp .env.offline .env.local     # keep a copy of the online one first
+#   pnpm db:migrate && pnpm seed --reset
+#   pnpm demo:offline
+#
+# What each service replaces:
+#   postgres  -> Supabase PostgreSQL (pgvector for the embedding kNN prior)
+#   minio     -> Supabase Storage (objects keyed by SHA-256, same as production)
+#   ollama    -> Gemini and Groq. Absent it, the provider chain still lands on
+#                the deterministic rule tier and every stage returns at level 2.
+#   mailpit   -> Resend. SMS and WhatsApp are already mock inboxes at /demo.
+
+services:
+  postgres:
+    # pgvector on Postgres 17, matching the Supabase version production runs.
+    image: pgvector/pgvector:pg17
+    container_name: milan-postgres
+    environment:
+      POSTGRES_USER: milan
+      POSTGRES_PASSWORD: milan
+      POSTGRES_DB: milan
+    ports:
+      - "54322:5432"
+    volumes:
+      - milan-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U milan -d milan"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    container_name: milan-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: milan
+      MINIO_ROOT_PASSWORD: milan-offline-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - milan-minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Creates the `media` bucket the app expects, then exits.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 milan milan-offline-secret &&
+      mc mb --ignore-existing local/media &&
+      mc anonymous set download local/media
+      "
+
+  ollama:
+    # Optional. Without it the provider chain drops to the deterministic rule
+    # tier, which is the behaviour we WANT to be able to demonstrate: pull the
+    # plug and every stage returns at fallback level 2 rather than erroring.
+    image: ollama/ollama:latest
+    container_name: milan-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - milan-ollama:/root/.ollama
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: milan-mailpit
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # the inbox, in a browser
+    environment:
+      MP_MAX_MESSAGES: 5000
+
+volumes:
+  milan-pg:
+  milan-minio:
+  milan-ollama:

@@ -1,0 +1,64 @@
+%PDF-1.4
+% Milan  CSR report
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 2897 >>
+stream
+BT /F2 18 Tf 1 0 0 1 56 785.89 Tm (CSR impact report) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 759.89 Tm (Companies Act 2013, section 135 - annexure of supported projects) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 745.89 Tm (Generated 2026-09-05 12:39:49 UTC from Milan, Government of Jharkhand) Tj ET
+BT /F2 13 Tf 1 0 0 1 56 716.89 Tm (Summary) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 699.89 Tm (Challenges supported: 1) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 685.89 Tm (Districts: Sahibganj) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 665.89 Tm (Confirmed by the citizen who reported the problem: 0. Partly confirmed: 1. Claimed by an) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 651.89 Tm (implementer but NOT confirmed by any citizen: 0. Disputed by the citizen: 0.) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 631.89 Tm (Beneficiaries, confirmed outcomes only: 1800. Beneficiaries attached to unconfirmed claims,) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 617.89 Tm (reported separately and NOT included in the figure above: 0.) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 593.89 Tm (Why the two figures are separate. In Milan an outcome is counted only when the person who reported the) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 580.89 Tm (problem confirms it was fixed. Publishing a solution does not count, funding it does not count, and an) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 567.89 Tm (implementer saying they did it does not count. Any figure above that is marked unconfirmed is a claim) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 554.89 Tm (awaiting that confirmation, and is presented as such here so that this annexure can be defended to an) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 541.89 Tm (auditor rather than merely filed.) Tj ET
+BT /F2 13 Tf 1 0 0 1 56 512.89 Tm (Projects supported) Tj ET
+BT /F2 11 Tf 1 0 0 1 56 483.89 Tm (JH-2026-SAH-0001 - The Ganga is eating our village at Rajmahal, twelve houses gone) Tj ET
+BT /F2 11 Tf 1 0 0 1 56 468.89 Tm (in two years) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 453.89 Tm (Sahibganj, Rajmahal - WATER - NDMA hazard: FLOOD) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 440.89 Tm (Institution: BIT Sindri - supported since 2026-09-05 \(accepted\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 427.89 Tm (Artifacts: 0 - reporters: 14 - beneficiaries: 1800) Tj ET
+BT /F2 10 Tf 1 0 0 1 56 414.89 Tm (IMPACT: PARTLY CONFIRMED BY CITIZEN on 2026-09-05) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 400.89 Tm (Spend committed \(INR\): ______________ Spend disbursed \(INR\): ______________) Tj ET
+BT /F2 13 Tf 1 0 0 1 56 369.89 Tm (Declared limitations) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 346.89 Tm (Spend figures are left blank because payment rails are not implemented in this release; the columns are) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 333.89 Tm (provided for the filer. E-signature and MoU negotiation are likewise not implemented: the MoU is) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 320.89 Tm (generated from a template and hashed into an append-only ledger so that the version both parties) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 307.89 Tm (discussed cannot later be disputed.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000030 00000 n 
+0000000079 00000 n 
+0000000136 00000 n 
+0000000233 00000 n 
+0000000335 00000 n 
+0000000477 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+3425
+%%EOF

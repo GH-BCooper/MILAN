@@ -33,7 +33,15 @@
     "verify:provenance": "tsx --conditions=react-server scripts/verify-provenance.mts",
     "verify:impact": "tsx --conditions=react-server scripts/verify-impact.mts",
     "verify:industry": "tsx --conditions=react-server scripts/verify-industry.mts",
-    "verify:demo": "tsx --conditions=react-server scripts/verify-demo.mts"
+    "verify:demo": "tsx --conditions=react-server scripts/verify-demo.mts",
+    "demo:offline": "next start -p 3000",
+    "offline:up": "docker compose up -d",
+    "offline:down": "docker compose down",
+    "ledger:repair": "tsx --conditions=react-server scripts/ledger-repair.mts",
+    "verify:seedguard": "tsx --conditions=react-server scripts/verify-seed-guard.mts",
+    "verify:perf": "tsx --conditions=react-server scripts/verify-perf.mts",
+    "verify:phase3": "tsx --conditions=react-server scripts/verify-phase3.mts",
+    "backup": "node scripts/backup.mjs backups/phase3-demo.sql"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

@@ -65,6 +65,12 @@ jobs:
         if: env.DATABASE_URL != ''
         run: pnpm vitest run
 
+      # CLAUDE.md section 6.6: real Jharkhand districts, real HEIs, real firms.
+      # A judge who finds "Test University" on a slide stops believing the other
+      # twenty-four rows, so this is a required check rather than a habit.
+      - name: Seed guard — no placeholder data
+        run: pnpm verify:seedguard
+
       # CLAUDE.md invariant 1, as a required check rather than as a hope.
       # Phase 3 Task 3.2 un-skipped this; it must return 0. If it fails, a state
       # in lib/sla/deadlines.ts has no clock on it and a challenge can die

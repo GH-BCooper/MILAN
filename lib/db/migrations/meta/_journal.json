@@ -71,6 +71,13 @@
       "when": 1788610000000,
       "tag": "0009_ledger_chain_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788620000000,
+      "tag": "0010_phase3_indexes",
+      "breakpoints": true
     }
   ]
 }
