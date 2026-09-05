@@ -547,6 +547,15 @@ challenge is still scored and still routed.
   PWA, no self-serve institutional onboarding, nearest-centroid geocoding.
 
 ### Known issues
+- **The deployed pipeline runs at ~23s, and the cause is a one-dropdown fix** — *high, and it is
+  the single biggest thing standing between this and a clean demo*. Supabase is in Mumbai
+  (`ap-south-1`); Vercel is executing the functions in Washington (`iad1`), so every one of the
+  many small queries a pipeline run makes crosses two oceans. The models are not the problem: the
+  same run recorded 754ms, 886ms, 685ms and 712ms for its four model calls — three seconds of
+  model time inside a twenty-four second run. `vercel.json` already asks for `bom1`, but Hobby
+  projects ignore the `regions` key and use the region set on the project, so this needs
+  **Vercel → milan → Settings → Functions → Function Region → Mumbai (bom1) → redeploy**.
+  Written up with the measurements in `docs/VERCEL_REGION.md`.
 - **The pipeline runs at 7.4s-8.8s cold against a free provider tier** — *medium*. Measured over
   three consecutive cold runs: 7.4s, 7.6s, 8.8s submit-to-S5, against an 8s budget. The variance
   is entirely Gemini and Groq free-tier latency; the seeded demo path, which is cached, runs in
@@ -572,8 +581,9 @@ pnpm verify:pipeline          9/9 live; three cold runs at 7.4s / 7.6s / 8.8s su
 pnpm verify:framing           9/10 — the one failure is the unrecorded voice note
 pnpm verify:hei               28/28 — claim, capacity decrement, ledger, credit chain, no emails
 pnpm verify:triage            9/9  — the human-in-the-loop recovery, end to end
-pnpm verify:phase2            23/23 — every surface, every role guard, the public breakdown
+pnpm verify:phase2            23/23 local, and 23/23 again against the DEPLOYED URL
 CI run 33957907959            green, with Build and Test actually running (6 test files)
+deployed verify:pipeline      8/9 — everything passes but the clock; 23s, and see the region note
 pnpm s3:matrix                GUM 0001/0002/0003 at 0.886 / 0.904 / 0.850; all others 0.69–0.71
 pnpm build                    clean
 pnpm typecheck                clean
@@ -593,8 +603,10 @@ pnpm seed --reset             idempotent; 47 capability embeddings computed
   and 23 challenges are scored.
 
 ### Start here next phase
-1. **Re-run the verification suite against the deployed URL** with
-   `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app`. Everything below was measured locally.
+1. **Set the Vercel function region to Mumbai** (Settings → Functions → Function Region →
+   `bom1`), redeploy, and re-run `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app
+   pnpm verify:pipeline`. It is one dropdown and it should take the deployed run from ~23s to
+   single figures. See `docs/VERCEL_REGION.md`.
 2. **Record `seed-data/voice-note.mp3`** and paste its SHA-256 into `lib/ai/seededTranscripts.ts`.
    It is the last thing standing between Task 2.8 and a full pass, and it needs a human voice.
 3. Then execute `docs/PHASE_3_BUILD.md`, Task 3.1.

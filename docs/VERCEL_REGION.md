@@ -30,8 +30,26 @@ append and outbox event, a capability scan, a route insert.
 
 ## The fix
 
-Put the functions where the data is. `bom1` is Vercel's Mumbai region and it is
-available on Hobby.
+Put the functions where the data is. `bom1` is Vercel's Mumbai region.
+
+**On the Hobby plan this file is not enough.** After deploying with
+`"regions": ["bom1"]` the response header still read:
+
+```
+x-vercel-id: bom1::iad1::m8pn7-...
+```
+
+`bom1` is the edge that accepted the request; `iad1` is where the function
+actually ran. Hobby projects execute in the single region configured on the
+project, and the `regions` key is honoured on Pro and above. So somebody with
+dashboard access has to set it once:
+
+> **Vercel → the `milan` project → Settings → Functions → Function Region →
+> Mumbai, South Asia (bom1) → Save, then redeploy.**
+
+It is one dropdown and it is worth about sixteen seconds of the demo. The
+`regions` key stays in `vercel.json` regardless: it documents the intent, and it
+is what takes effect the moment the project is on a plan that reads it.
 
 This is also the right answer for the product rather than only for the demo: the
 users are in Jharkhand, the data is in Mumbai, and a citizen on a 3G connection
