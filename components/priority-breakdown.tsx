@@ -223,15 +223,3 @@ function RawValue({
       return <span>{term.rawValue}</span>;
   }
 }
-
-/** Parse a stored `priority_breakdown` back into a ScoreResult, or null. */
-export function parseBreakdown(value: unknown): ScoreResult | null {
-  if (typeof value !== "object" || value === null) return null;
-  const candidate = value as Partial<ScoreResult>;
-  if (typeof candidate.total !== "number" || !Array.isArray(candidate.terms)) return null;
-  return {
-    total: candidate.total,
-    version: typeof candidate.version === "string" ? candidate.version : "unknown",
-    terms: candidate.terms as Term[],
-  };
-}

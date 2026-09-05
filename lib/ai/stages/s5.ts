@@ -293,9 +293,14 @@ export async function persistRoutes(args: {
 /**
  * Send the offers.
  *
- * Called immediately for a below-threshold challenge, and by /gov/gate when a
- * District Collector confirms one above it. Every notification links straight
+ * Called immediately for a below-threshold challenge, and by `releaseGate` when
+ * a District Collector confirms one above it. Every notification links straight
  * to that challenge's claim page: push, never browse.
+ *
+ * This function only NOTIFIES. Moving the challenge on is `releaseGate`'s job,
+ * because the two are not the same thing and conflating them was a real bug:
+ * a gated challenge that had been notified but left at VERIFIED could not then
+ * be claimed, since VERIFIED -> CLAIMED is not a legal edge.
  */
 export async function releaseNotifications(
   challengeId: string,
@@ -379,3 +384,56 @@ export async function releaseNotifications(
 }
 
 
+
+/**
+ * Release a challenge the human gate is holding.
+ *
+ * What a District Collector's confirmation at /gov/gate actually does: move the
+ * challenge from VERIFIED to ROUTED, then send the three offers. The state
+ * change is its own transaction so the ledger and the status agree, and the
+ * notifications go out afterwards, because an email that fails must not roll
+ * back a decision an officer has made.
+ *
+ * Separating this from `releaseNotifications` is not tidiness. The first
+ * version notified without transitioning, which left a challenge notified but
+ * still VERIFIED — and VERIFIED -> CLAIMED is not a legal edge, so the three
+ * institutions received an offer none of them could accept.
+ */
+export async function releaseGate(args: {
+  challengeId: string;
+  trackingId: string;
+  actorId?: string | null;
+  reason?: string | null;
+}): Promise<{ notified: number; status: string }> {
+  const [before] = await db
+    .select({ status: challenges.status })
+    .from(challenges)
+    .where(eq(challenges.id, args.challengeId))
+    .limit(1);
+
+  if (!before) throw new Error(`challenge ${args.challengeId} not found`);
+
+  const { canTransition, transition } = await import("@/lib/db/stateMachine");
+
+  if (canTransition(before.status, "ROUTED")) {
+    await db.transaction(async (tx) => {
+      await transition(tx, {
+        challengeId: args.challengeId,
+        to: "ROUTED",
+        actorId: args.actorId ?? null,
+        reason: args.reason ?? "Released by a district officer after the human gate.",
+        meta: { by: "gov-gate" },
+      });
+    });
+  }
+
+  const notified = await releaseNotifications(args.challengeId, args.trackingId);
+
+  const [after] = await db
+    .select({ status: challenges.status })
+    .from(challenges)
+    .where(eq(challenges.id, args.challengeId))
+    .limit(1);
+
+  return { notified, status: after?.status ?? before.status };
+}

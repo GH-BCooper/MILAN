@@ -139,3 +139,23 @@ function round(n: number, places: number): number {
   const factor = 10 ** places;
   return Math.round(n * factor) / factor;
 }
+
+/**
+ * Parse a stored `priority_breakdown` back into a `ScoreResult`.
+ *
+ * Lives here rather than beside the chart because a server component needs it
+ * too, and a function exported from a `"use client"` module cannot be called on
+ * the server. It is pure, it validates rather than trusts, and it returns null
+ * for anything that is not a breakdown we wrote — an old row from before a
+ * schema change renders as "not scored yet" instead of throwing.
+ */
+export function parseBreakdown(value: unknown): ScoreResult | null {
+  if (typeof value !== "object" || value === null) return null;
+  const candidate = value as Partial<ScoreResult>;
+  if (typeof candidate.total !== "number" || !Array.isArray(candidate.terms)) return null;
+  return {
+    total: candidate.total,
+    version: typeof candidate.version === "string" ? candidate.version : "unknown",
+    terms: candidate.terms as Term[],
+  };
+}

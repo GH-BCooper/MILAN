@@ -83,6 +83,28 @@ export async function knnPrior(
     }));
 }
 
+/**
+ * What the cache is keyed on.
+ *
+ * Everything the model sees EXCEPT the volatile parts of the prior. The
+ * neighbours' labels change the answer and belong in the key; their cosine
+ * similarities and titles drift whenever anything nearby is re-embedded and
+ * would make S2 pay for an identical answer on every reseed.
+ */
+export function s2CacheInput(input: S2Input) {
+  return {
+    title: input.title,
+    bodyOriginal: input.bodyOriginal,
+    bodyEn: input.bodyEn,
+    districtCode: input.districtCode,
+    blockName: input.blockName,
+    peopleAffected: input.peopleAffected,
+    recurrence: input.recurrence,
+    // Sorted labels only. Same neighbours classified the same way, same key.
+    priorLabels: input.priors.map((p) => `${p.domain}/${p.hazard}`).sort(),
+  };
+}
+
 export async function runS2(
   input: S2Input,
   challengeId?: string | null,
@@ -94,6 +116,7 @@ export async function runS2(
     user: prompt.render(input),
     schema: S2Schema,
     input,
+    cacheInput: s2CacheInput(input),
     challengeId,
     confidenceOf: (v) => v.confidence,
   });

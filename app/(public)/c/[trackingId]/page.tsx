@@ -4,12 +4,14 @@ import { asc, eq } from "drizzle-orm";
 
 import { CorroborateButton } from "@/components/corroborate-button";
 import { PipelineTrace } from "@/components/pipeline-trace";
-import { PriorityBreakdown, parseBreakdown } from "@/components/priority-breakdown";
+import { PriorityBreakdown } from "@/components/priority-breakdown";
+import { parseBreakdown } from "@/packages/scoring";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { currentUser } from "@/lib/auth/guards";
-import { handoffContract } from "@/lib/ai/stages/s1";
+import { framingProvenance } from "@/lib/ai/stages/p1_framing";
+import { handoffContract } from "@/lib/ai/triage";
 import { db } from "@/lib/db";
 import {
   blocks,
@@ -65,6 +67,10 @@ export default async function ChallengePage({
   if (!row) notFound();
   const c = row.challenge;
   const breakdown = parseBreakdown(c.priorityBreakdown);
+  const provenance = framingProvenance({
+    framedStatement: c.framedStatement,
+    approved: c.framingApprovedByCitizen,
+  });
 
   const [media, credits, offers] = await Promise.all([
     db.select().from(challengeMedia).where(eq(challengeMedia.challengeId, c.id)),
@@ -95,6 +101,10 @@ export default async function ChallengePage({
   // The gate is held when routes exist but none has been notified: S5 wrote the
   // shortlist and deliberately sent nothing.
   const gateHeld = offers.length > 0 && offers.every((o) => o.notifiedAt === null);
+
+  // A recording gets its own three-panel section; photographs stay in Evidence.
+  const audio = media.filter((m) => m.mime.startsWith("audio/"));
+  const photos = media.filter((m) => !m.mime.startsWith("audio/"));
 
   // The grievance handoff contract, rebuilt from the challenge rather than
   // stored, so what is shown is always what would be sent today.
@@ -183,27 +193,101 @@ export default async function ChallengePage({
           </div>
         </section>
 
-        {c.successCriteria ? (
-          <section className="mt-8" aria-labelledby="success-heading">
-            <h2 id="success-heading" className="text-lg font-semibold">
-              What success would look like
+        {/* Task 2.7. The provenance of the wording is never left implicit: a
+            reader always knows whether they are looking at the citizen's own
+            sentence or at one an AI proposed and the citizen approved. */}
+        {c.framedStatement || c.successCriteria ? (
+          <section className="mt-8" aria-labelledby="framing-heading">
+            <h2 id="framing-heading" className="text-lg font-semibold">
+              The problem, as a research team receives it
             </h2>
-            <p className="mt-2 whitespace-pre-wrap text-base">{c.successCriteria}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {c.framingApprovedByCitizen
-                ? "Approved by the person who reported it."
-                : "Not yet approved by the reporter."}
+            <p className="mt-1 text-sm">
+              <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium">
+                {provenance.label}
+              </span>
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">{provenance.detail}</p>
+
+            {c.framedStatement ? (
+              <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed">
+                {c.framedStatement}
+              </p>
+            ) : null}
+
+            {c.successCriteria ? (
+              <>
+                <h3 className="mt-5 text-sm font-semibold">What success would look like</h3>
+                <p className="mt-1 whitespace-pre-wrap text-base">{c.successCriteria}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Only the person who reported this can confirm it was solved. Nobody else can mark
+                  it done.
+                </p>
+              </>
+            ) : null}
           </section>
         ) : null}
 
-        {media.length > 0 ? (
+        {/* Task 2.8, the three-panel voice result: the recording, the words as
+            they were spoken, and the English working copy. The original is the
+            same size and weight as the translation and it is never behind a
+            toggle — a person who reports in Hindi is not a second-class
+            reporter of their own problem. */}
+        {audio.length > 0 ? (
+          <section className="mt-8" aria-labelledby="voice-heading">
+            <h2 id="voice-heading" className="text-lg font-semibold">
+              Reported by voice
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Recorded on a phone. Milan transcribed it and translated it; both are shown, and the
+              recording itself is here so anyone can check the transcript against it.
+            </p>
+            <div className="mt-3 grid gap-4 lg:grid-cols-3">
+              <div className="rounded-lg border border-border p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  The recording
+                </h3>
+                {audio.map((m) => (
+                  <div key={m.id} className="mt-2">
+                    <audio controls className="w-full" src={publicUrlFor(m.storageKey) ?? undefined}>
+                      Your browser cannot play this recording.
+                    </audio>
+                    <p className="mt-2 break-all font-mono text-[10px] text-muted-foreground">
+                      sha256 {m.contentHash.slice(0, 16)}…
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  What was said {c.bodyLang === "hi" ? "(हिन्दी)" : `(${c.bodyLang})`}
+                </h3>
+                <p lang={c.bodyLang} className="mt-2 whitespace-pre-wrap text-base leading-relaxed">
+                  {c.bodyOriginal}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border p-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  English working copy
+                </h3>
+                <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed">
+                  {c.bodyEn ?? (
+                    <span className="text-muted-foreground">
+                      Not translated yet. The words above are the record.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {photos.length > 0 ? (
           <section className="mt-8" aria-labelledby="evidence-heading">
             <h2 id="evidence-heading" className="text-lg font-semibold">
               Evidence
             </h2>
             <ul className="mt-3 grid gap-3 sm:grid-cols-3">
-              {media.map((m) => (
+              {photos.map((m) => (
                 <li key={m.id} className="rounded-lg border border-border p-2">
                   {m.mime.startsWith("image/") ? (
                     // A citizen's photo of unknown dimensions from Supabase Storage.
@@ -414,7 +498,7 @@ export default async function ChallengePage({
             {credits.map((edge) => (
               <li key={edge.id} className="flex flex-wrap items-center gap-3 p-4">
                 <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
-                  {edge.relation}
+                  {edge.relation.replaceAll("_", " ")}
                 </span>
                 <span className="text-sm font-medium">
                   {edge.declaredRole ?? "Anonymous reporter"}

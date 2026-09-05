@@ -935,6 +935,28 @@ async function main() {
   console.log("-".repeat(40));
   for (const r of counts) console.log(`${String(r.table).padEnd(20)} ${String(r.n).padStart(6)}`);
 
+  /**
+   * Embed the capability graph (PHASE_2_BUILD.md Task 2.5 step 1).
+   *
+   * Done here so that `--reset` leaves S5 warm: the semantic term is 45% of the
+   * match score, and a capability with no vector scores zero on it. The
+   * embeddings are cached on the hash of the text they are built from, so a
+   * reseed that changes nothing costs nothing.
+   *
+   * Skipped with SEED_SKIP_EMBED=1 when someone is iterating on the CSVs and
+   * does not want to wait for 47 network calls.
+   */
+  if (process.env.SEED_SKIP_EMBED === "1") {
+    console.log("\nSEED_SKIP_EMBED=1 — capability embeddings left for the first routing run.");
+  } else {
+    const { ensureCapabilityEmbeddings } = await import("../lib/ai/stages/s5");
+    const embedded = await ensureCapabilityEmbeddings();
+    console.log(
+      `\nCapability embeddings: ${embedded} computed` +
+        `${embedded === 0 ? " (all already cached)" : ""}.`,
+    );
+  }
+
   console.log("\nDemo accounts (password: " + DEMO_PASSWORD + ")");
   console.log("-".repeat(78));
   for (const a of DEMO_ACCOUNTS) {

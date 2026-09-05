@@ -15,7 +15,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Loader2, MinusCircle, Play, RotateCcw } from "lucide-react";
 
-import { PriorityBreakdown, parseBreakdown } from "@/components/priority-breakdown";
+import { PriorityBreakdown } from "@/components/priority-breakdown";
+import { parseBreakdown } from "@/packages/scoring";
 import { Button } from "@/components/ui/button";
 
 type StageKey = "P0" | "S1" | "S2" | "S3" | "S4" | "S5";

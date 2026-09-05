@@ -18,7 +18,7 @@
  */
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 
 import { clockNow, elapsedMs } from "@/lib/clock";
 import { db } from "@/lib/db";
@@ -33,7 +33,9 @@ import {
 } from "@/lib/db/schema";
 import { canTransition, contentHashOf, transition } from "@/lib/db/stateMachine";
 import { removeObjects } from "@/lib/media/storage";
+import { getObject } from "@/lib/media/storage";
 import { embed } from "./providers/embed";
+import { transcribe, translate } from "./stages/p0";
 import { decideS1, handoffContract, runS1 } from "./stages/s1";
 import { decideS2, knnPrior, normaliseS2, runS2 } from "./stages/s2";
 import type { S2Input } from "./schemas";
@@ -248,22 +250,98 @@ const STAGE_RUNNERS: Record<PipelineStage, StageRunner> = {
 };
 
 /**
- * P0 — translation.
- * Filled in by Task 2.8. Until then it reports honestly rather than pretending:
- * an English report needs nothing, and a Hindi one is passed through with its
- * English copy still missing, which the challenge page already says out loud.
+ * P0 — the voice path and the English working copy.
+ *
+ * An attached recording is transcribed and the transcript becomes the report's
+ * text; a report in any language other than English gains a working copy.
+ * Neither replaces `body_original`, which the database itself now documents as
+ * never-overwritten (migration 0006).
+ *
+ * A failure here degrades and continues: S1 and S2 read the original text, and
+ * the gazetteer and both prompts are bilingual, so a missing translation costs
+ * accuracy rather than the whole run.
  */
 async function stageP0(ctx: Ctx, emit: Emit): Promise<void> {
+  const c = ctx.challenge;
+  const at = () => clockNow().toISOString();
+
+  /* ---------------------------------------------------------- the recording */
+
+  let transcriptNote: string | null = null;
+  let transcriptSource: string | null = null;
+
+  if (!c.bodyOriginal.trim() || c.bodyOriginal.startsWith("[voice note]")) {
+    const [audio] = await db
+      .select({ storageKey: challengeMedia.storageKey, mime: challengeMedia.mime })
+      .from(challengeMedia)
+      .where(and(eq(challengeMedia.challengeId, c.id), like(challengeMedia.mime, "audio/%")))
+      .limit(1);
+
+    if (audio) {
+      const bytes = await getObject(audio.storageKey);
+      const result = bytes ? await transcribe(bytes, audio.mime) : null;
+      if (result) {
+        await db
+          .update(challenges)
+          .set({ bodyOriginal: result.original, bodyLang: result.lang, updatedAt: clockNow() })
+          .where(eq(challenges.id, c.id));
+        ctx.challenge = { ...c, bodyOriginal: result.original, bodyLang: result.lang };
+        transcriptNote = result.note;
+        transcriptSource = result.source;
+      }
+    }
+  }
+
+  /* --------------------------------------------------------- the translation */
+
+  const current = ctx.challenge;
+  if (current.bodyEn) {
+    await emit({
+      type: "stage",
+      stage: "P0",
+      status: "done",
+      at: at(),
+      result: { body_lang: current.bodyLang, translated: true, transcript_source: transcriptSource },
+      decision:
+        current.bodyLang === "en"
+          ? "Reported in English; the working copy is the citizen's own words."
+          : "Already translated. The original is the record either way.",
+      note: transcriptNote,
+    });
+    return;
+  }
+
+  const outcome = await translate(
+    { bodyOriginal: current.bodyOriginal, bodyLang: current.bodyLang },
+    current.id,
+  );
+
+  if (outcome.bodyEn) {
+    await db
+      .update(challenges)
+      .set({ bodyEn: outcome.bodyEn, updatedAt: clockNow() })
+      .where(eq(challenges.id, current.id));
+    ctx.challenge = { ...current, bodyEn: outcome.bodyEn };
+  }
+
   await emit({
     type: "stage",
     stage: "P0",
-    status: ctx.challenge.bodyLang === "en" ? "done" : "skipped",
-    at: clockNow().toISOString(),
-    result: { body_lang: ctx.challenge.bodyLang, translated: ctx.challenge.bodyEn !== null },
-    note:
-      ctx.challenge.bodyLang === "en"
+    status: outcome.translationFailed ? "degraded" : "done",
+    at: at(),
+    result: {
+      body_lang: current.bodyLang,
+      detected_lang: outcome.detectedLang,
+      translated: Boolean(outcome.bodyEn),
+      transcript_source: transcriptSource,
+    },
+    decision: outcome.translationFailed
+      ? "No translation available, so the English copy is left empty rather than filled with the original. The rest of the pipeline reads the citizen's own words."
+      : current.bodyLang === "en"
         ? "Reported in English; the working copy is the citizen's own words."
-        : "Translation arrives in Task 2.8. The original is the record either way.",
+        : `Translated from ${current.bodyLang}. The original is kept and shown beside it, unchanged.`,
+    note: transcriptNote,
+    meta: outcome.run ? metaOf(outcome.run.meta) : null,
   });
 }
 

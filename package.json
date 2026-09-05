@@ -10,7 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx seed/index.mts",
+    "seed": "tsx --conditions=react-server seed/index.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -19,7 +19,11 @@
     "pipeline:run": "tsx --conditions=react-server scripts/pipeline.mts",
     "pipeline:replay": "tsx --conditions=react-server scripts/pipeline.mts",
     "s3:matrix": "tsx --conditions=react-server scripts/similarity-matrix.mts",
-    "verify:pipeline": "tsx --conditions=react-server scripts/verify-pipeline.mts"
+    "verify:pipeline": "tsx --conditions=react-server scripts/verify-pipeline.mts",
+    "verify:framing": "tsx --conditions=react-server scripts/verify-framing.mts",
+    "verify:hei": "tsx --conditions=react-server scripts/verify-hei.mts",
+    "phase:report": "tsx --conditions=react-server scripts/phase-report.mts",
+    "verify:phase2": "tsx --conditions=react-server scripts/verify-phase2-routes.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

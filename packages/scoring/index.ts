@@ -6,7 +6,14 @@
  * reading the source of every file in this directory, so it cannot rot into a
  * comment that used to be true.
  */
-export { computePriority, topContributors, type ScoreResult, type ScoringInput, type Term } from "./score";
+export {
+  computePriority,
+  parseBreakdown,
+  topContributors,
+  type ScoreResult,
+  type ScoringInput,
+  type Term,
+} from "./score";
 export {
   SCORING_VERSION,
   TERM_LABELS,

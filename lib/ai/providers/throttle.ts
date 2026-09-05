@@ -33,7 +33,22 @@ function minIntervalMs(provider: string): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
 
-/** True while this provider is in its post-429 cool-off. */
+/**
+ * True while this provider is in its post-429 cool-off AND the caller is not
+ * willing to wait for it.
+ *
+ * A live request is never willing to wait: a citizen watching the trace would
+ * rather have a rule-tier answer now than a model answer in forty seconds, so
+ * the chain drops a level. A batch backfill is the opposite — nobody is
+ * watching, and a whole run classified by the gazetteer because the first
+ * challenge hit a rate limit is a waste of the run. So when pacing is switched
+ * on (which only the batch CLI does), the provider stays "available" and `pace`
+ * waits the cool-off out instead.
+ *
+ * That distinction was not theoretical: the first paced backfill finished eight
+ * challenges in 22 seconds because every one after the first 429 skipped Groq
+ * entirely and fell to level 2.
+ */
 export function isCoolingOff(provider: string): boolean {
   const until = coolingUntil.get(provider);
   if (until === undefined) return false;
@@ -41,7 +56,7 @@ export function isCoolingOff(provider: string): boolean {
     coolingUntil.delete(provider);
     return false;
   }
-  return true;
+  return minIntervalMs(provider) === 0;
 }
 
 export function secondsUntilWarm(provider: string): number {
@@ -65,8 +80,18 @@ export async function pace(provider: string): Promise<void> {
   if (interval === 0) return;
 
   const last = lastCallAt.get(provider) ?? 0;
-  const wait = last + interval - elapsedMs();
-  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+  // Whichever is further away: the minimum gap since our last call, or the end
+  // of a cool-off the provider asked for. Honouring a Retry-After we were given
+  // is the difference between backing off and being throttled harder.
+  const coolUntil = coolingUntil.get(provider) ?? 0;
+  const readyAt = Math.max(last + interval, coolUntil);
+  const wait = readyAt - elapsedMs();
+
+  if (wait > 0) {
+    console.info(`[ai/throttle] waiting ${Math.ceil(wait / 1000)}s for ${provider}`);
+    await new Promise((resolve) => setTimeout(resolve, wait));
+  }
+  coolingUntil.delete(provider);
   lastCallAt.set(provider, elapsedMs());
 }
 

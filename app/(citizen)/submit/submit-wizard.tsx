@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { resolvePoint, type Centroid } from "@/lib/geo/nearest";
-import { submitChallengeAction, uploadEvidenceAction } from "./actions";
+import { proposeFramingAction, submitChallengeAction, uploadEvidenceAction } from "./actions";
 import { MIN_BODY_CHARS, PEOPLE_BUCKETS, RECURRENCE } from "./schema";
 import {
   FIRST_STEP,
@@ -80,6 +80,14 @@ export function SubmitWizard({
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
+  /* Step 5: the AI's proposed wording. Null until it has been asked for. */
+  const [framing, setFraming] = useState<
+    | { state: "idle" }
+    | { state: "loading" }
+    | { state: "ready"; provider: string; fallbackLevel: number; confidence: number }
+    | { state: "failed"; error: string }
+  >({ state: "idle" });
+  const framingAsked = useRef(false);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
 
@@ -100,6 +108,50 @@ export function SubmitWizard({
   useEffect(() => {
     if (hydrated) headingRef.current?.focus();
   }, [state.step, hydrated]);
+
+  /* Ask for a proposed wording when the citizen first reaches step 5.
+     Once only: re-asking would overwrite an edit they had already made. */
+  useEffect(() => {
+    if (!hydrated || state.step !== 5 || framingAsked.current) return;
+    if (state.bodyOriginal.trim().length < MIN_BODY_CHARS) return;
+    framingAsked.current = true;
+    setFraming({ state: "loading" });
+
+    void proposeFramingAction({
+      bodyOriginal: state.bodyOriginal.trim(),
+      bodyLang: state.bodyLang,
+      districtCode: state.districtCode || null,
+      blockCode: state.blockCode,
+    }).then((result) => {
+      if (!result.ok) {
+        setFraming({ state: "failed", error: result.error });
+        return;
+      }
+      setFraming({
+        state: "ready",
+        provider: result.provider,
+        fallbackLevel: result.fallbackLevel,
+        confidence: result.confidence,
+      });
+      // The proposal fills the editable box. It is not stored anywhere until
+      // the citizen ticks approval on submit.
+      dispatch({
+        type: "set",
+        patch: {
+          framedStatement: result.framedStatement,
+          successCriteria: state.successCriteria.trim() || result.successCriteria,
+        },
+      });
+    });
+  }, [
+    hydrated,
+    state.step,
+    state.bodyOriginal,
+    state.bodyLang,
+    state.districtCode,
+    state.blockCode,
+    state.successCriteria,
+  ]);
 
   const blocker = stepBlocker(state, state.step);
   const blocksForDistrict = useMemo(
@@ -611,32 +663,85 @@ export function SubmitWizard({
         ) : null}
 
         {/* ---------------------------------------------- step 5: the framing */}
+        {/* Invariant 6, at the moment it matters most. The citizen's own words
+            and the AI's proposal sit side by side, the same size, both editable.
+            Nothing is stored as the framed statement unless they tick approval,
+            and if they decline their own words are used and that is recorded. */}
         {state.step === 5 ? (
           <div className="space-y-4">
-            <Alert>
-              <AlertDescription className="text-sm">
-                In the next version, Milan will suggest a clearer wording here for you to accept or
-                reject. Right now the statement below is simply your own words.
-              </AlertDescription>
-            </Alert>
+            {framing.state === "loading" ? (
+              <Alert>
+                <AlertDescription className="flex items-center gap-2 text-sm">
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Milan is suggesting a clearer wording. You will be able to change it or refuse it.
+                </AlertDescription>
+              </Alert>
+            ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="framed">The problem, as it will be shown</Label>
-              <Textarea
-                id="framed"
-                rows={5}
-                lang={state.bodyLang}
-                value={state.framedStatement || state.bodyOriginal}
-                onChange={(e) => set({ framedStatement: e.target.value })}
-                className="text-base"
-              />
+            {framing.state === "failed" ? (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  {framing.error} Nothing is lost — your report will be submitted in your own words.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            {framing.state === "ready" ? (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Milan has suggested a clearer wording on the right. Read it. Change anything that
+                  is wrong. If you do not like it, leave the box below unticked and your own words
+                  are used instead — and we record that you chose them.
+                  <span className="mt-1 block font-mono text-[11px] text-muted-foreground">
+                    {framing.provider} · confidence {framing.confidence.toFixed(2)}
+                    {framing.fallbackLevel === 2 ? " · fallback: rules" : ""}
+                  </span>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <section className="space-y-2">
+                <Label htmlFor="original-readonly">Your words, exactly as you wrote them</Label>
+                <p className="text-xs text-muted-foreground">
+                  This is kept forever and shown beside everything else. Nobody can change it.
+                </p>
+                <Textarea
+                  id="original-readonly"
+                  rows={8}
+                  lang={state.bodyLang}
+                  value={state.bodyOriginal}
+                  onChange={(e) => set({ bodyOriginal: e.target.value })}
+                  className="text-base"
+                />
+              </section>
+
+              <section className="space-y-2">
+                <Label htmlFor="framed">Milan&apos;s suggested wording</Label>
+                <p className="text-xs text-muted-foreground">
+                  Written so a university team can start work on it. Edit it freely.
+                </p>
+                <Textarea
+                  id="framed"
+                  rows={8}
+                  lang="en"
+                  value={state.framedStatement}
+                  placeholder={
+                    framing.state === "loading"
+                      ? "Suggesting…"
+                      : "No suggestion — your own words above will be used."
+                  }
+                  onChange={(e) => set({ framedStatement: e.target.value })}
+                  className="text-base"
+                />
+              </section>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="success">What would success look like?</Label>
               <p className="text-xs text-muted-foreground">
                 How would you know the problem was actually solved? This is what a student team
-                will be measured against.
+                will be measured against — and only your confirmation counts as impact.
               </p>
               <Textarea
                 id="success"
@@ -653,10 +758,14 @@ export function SubmitWizard({
                 type="checkbox"
                 className="mt-1 size-5"
                 checked={state.framingApprovedByCitizen}
+                disabled={!state.framedStatement.trim()}
                 onChange={(e) => set({ framingApprovedByCitizen: e.target.checked })}
               />
               <Label htmlFor="approve" className="text-sm font-normal leading-snug">
-                This wording is right. I approve it.
+                I have read the suggested wording and I approve it.
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Leave this unticked to use your own words. Either way your original is kept.
+                </span>
               </Label>
             </div>
           </div>

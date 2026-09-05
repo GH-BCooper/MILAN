@@ -62,6 +62,21 @@ export interface ChainArgs<T> {
   user: string;
   schema: ZodType<T>;
   input: unknown;
+  /**
+   * What the cache key is computed from, when that differs from `input`.
+   *
+   * S2 is the reason this exists. Its input carries the embedding kNN prior —
+   * the nearest already-classified challenges, with their titles and their
+   * cosine similarities. Those floats move whenever anything nearby is
+   * reclassified, so hashing them made S2 miss the cache on every reseed and
+   * re-pay for an answer that had not changed.
+   *
+   * The stage passes a normalised digest instead: the prior's LABELS, sorted.
+   * The cache then busts exactly when the prior would actually change the
+   * answer — when a human correction changes what the neighbours are classified
+   * as — and not when a similarity moves in the fourth decimal place.
+   */
+  cacheInput?: unknown;
   timeoutMs?: number;
   challengeId?: string | null;
   /** Pulls `confidence` out of the parsed value for `ai_runs` and the trace. */
@@ -83,7 +98,7 @@ export const DEFAULT_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS ?? 3000);
 
 export async function runWithChain<T>(args: ChainArgs<T>): Promise<StageRun<T>> {
   const timeoutMs = args.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const inputHash = stageInputHash(args.stage, args.version, args.input);
+  const inputHash = stageInputHash(args.stage, args.version, args.cacheInput ?? args.input);
   const errors: ProviderError[] = [];
 
   /* -------------------------------------------------------- the cache tier */
