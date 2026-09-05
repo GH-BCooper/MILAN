@@ -9,8 +9,18 @@ import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { currentUser } from "@/lib/auth/guards";
+import { handoffContract } from "@/lib/ai/stages/s1";
 import { db } from "@/lib/db";
-import { blocks, challengeMedia, challenges, creditEdges, districts } from "@/lib/db/schema";
+import {
+  blocks,
+  capabilities,
+  challengeMedia,
+  challenges,
+  creditEdges,
+  districts,
+  organization,
+  routes,
+} from "@/lib/db/schema";
 import { publicUrlFor } from "@/lib/media/storage";
 
 export const dynamic = "force-dynamic";
@@ -56,14 +66,55 @@ export default async function ChallengePage({
   const c = row.challenge;
   const breakdown = parseBreakdown(c.priorityBreakdown);
 
-  const [media, credits] = await Promise.all([
+  const [media, credits, offers] = await Promise.all([
     db.select().from(challengeMedia).where(eq(challengeMedia.challengeId, c.id)),
     db
       .select()
       .from(creditEdges)
       .where(eq(creditEdges.challengeId, c.id))
       .orderBy(asc(creditEdges.createdAt)),
+    db
+      .select({
+        id: routes.id,
+        rank: routes.rank,
+        matchScore: routes.matchScore,
+        reasonText: routes.reasonText,
+        notifiedAt: routes.notifiedAt,
+        claimWindowEndsAt: routes.claimWindowEndsAt,
+        orgName: organization.name,
+        department: capabilities.department,
+        labName: capabilities.labName,
+      })
+      .from(routes)
+      .innerJoin(organization, eq(organization.id, routes.orgId))
+      .leftJoin(capabilities, eq(capabilities.id, routes.capabilityId))
+      .where(eq(routes.challengeId, c.id))
+      .orderBy(asc(routes.rank)),
   ]);
+
+  // The gate is held when routes exist but none has been notified: S5 wrote the
+  // shortlist and deliberately sent nothing.
+  const gateHeld = offers.length > 0 && offers.every((o) => o.notifiedAt === null);
+
+  // The grievance handoff contract, rebuilt from the challenge rather than
+  // stored, so what is shown is always what would be sent today.
+  const contract =
+    c.isGrievance && c.forwardedRef
+      ? handoffContract({
+          target: c.forwardedRef.startsWith("JHS") ? "JharSewa" : "CPGRAMS",
+          reference: c.forwardedRef,
+          trackingId: c.trackingId,
+          title: c.title,
+          bodyOriginal: c.bodyOriginal,
+          bodyLang: c.bodyLang,
+          bodyEn: c.bodyEn,
+          districtCode: c.districtCode,
+          blockCode: c.blockCode,
+          reporterName: c.reporterName,
+          rationale: "Classified as a grievance by S1 and forwarded to the scheme owner.",
+          createdAt: c.createdAt,
+        })
+      : null;
 
   return (
     <>
@@ -181,7 +232,7 @@ export default async function ChallengePage({
           </section>
         ) : null}
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-2" aria-label="Details">
+        <section id="details" className="mt-8 grid gap-4 sm:grid-cols-2" aria-label="Details">
           <dl className="rounded-lg border border-border p-4">
             <div className="flex justify-between gap-4 py-1">
               <dt className="text-sm text-muted-foreground">District</dt>
@@ -214,7 +265,7 @@ export default async function ChallengePage({
             </div>
           </dl>
 
-          <div className="rounded-lg border border-border p-4">
+          <div id="corroborations" className="rounded-lg border border-border p-4">
             <p className="text-sm text-muted-foreground">Reported by this many people</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">{c.corroborationCount}</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -255,6 +306,102 @@ export default async function ChallengePage({
             </div>
           )}
         </section>
+
+        {offers.length > 0 ? (
+          <section className="mt-8" id="routing" aria-labelledby="routing-heading">
+            <h2 id="routing-heading" className="text-lg font-semibold">
+              Where it was sent
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A professor never has to go looking. Each department below was matched by a published
+              scoring function and sent a direct link, with a written reason and a clock.
+            </p>
+            {gateHeld ? (
+              <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                Severity is at or above 0.70, so nothing has been sent yet. A District Collector
+                confirms or overrides this shortlist first, and any override is recorded with a
+                written reason.
+              </p>
+            ) : null}
+            <ol className="mt-3 space-y-2">
+              {offers.map((offer) => (
+                <li key={offer.id} className="rounded-lg border border-border p-4">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-medium">
+                      <span className="me-2 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                        #{offer.rank}
+                      </span>
+                      {offer.orgName}
+                      {offer.department ? (
+                        <span className="text-muted-foreground">
+                          {" "}
+                          — {offer.department}
+                          {offer.labName ? ` · ${offer.labName}` : ""}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      match {offer.matchScore ? Number(offer.matchScore).toFixed(3) : "—"}
+                    </p>
+                  </div>
+                  {offer.reasonText ? <p className="mt-1 text-sm">{offer.reasonText}</p> : null}
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {offer.notifiedAt
+                      ? `Notified ${formatDate(offer.notifiedAt)}.`
+                      : "Not notified yet — waiting for a district officer to confirm."}
+                    {offer.claimWindowEndsAt
+                      ? ` Claim window closes ${formatDate(offer.claimWindowEndsAt)}.`
+                      : ""}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
+
+        {/* The live answer to "why not just use CPGRAMS". We are not competing
+            with it; when something is a grievance we hand it over, and we show
+            the citizen exactly what we handed over. */}
+        {c.isGrievance && c.forwardedRef ? (
+          <section className="mt-8" id="forwarded" aria-labelledby="forwarded-heading">
+            <h2 id="forwarded-heading" className="text-lg font-semibold">
+              This was a grievance, so we forwarded it
+            </h2>
+            <p className="mt-1 text-sm">
+              This problem already has a known fix and an accountable officer, so it belongs to the
+              grievance system rather than to a research team. Milan sent it on rather than sitting
+              on it.
+            </p>
+            <p className="mt-3 rounded-md border border-border bg-muted p-3 font-mono text-sm">
+              Reference: {c.forwardedRef}
+            </p>
+            {contract ? (
+              <details className="mt-3 rounded-lg border border-border p-4">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Exactly what we sent, and where
+                </summary>
+                <p className="mt-2 text-xs text-muted-foreground">{contract.note}</p>
+                <p className="mt-2 font-mono text-xs">
+                  {contract.method} {contract.endpoint}
+                </p>
+                <pre className="mt-2 overflow-x-auto rounded bg-muted p-3 text-xs">
+                  {JSON.stringify(contract.payload, null, 2)}
+                </pre>
+              </details>
+            ) : null}
+          </section>
+        ) : null}
+
+        {/* The trace is replayable from here. Every tick corresponds to a row in
+            ai_runs; /admin/ai-runs is the receipt if anyone doubts it. */}
+        <div id="pipeline">
+          <PipelineTrace
+            trackingId={c.trackingId}
+            districtCode={c.districtCode}
+            replay
+            heading="How Milan handled this report"
+          />
+        </div>
 
         <section className="mt-8" aria-labelledby="credit-heading">
           <h2 id="credit-heading" className="text-lg font-semibold">

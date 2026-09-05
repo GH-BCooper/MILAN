@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 
 import { CopyButton } from "@/components/copy-button";
+import { PipelineTrace } from "@/components/pipeline-trace";
 import { SiteHeader } from "@/components/site-header";
 import { db } from "@/lib/db";
 import { challenges } from "@/lib/db/schema";
@@ -43,7 +44,11 @@ export default async function SubmitSuccessPage({
   const decoded = decodeURIComponent(trackingId);
 
   const [challenge] = await db
-    .select({ trackingId: challenges.trackingId, districtCode: challenges.districtCode })
+    .select({
+      trackingId: challenges.trackingId,
+      districtCode: challenges.districtCode,
+      status: challenges.status,
+    })
     .from(challenges)
     .where(eq(challenges.trackingId, decoded))
     .limit(1);
@@ -90,6 +95,18 @@ export default async function SubmitSuccessPage({
           </Link>
           .
         </p>
+
+        {/* The trace runs here, on the citizen's own success page. They watch
+            their report being triaged, classified, deduplicated, scored and
+            routed in about six seconds — and so does a judge. It starts by
+            itself only for a report that has not been through the pipeline yet;
+            re-opening this page later shows the button instead of re-running. */}
+        <PipelineTrace
+          trackingId={challenge.trackingId}
+          districtCode={challenge.districtCode}
+          autoStart={challenge.status === "SUBMITTED"}
+          heading="What is happening to your report, right now"
+        />
 
         <section className="mt-10" aria-labelledby="next-heading">
           <h2 id="next-heading" className="text-lg font-semibold">

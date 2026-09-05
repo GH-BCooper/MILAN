@@ -24,6 +24,7 @@ import { readCache, writeCache } from "./cache";
 import type { FallbackLevel } from "../types";
 import { coolOff, isCoolingOff, pace, retryAfterSeconds } from "./throttle";
 import { ProviderFailure, withTimeout } from "./types";
+import { elapsedMs } from "@/lib/clock";
 
 export const EMBED_DIMENSIONS = 768;
 export const EMBED_VERSION = "1.0.0";
@@ -66,7 +67,7 @@ export async function embed(text: string, challengeId?: string | null): Promise<
     return { vector, model: cached.model ?? GEMINI_MODEL, fallbackLevel: cached.fallbackLevel, latencyMs: 0, cached: true };
   }
 
-  const started = Date.now();
+  const started = elapsedMs();
   let vector: number[] | null = null;
   let model = GEMINI_MODEL;
   let level: FallbackLevel = 0;
@@ -85,7 +86,7 @@ export async function embed(text: string, challengeId?: string | null): Promise<
     level = 2;
   }
 
-  const latencyMs = Date.now() - started;
+  const latencyMs = elapsedMs() - started;
   await Promise.all([
     writeCache({
       key,

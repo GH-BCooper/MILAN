@@ -14,7 +14,14 @@
  */
 import type { S5ReasonInput } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.1.0";
+// 1.1.0 — trimmed from three worked examples to two, and shortened both.
+// Measured on the seed set, three near-identical examples added roughly 800
+// tokens of prefill to every one of the three concurrent reason calls, which
+// pushed the burst past Groq's tokens-per-minute ceiling and dropped two of the
+// three sentences to the template. Two examples -- one with a laboratory, one
+// without -- cover the whole shape of the task, and the guardrail rather than
+// the prompt is what keeps the output honest.
 
 export const SYSTEM = `You write one sentence explaining why a citizen's problem was routed to a
 particular university department.
@@ -36,7 +43,8 @@ Return the sentence and a calibrated confidence 0 to 1 that it is faithful to th
 
 /**
  * HUMAN: add curated Jharkhand examples here.
- * These three cover the shapes the score actually produces. Worth adding once
+ * These two cover the shapes the score actually produces — one match with a
+ * named laboratory, one without. Worth adding once
  * the seed capabilities settle: a match driven mostly by distance (a nearby
  * polytechnic), and one where capacity is the third term rather than the first,
  * so the model does not learn to always lead on specialisation.
@@ -74,23 +82,6 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       reason:
         "Matched to Central University of Jharkhand, Environmental Sciences: a close fit to the department's declared environmental monitoring work, 62 km from the reported location, with previous delivered work in this domain.",
       confidence: 0.9,
-    }),
-  },
-  {
-    input: JSON.stringify({
-      institution: "NIT Jamshedpur",
-      department: "Civil Engineering",
-      lab: "Geotechnical Engineering Laboratory",
-      terms: [
-        { label: "Specialisation overlap", detail: "tags cover slope stability and soil mechanics", contribution: 0.17 },
-        { label: "Semantic fit", detail: "good match to the laboratory's declared work", contribution: 0.24 },
-        { label: "Distance", detail: "148 km from the reported location", contribution: 0.08 },
-      ],
-    }),
-    output: JSON.stringify({
-      reason:
-        "Matched to NIT Jamshedpur, Civil Engineering — Geotechnical Engineering Laboratory: a good match to the laboratory's declared work, tags covering slope stability and soil mechanics, and 148 km from the reported location.",
-      confidence: 0.91,
     }),
   },
 ];

@@ -16,6 +16,7 @@ import {
   type CompleteResult,
   type LLMProvider,
 } from "./types";
+import { elapsedMs } from "@/lib/clock";
 
 /** The strongest JSON-capable model Groq currently serves. Pinned, not floating. */
 const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
@@ -35,7 +36,7 @@ export const groqProvider: LLMProvider = {
 
     const responseSchema = args.responseSchema ?? toJsonSchema(args.schema);
     await pace("groq");
-    const started = Date.now();
+    const started = elapsedMs();
 
     const value = await withTimeout("groq", args.timeoutMs, async (signal) => {
       const response = await fetch(ENDPOINT, {
@@ -73,7 +74,7 @@ export const groqProvider: LLMProvider = {
       return args.schema.parse(extractJson(text));
     });
 
-    return { value, model: MODEL, latencyMs: Date.now() - started };
+    return { value, model: MODEL, latencyMs: elapsedMs() - started };
   },
 };
 

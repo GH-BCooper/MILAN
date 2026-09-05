@@ -135,6 +135,34 @@ export const RESEARCH_TERMS: Array<{ term: string; weight: number }> = [
   { term: "रिस", weight: 0.2 },
 ];
 
+/**
+ * Hard evidence that a grievance system already owns this.
+ *
+ * Forwarding is IRREVERSIBLE — FORWARDED_EXTERNAL is terminal — so the model's
+ * judgement is necessary but not sufficient. `decideS1` requires at least one
+ * of these to appear in the text before it will forward: a named scheme, a
+ * sanctioned work, a withheld entitlement, or a bribe. Without one, a
+ * confident-but-wrong model sends a research problem to an officer who has no
+ * method to solve it, and the citizen never hears from anyone again.
+ *
+ * With one, the two seeded grievances still forward: the PMGSY road carries
+ * "pmgsy" and "स्वीकृत", the Jal Jeevan taps carry "jal jeevan" and "were fitted".
+ */
+export const GRIEVANCE_EVIDENCE = [
+  "sanctioned", "स्वीकृत", "swikrit", "tender was passed", "निविदा",
+  "pmgsy", "पीएमजीएसवाई", "jal jeevan", "जल जीवन", "mgnrega payment",
+  "pension has not", "पेंशन नहीं", "ration card", "राशन कार्ड",
+  "bribe", "रिश्वत", "contractor took",
+  "was fitted", "were fitted", "installed but",
+  "not been built", "not built", "नहीं बनी", "नहीं बना",
+];
+
+/** True when the text names something a grievance system is already accountable for. */
+export function hasGrievanceEvidence(text: string): boolean {
+  const lower = text.toLowerCase();
+  return GRIEVANCE_EVIDENCE.some((term) => lower.includes(term.toLowerCase()));
+}
+
 /** Which external system a forwarded grievance goes to. */
 export function grievanceTargetFor(text: string): string {
   const t = text.toLowerCase();

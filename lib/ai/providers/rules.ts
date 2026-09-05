@@ -45,6 +45,7 @@ import { RULES_CONFIDENCE, type StageName } from "../types";
 import { ProviderFailure, type CompleteArgs, type CompleteResult, type LLMProvider } from "./types";
 
 import type { Domain, Hazard } from "@/lib/db/schema";
+import { elapsedMs } from "@/lib/clock";
 
 /* ------------------------------------------------------------------- text */
 
@@ -313,14 +314,14 @@ export const rulesProvider: LLMProvider = {
   },
 
   async complete<T>(args: CompleteArgs<T>): Promise<CompleteResult<T>> {
-    const started = Date.now();
+    const started = elapsedMs();
     const rule = RULE_STAGES[args.stage];
     if (!rule) throw new ProviderFailure("rules", `no rule implementation for stage ${args.stage}`);
 
     // Parsed through the same Zod schema as a model answer: the rule tier gets
     // no special treatment, and a rule that drifts from the contract fails loudly.
     const value = args.schema.parse(rule(args.input));
-    return { value, model: "gazetteer-1.0.0", latencyMs: Date.now() - started };
+    return { value, model: "gazetteer-1.0.0", latencyMs: elapsedMs() - started };
   },
 };
 

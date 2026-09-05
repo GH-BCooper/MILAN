@@ -48,3 +48,22 @@ export function clockPlusHours(hours: number): Date {
 export function currentClockOffsetDays(): number {
   return offsetDays();
 }
+
+/**
+ * Real elapsed milliseconds, never Milan time.
+ *
+ * `clockNow()` is what the product means by "now" and the Phase 3 demo console
+ * can move it by thirty days. Two kinds of measurement must NOT move with it:
+ *
+ *   - how long a provider call took. A latency of "-2,592,000,000 ms" in the
+ *     trace panel would be a bug in the receipt, not a fast-forward.
+ *   - how long a rate-limit cool-off has left. Jump the clock forward and a
+ *     cool-off would expire instantly; jump it back and it would never expire.
+ *
+ * Those are durations against the real world, so they read the real wall clock
+ * through here. Anything a citizen, a deadline or a ledger entry can see uses
+ * `clockNow()` instead. If you are not sure which you need, you need clockNow().
+ */
+export function elapsedMs(): number {
+  return Date.now();
+}

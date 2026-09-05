@@ -18,6 +18,7 @@ import {
   type JsonSchemaNode,
   type LLMProvider,
 } from "./types";
+import { elapsedMs } from "@/lib/clock";
 
 /**
  * CLAUDE.md section 3 locks the stack to "Gemini 2.5 Flash". As of this build
@@ -66,7 +67,7 @@ export const geminiProvider: LLMProvider = {
 
     const responseSchema = args.responseSchema ?? toJsonSchema(args.schema as ZodType<T>);
     await pace("gemini");
-    const started = Date.now();
+    const started = elapsedMs();
 
     const value = await withTimeout("gemini", args.timeoutMs, async (signal) => {
       const response = await fetch(`${ENDPOINT}/${MODEL}:generateContent?key=${key}`, {
@@ -108,7 +109,7 @@ export const geminiProvider: LLMProvider = {
       return args.schema.parse(extractJson(text));
     });
 
-    return { value, model: MODEL, latencyMs: Date.now() - started };
+    return { value, model: MODEL, latencyMs: elapsedMs() - started };
   },
 };
 

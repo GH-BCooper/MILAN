@@ -20,7 +20,7 @@ import "server-only";
 
 import { eq } from "drizzle-orm";
 
-import { clockNow } from "@/lib/clock";
+import { clockNow, elapsedMs } from "@/lib/clock";
 import { db } from "@/lib/db";
 import {
   blocks,
@@ -31,11 +31,12 @@ import {
   notifications,
   type ChallengeStatus,
 } from "@/lib/db/schema";
-import { contentHashOf, transition } from "@/lib/db/stateMachine";
+import { canTransition, contentHashOf, transition } from "@/lib/db/stateMachine";
 import { removeObjects } from "@/lib/media/storage";
 import { embed } from "./providers/embed";
 import { decideS1, handoffContract, runS1 } from "./stages/s1";
 import { decideS2, knnPrior, normaliseS2, runS2 } from "./stages/s2";
+import type { S2Input } from "./schemas";
 import {
   S3_THRESHOLDS,
   adjudicate,
@@ -106,6 +107,41 @@ interface Ctx {
   blockName: string | null;
   /** Written by the embed step, read by S2's prior, S3 and S5. */
   embedding: number[] | null;
+  /**
+   * The embedding is started the moment the pipeline does, concurrently with
+   * P0 and S1, because neither of them needs it and S2 cannot start without it.
+   * Awaiting it inside S2 put a whole network round trip on the critical path
+   * for no reason: measured, that was most of a second of the 8s budget.
+   */
+  embeddingPromise: Promise<number[] | null> | null;
+  /**
+   * S2 runs CONCURRENTLY with S1.
+   *
+   * They read the same text and neither needs the other's answer: S1 asks "is
+   * this safe, is it a grievance", S2 asks "what kind of problem is it". Run in
+   * series they cost two round trips back to back, which was most of two
+   * seconds of the eight-second budget.
+   *
+   * The cost of speculating is one wasted classification on the minority of
+   * reports S1 stops — and nothing is ever WRITTEN from a speculative result:
+   * when S1 halts the challenge, S2's stage never runs and its answer is
+   * discarded (the ai_runs row and the cache entry stay, which is honest, and
+   * the cache makes the retry free if a human later releases it).
+   */
+  s2Promise: Promise<Awaited<ReturnType<typeof runS2>>> | null;
+  s2Priors: S2Input["priors"];
+  /**
+   * S5's ranking and its three reason sentences are computed while S3 clusters.
+   *
+   * Routing depends on S2 (domain, hazard, severity) and the embedding, and on
+   * nothing S3 or S4 produce — S4's priority score is not an input to the match
+   * score at all. Waiting for them put four seconds of model latency at the very
+   * end of the run, which is where a judge is watching hardest.
+   *
+   * Nothing is written from it: if S3 merges the report, `stageS5` never runs
+   * and the shortlist is discarded. Persisting the routes stays in S5.
+   */
+  s5Promise: Promise<S5Prepared | null> | null;
   /** Set when a stage decides the pipeline should stop here. */
   halted: { reason: string } | null;
 }
@@ -124,7 +160,7 @@ export async function runPipeline(
   emit: Emit,
   options: RunOptions = {},
 ): Promise<void> {
-  const started = Date.now();
+  const started = elapsedMs();
   const now = () => clockNow().toISOString();
 
   const ctx = await loadContext(challengeId);
@@ -140,6 +176,10 @@ export async function runPipeline(
     status: ctx.challenge.status,
     at: now(),
   });
+
+  // Both go off now, in parallel with P0 and S1.
+  startEmbedding(ctx);
+  startS2(ctx);
 
   const fromIndex = options.from ? PIPELINE_STAGES.indexOf(options.from) : 0;
   const toIndex = options.to ? PIPELINE_STAGES.indexOf(options.to) : PIPELINE_STAGES.length - 1;
@@ -189,7 +229,7 @@ export async function runPipeline(
     challengeId: ctx.challenge.id,
     trackingId: ctx.challenge.trackingId,
     status: fresh?.status ?? ctx.challenge.status,
-    totalMs: Date.now() - started,
+    totalMs: elapsedMs() - started,
     at: now(),
   });
 }
@@ -240,7 +280,13 @@ async function stageS1(ctx: Ctx, emit: Emit): Promise<void> {
     c.id,
   );
 
-  const decision = decideS1(run.value, c.trackingId);
+  // The decision reads the citizen's own words as well as the model's answer:
+  // the evidence check for an irreversible forward is done against the text.
+  const decision = decideS1(
+    run.value,
+    c.trackingId,
+    [c.title, c.bodyOriginal, c.bodyEn ?? ""].join("\n"),
+  );
   let decisionText: string;
 
   switch (decision.kind) {
@@ -282,30 +328,46 @@ async function stageS1(ctx: Ctx, emit: Emit): Promise<void> {
   });
 }
 
+/**
+ * Kick off S2's classification without waiting for S1.
+ *
+ * It still needs the embedding first, for the kNN prior, so it chains off that
+ * promise rather than off the wall clock.
+ */
+function startS2(ctx: Ctx): void {
+  if (ctx.s2Promise) return;
+  const c = ctx.challenge;
+  ctx.s2Promise = (async () => {
+    const embedding = await embedChallenge(ctx);
+    const priors = embedding ? await knnPrior(embedding, c.id) : [];
+    ctx.s2Priors = priors;
+    return runS2(
+      {
+        title: c.title,
+        bodyOriginal: c.bodyOriginal,
+        bodyEn: c.bodyEn,
+        districtCode: c.districtCode,
+        districtName: ctx.districtName,
+        blockName: ctx.blockName,
+        peopleAffected: c.peopleAffected,
+        recurrence: c.recurrence,
+        priors,
+      },
+      c.id,
+    );
+  })();
+  // Nothing awaits this promise when S1 halts the run, so its rejection must
+  // not surface as an unhandled rejection and take the process with it.
+  ctx.s2Promise.catch(() => undefined);
+}
+
 /** S2 — domain, hazard, severity. Uses the embedding kNN prior. */
 async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
   const c = ctx.challenge;
 
-  // The embedding is computed here rather than in its own stage card because
-  // S2's prior needs it and a judge does not need a card that says "vector".
-  // It still writes its own ai_runs row, so the trace can be audited.
-  const embedding = await embedChallenge(ctx);
-  const priors = embedding ? await knnPrior(embedding, c.id) : [];
-
-  const run = await runS2(
-    {
-      title: c.title,
-      bodyOriginal: c.bodyOriginal,
-      bodyEn: c.bodyEn,
-      districtCode: c.districtCode,
-      districtName: ctx.districtName,
-      blockName: ctx.blockName,
-      peopleAffected: c.peopleAffected,
-      recurrence: c.recurrence,
-      priors,
-    },
-    c.id,
-  );
+  startS2(ctx);
+  const run = await ctx.s2Promise!;
+  const priors = ctx.s2Priors;
 
   const value = normaliseS2(run.value);
   const decision = decideS2(value);
@@ -343,6 +405,9 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
     decisionText = `${value.domain} / ${value.hazard}, severity ${value.severity.toFixed(2)}.`;
     await advance(ctx, "CLASSIFIED", value.rationale);
   }
+
+  // Routing has everything it needs now. Off it goes, alongside S3 and S4.
+  startS5(ctx);
 
   await emit({
     type: "stage",
@@ -395,12 +460,30 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
   let merged: { into: string; similarity: number; count: number } | null = null;
   let adjudicationMeta: ReturnType<typeof metaOf> | null = null;
 
+  // Candidates come back nearest-first, so the first one in the ambiguous band
+  // is the strongest case for a merge. If the model says that one is a different
+  // problem, the ones behind it are further away and the answer would be the
+  // same, so we spend exactly one adjudication call rather than one per
+  // candidate. Measured: that was over a second of the 8s budget in a block
+  // where several reports sit in the middle band.
+  //
+  // And none at all when this report cannot be merged anyway — a report S1 held
+  // for a human is still compared, and the cosines are still shown so the
+  // reviewer sees the likely duplicate, but there is no point spending a model
+  // call to answer a question we are not allowed to act on.
+  let adjudicationsLeft = canTransition(ctx.challenge.status, "MERGED") ? 1 : 0;
+
   for (const candidate of candidates) {
     const band = bandFor(candidate.similarity);
     let same = band === "AUTO_MERGE";
     let verdict = band === "AUTO_MERGE" ? "same problem (above the auto-merge line)" : "distinct";
 
-    if (band === "ADJUDICATE") {
+    if (band === "ADJUDICATE" && adjudicationsLeft <= 0) {
+      verdict = canTransition(ctx.challenge.status, "MERGED")
+        ? "ambiguous — not adjudicated; a nearer candidate in the same band was already ruled different"
+        : "ambiguous — not adjudicated; this report is held for human review and cannot be merged";
+    } else if (band === "ADJUDICATE") {
+      adjudicationsLeft--;
       const run = await adjudicate(
         {
           a: { trackingId: c.trackingId, title: c.title, body: c.bodyEn ?? c.bodyOriginal, block: c.blockCode },
@@ -496,7 +579,9 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
     result: { comparisons, merged, rolledUp, anomalies: flags, thresholds: S3_THRESHOLDS },
     decision: merged
       ? `Merged into ${merged.into} at cosine ${merged.similarity.toFixed(3)}. Both reporters credited; ${merged.into} now shows ${merged.count} reports.`
-      : `No duplicate above ${S3_THRESHOLDS.autoMerge}. ${candidates.length} nearby report(s) compared.` +
+      : (canTransition(ctx.challenge.status, "MERGED")
+          ? `No duplicate above ${S3_THRESHOLDS.autoMerge}. ${candidates.length} nearby report(s) compared.`
+          : `${candidates.length} nearby report(s) compared, but this report is held for a human review, so nothing was merged automatically.`) +
         (rolledUp
           ? ` Created the systemic parent ${rolledUp.parentTrackingId} over ${rolledUp.childTrackingIds.length} reports; the children keep their own pages.`
           : "") +
@@ -514,6 +599,17 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
  */
 function mergeable(ctx: Ctx, candidate: Candidate): boolean {
   if (candidate.id === ctx.challenge.parentId) return false;
+
+  // A merge is consequential and awkward to undo: it moves a report to a
+  // terminal state and folds it into someone else's. So it only happens from a
+  // state the machine says can reach MERGED.
+  //
+  // In practice that check means one specific thing: when S1 held this report
+  // for a human at /admin/triage, its status is still SUBMITTED and S3 must not
+  // merge it. The AI does not get to take an irreversible action on an item it
+  // has already admitted it is unsure about. The comparison is still computed
+  // and still shown, so the human sees the likely duplicate when they decide.
+  if (!canTransition(ctx.challenge.status, "MERGED")) return false;
 
   // The FIRST person to report a problem is its originator, and a merge must
   // never take that away from them just because their neighbour's report
@@ -574,38 +670,69 @@ async function stageS4(ctx: Ctx, emit: Emit): Promise<void> {
   });
 }
 
+interface S5Prepared {
+  matches: Awaited<ReturnType<typeof shortlist>>;
+  reasons: Array<Awaited<ReturnType<typeof writeReason>>>;
+}
+
+/**
+ * Rank the capability graph and write the three reason sentences.
+ *
+ * Started from S2 so it runs alongside S3 and S4. Everything here is a
+ * computation: no route row is written and no notification is sent until
+ * `stageS5` consumes the result, so a report that S3 merges costs nothing but
+ * three cached sentences.
+ */
+function startS5(ctx: Ctx): void {
+  if (ctx.s5Promise) return;
+  const c = ctx.challenge;
+
+  ctx.s5Promise = (async () => {
+    const embedding = await embedChallenge(ctx);
+    if (!embedding) return null;
+
+    await ensureCapabilityEmbeddings();
+    const [pool, trackRecord] = await Promise.all([loadCapabilities(), trackRecordFor(c.domain)]);
+
+    const scored = pool.map((capability) =>
+      matchScore(capability, {
+        embedding,
+        domain: c.domain,
+        hazard: c.hazard,
+        lat: c.lat === null ? null : Number(c.lat),
+        lng: c.lng === null ? null : Number(c.lng),
+        trackRecord,
+        now: clockNow(),
+      }),
+    );
+
+    const matches = shortlist(scored);
+    if (matches.length === 0) return { matches, reasons: [] };
+
+    // Three independent sentences, three concurrent calls. Each one sees only
+    // its own match's three terms — invariant 4 is not traded for latency.
+    const reasons = await Promise.all(matches.map((m) => writeReason(reasonInputFor(m), c.id)));
+    return { matches, reasons };
+  })();
+
+  ctx.s5Promise.catch(() => undefined);
+}
+
 /**
  * S5 — capability routing, then the human gate.
  *
- * The ranking is arithmetic. The model writes one sentence per match around
- * three facts it is handed, and a guardrail rejects any sentence containing a
- * number we did not supply.
+ * The ranking is arithmetic and was computed while S3 ran. This stage decides
+ * what to do with it: write the routes, and either release the notifications or
+ * hold everything for a District Collector.
  */
 async function stageS5(ctx: Ctx, emit: Emit): Promise<void> {
   const c = ctx.challenge;
-  const embedding = await embedChallenge(ctx);
-  if (!embedding) throw new Error("no embedding, so no semantic match is possible");
+  startS5(ctx);
+  const prepared = await ctx.s5Promise;
 
-  await ensureCapabilityEmbeddings();
+  if (!prepared) throw new Error("no embedding, so no semantic match was possible");
 
-  const [pool, trackRecord] = await Promise.all([
-    loadCapabilities(),
-    trackRecordFor(c.domain),
-  ]);
-
-  const scored = pool.map((capability) =>
-    matchScore(capability, {
-      embedding,
-      domain: c.domain,
-      hazard: c.hazard,
-      lat: c.lat === null ? null : Number(c.lat),
-      lng: c.lng === null ? null : Number(c.lng),
-      trackRecord,
-      now: clockNow(),
-    }),
-  );
-
-  const top = shortlist(scored);
+  const { matches: top, reasons } = prepared;
   if (top.length === 0) {
     await emit({
       type: "stage",
@@ -616,10 +743,6 @@ async function stageS5(ctx: Ctx, emit: Emit): Promise<void> {
     });
     return;
   }
-
-  // The reason sentences, one per match, written concurrently: they are
-  // independent and three sequential model calls would blow the 8s budget.
-  const reasons = await Promise.all(top.map((m) => writeReason(reasonInputFor(m), c.id)));
 
   const severity = c.severity === null ? null : Number(c.severity);
   const result = await persistRoutes({
@@ -680,7 +803,6 @@ async function advance(ctx: Ctx, to: ChallengeStatus, reason: string | null): Pr
   const current = ctx.challenge.status;
   if (current === to) return;
 
-  const { canTransition } = await import("@/lib/db/stateMachine");
   if (!canTransition(current, to)) {
     console.info(
       `[pipeline] ${ctx.challenge.trackingId}: already at ${current}, not moving to ${to} (recompute only)`,
@@ -810,15 +932,29 @@ export function embeddingTextFor(c: {
   return [c.title, c.bodyEn ?? c.bodyOriginal, c.districtCode ?? ""].join("\n");
 }
 
+function startEmbedding(ctx: Ctx): void {
+  if (ctx.embeddingPromise) return;
+  ctx.embeddingPromise = (async () => {
+    const result = await embed(embeddingTextFor(ctx.challenge), ctx.challenge.id);
+    await db
+      .update(challenges)
+      .set({ embedding: result.vector })
+      .where(eq(challenges.id, ctx.challenge.id));
+    ctx.embedding = result.vector;
+    return result.vector;
+  })().catch((e) => {
+    // An embedding failure costs us the kNN prior, the duplicate check and the
+    // semantic half of routing. It does not cost the citizen their triage, so
+    // it degrades rather than throws.
+    console.error("[pipeline] embedding failed", e);
+    return null;
+  });
+}
+
 async function embedChallenge(ctx: Ctx): Promise<number[] | null> {
   if (ctx.embedding) return ctx.embedding;
-  const result = await embed(embeddingTextFor(ctx.challenge), ctx.challenge.id);
-  await db
-    .update(challenges)
-    .set({ embedding: result.vector })
-    .where(eq(challenges.id, ctx.challenge.id));
-  ctx.embedding = result.vector;
-  return result.vector;
+  startEmbedding(ctx);
+  return ctx.embeddingPromise;
 }
 
 async function loadContext(challengeId: string): Promise<Ctx | null> {
@@ -840,6 +976,10 @@ async function loadContext(challengeId: string): Promise<Ctx | null> {
     districtName: row.districtName,
     blockName: row.blockName,
     embedding: null,
+    embeddingPromise: null,
+    s2Promise: null,
+    s2Priors: [],
+    s5Promise: null,
     halted: null,
   };
 }

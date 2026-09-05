@@ -19,6 +19,8 @@
  * nothing is cooling off.
  */
 
+import { elapsedMs } from "@/lib/clock";
+
 const lastCallAt = new Map<string, number>();
 const coolingUntil = new Map<string, number>();
 
@@ -35,7 +37,7 @@ function minIntervalMs(provider: string): number {
 export function isCoolingOff(provider: string): boolean {
   const until = coolingUntil.get(provider);
   if (until === undefined) return false;
-  if (Date.now() >= until) {
+  if (elapsedMs() >= until) {
     coolingUntil.delete(provider);
     return false;
   }
@@ -44,7 +46,7 @@ export function isCoolingOff(provider: string): boolean {
 
 export function secondsUntilWarm(provider: string): number {
   const until = coolingUntil.get(provider) ?? 0;
-  return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+  return Math.max(0, Math.ceil((until - elapsedMs()) / 1000));
 }
 
 /**
@@ -54,7 +56,7 @@ export function secondsUntilWarm(provider: string): number {
  */
 export function coolOff(provider: string, retryAfterSeconds?: number | null): void {
   const seconds = retryAfterSeconds && retryAfterSeconds > 0 ? retryAfterSeconds : 60;
-  coolingUntil.set(provider, Date.now() + seconds * 1000);
+  coolingUntil.set(provider, elapsedMs() + seconds * 1000);
 }
 
 /** Wait, if pacing is on, until this provider may be called again. */
@@ -63,9 +65,9 @@ export async function pace(provider: string): Promise<void> {
   if (interval === 0) return;
 
   const last = lastCallAt.get(provider) ?? 0;
-  const wait = last + interval - Date.now();
+  const wait = last + interval - elapsedMs();
   if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-  lastCallAt.set(provider, Date.now());
+  lastCallAt.set(provider, elapsedMs());
 }
 
 /** Parse `Retry-After`, which may be seconds or an HTTP date. */
@@ -75,7 +77,7 @@ export function retryAfterSeconds(headers: Headers): number | null {
   const asNumber = Number(raw);
   if (Number.isFinite(asNumber)) return asNumber;
   const asDate = Date.parse(raw);
-  return Number.isFinite(asDate) ? Math.ceil((asDate - Date.now()) / 1000) : null;
+  return Number.isFinite(asDate) ? Math.ceil((asDate - elapsedMs()) / 1000) : null;
 }
 
 /** For tests and for the smoke script, which must start from a clean slate. */
