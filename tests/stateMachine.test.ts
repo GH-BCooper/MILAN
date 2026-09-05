@@ -151,8 +151,12 @@ describe("state machine", () => {
       expect(entries[0].kind).toBe("STATE_CHANGE");
       expect(entries[0].contentHash).toMatch(/^[0-9a-f]{64}$/);
       expect(entries[0].id).toBe(result.ledgerEntryId);
-      // Phase 1 leaves the chain unlinked; Phase 3 Task 3.4 fills these.
-      expect(entries[0].prevHash).toBeNull();
+      // Phase 3 Task 3.4 links the chain inside this same transaction rather
+      // than backfilling it afterwards. A 64-character prev_hash here is the
+      // evidence that appendEntry ran on THIS transaction and not on a second
+      // connection that could have committed while the state change rolled back.
+      expect(entries[0].prevHash).toMatch(/^[0-9a-f]{64}$/);
+      expect(entries[0].entryHash).toMatch(/^[0-9a-f]{64}$/);
 
       const events = await tx
         .select()

@@ -30,7 +30,8 @@
     "sla:backfill": "tsx --conditions=react-server scripts/sla-backfill.mts",
     "ledger:seal": "tsx --conditions=react-server scripts/ledger-seal.mts",
     "verify:gov": "tsx --conditions=react-server scripts/verify-gov.mts",
-    "verify:provenance": "tsx --conditions=react-server scripts/verify-provenance.mts"
+    "verify:provenance": "tsx --conditions=react-server scripts/verify-provenance.mts",
+    "verify:impact": "tsx --conditions=react-server scripts/verify-impact.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

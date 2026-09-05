@@ -158,6 +158,8 @@ interface DemoAccount {
   role: "CITIZEN" | "HEI_MEMBER" | "GOVERNMENT" | "INDUSTRY" | "ADMIN";
   districtCode?: string;
   orgSlug?: string;
+  /** A reachable number for the mock SMS/WhatsApp inbox. Never a real one. */
+  phone?: string;
   note: string;
 }
 
@@ -168,7 +170,11 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     name: "Sunita Devi",
     role: "CITIZEN",
     districtCode: "GUM",
-    note: "reports the cracked embankment",
+    // The confirmation loop is the demo's closing beat, and it arrives by SMS.
+    // These are documentation-range numbers (+91 999999xxxx), never real ones;
+    // the SMS channel is a mock inbox and nothing leaves the process.
+    phone: "+919999900001",
+    note: "reports the cracked embankment, and confirms the fix by SMS",
   },
   {
     email: "hod.civil@bitsindri.demo.milan.in",
@@ -176,6 +182,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     role: "HEI_MEMBER",
     orgSlug: "bit-sindri",
     districtCode: "DHN",
+    phone: "+919999900002",
     note: "claims routed challenges",
   },
   {
@@ -183,6 +190,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     name: "Deputy Commissioner, Gumla",
     role: "GOVERNMENT",
     districtCode: "GUM",
+    phone: "+919999900003",
     note: "district scoped to GUM",
   },
   {
@@ -191,6 +199,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     role: "INDUSTRY",
     orgSlug: "tata-steel-foundation",
     districtCode: "ESB",
+    phone: "+919999900004",
     note: "expresses industry interest",
   },
   {
@@ -577,6 +586,7 @@ async function main() {
         role: acc.role,
         fullName: acc.name,
         preferredLang: acc.role === "CITIZEN" ? "hi" : "en",
+        phone: acc.phone ?? null,
         districtCode: acc.districtCode ?? null,
         orgId,
         // Demo accounts are pre-verified; a real citizen starts at tier 1.
@@ -584,7 +594,7 @@ async function main() {
       })
       .onConflictDoUpdate({
         target: userProfiles.userId,
-        set: { role: acc.role, fullName: acc.name, districtCode: acc.districtCode ?? null, orgId },
+        set: { role: acc.role, fullName: acc.name, districtCode: acc.districtCode ?? null, orgId, phone: acc.phone ?? null },
       });
 
     if (orgId) {

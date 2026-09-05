@@ -3,7 +3,9 @@ import { sql } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
+import { ConfirmationGap, ImpactCounter } from "@/components/impact-counter";
 import { execRaw } from "@/lib/db/raw";
+import { impactCounts } from "@/lib/impact/counter";
 import type { ChallengeStatus } from "@/lib/db/schema";
 
 export const metadata = { title: "Public statistics" };
@@ -34,10 +36,11 @@ export default async function StatsPage() {
     SELECT 'total' AS bucket, NULL::text AS key, NULL::text AS label, count(*)::int AS n
       FROM challenges
     UNION ALL
-    -- Invariant 7: the impact counter reads CITIZEN_VERIFIED and nothing else.
-    -- Not publication, not funding, not an implementer's claim.
-    SELECT 'impact', NULL, NULL, count(*)::int
-      FROM challenges WHERE status = 'CITIZEN_VERIFIED'
+    -- Invariant 7 has ONE definition, in lib/impact/counter.ts, and this page
+    -- reads it rather than restating it. What was here before was a status
+    -- filter, which quietly dropped a challenge the moment it was CLOSED — a
+    -- confirmed outcome that stopped being counted the day it was finished.
+    SELECT 'impact', NULL, NULL, 0
     UNION ALL
     SELECT 'district', c.district_code, d.name, count(*)::int
       FROM challenges c LEFT JOIN districts d ON d.code = c.district_code
@@ -66,7 +69,8 @@ export default async function StatsPage() {
       .sort((a, b) => b.n - a.n);
 
   const totalN = Number(rows.find((r) => r.bucket === "total")?.n ?? 0);
-  const impactN = Number(rows.find((r) => r.bucket === "impact")?.n ?? 0);
+  const impact = await impactCounts();
+  const impactN = impact.confirmed;
   const medianHours = medianRows[0]?.median ?? null;
 
   return (
@@ -92,6 +96,7 @@ export default async function StatsPage() {
             </p>
             <p className="mt-2 text-xs font-medium text-emerald-900">
               Impact counts only citizen-confirmed outcomes.
+              {impact.partial > 0 ? ` ${impact.partial} more were confirmed as partly fixed and are counted separately.` : ""}
             </p>
           </div>
 
@@ -115,6 +120,21 @@ export default async function StatsPage() {
           not count. Anything unconfirmed is shown in grey everywhere on this platform, including in
           reports we export to companies.
         </p>
+
+        {/* The confirmation gap. Task 3.6 step 4: do not hide it. */}
+        <section className="mt-6">
+          <ConfirmationGap counts={impact} href="/stats" />
+        </section>
+
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Claimed against confirmed</h2>
+          <p className="mb-3 mt-1 text-sm text-muted-foreground">
+            The same three numbers the District Collector sees, and the same three numbers a company
+            gets in its CSR export. There is one definition of confirmed impact in this codebase and
+            every surface reads it.
+          </p>
+          <ImpactCounter counts={impact} />
+        </section>
 
         <StatTable
           heading="By district"

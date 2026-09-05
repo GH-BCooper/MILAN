@@ -6,6 +6,7 @@ import { alias } from "drizzle-orm/pg-core";
 
 import { CitationBlock } from "@/components/citation-block";
 import { CorroborateButton } from "@/components/corroborate-button";
+import { UnconfirmedTag } from "@/components/impact-counter";
 import { CreditChain } from "@/components/credit-chain";
 import { bibtex, citationString, type CitationInput } from "@/lib/credit/citation";
 import { PipelineTrace } from "@/components/pipeline-trace";
@@ -187,6 +188,26 @@ export default async function ChallengePage({
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <StatusBadge status={c.status} />
+          {/* Invariant 7, rendered where a reader might otherwise assume a fix.
+              An implementer's claim is grey until the citizen answers. */}
+          {["IMPLEMENTED", "INDUSTRY_INTEREST", "AGREEMENT_SIGNED", "PILOT"].includes(c.status) && !c.impactConfirmed ? (
+            <UnconfirmedTag />
+          ) : null}
+          {c.impactConfirmed && c.impactPartial ? (
+            <span className="rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900">
+              the citizen says partly fixed
+            </span>
+          ) : null}
+          {c.impactConfirmed && !c.impactPartial ? (
+            <span className="rounded border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-medium text-emerald-900">
+              confirmed fixed by the citizen
+            </span>
+          ) : null}
+          {c.impactDisputed ? (
+            <span className="rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-900">
+              disputed — the citizen says nothing changed
+            </span>
+          ) : null}
           {c.domain ? (
             <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium">
               {c.domain.replaceAll("_", " ")}
