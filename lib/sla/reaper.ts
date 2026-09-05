@@ -18,7 +18,7 @@ import "server-only";
 
 import { eq, sql } from "drizzle-orm";
 
-import { clockNow } from "@/lib/clock";
+import { clockNow, elapsedMs } from "@/lib/clock";
 import { syncClockOffset } from "@/lib/clock/server";
 import { db } from "@/lib/db";
 import { challenges, slaDeadlines, type ChallengeStatus, type SlaKind } from "@/lib/db/schema";
@@ -60,7 +60,8 @@ interface DueRow extends Record<string, unknown> {
 const BATCH = 100;
 
 export async function runReaper(options: { limit?: number } = {}): Promise<ReaperResult> {
-  const startedAtReal = Date.now(); // eslint-disable-line no-restricted-globals
+  // A duration against the real world, not Milan time — see elapsedMs()'s doc comment.
+  const startedAtReal = elapsedMs();
   const offset = await syncClockOffset(true);
   const ranAt = clockNow();
   const fired: FiredDeadline[] = [];
@@ -166,7 +167,7 @@ export async function runReaper(options: { limit?: number } = {}): Promise<Reape
     scanned: due.length,
     fired,
     errors,
-    durationMs: Date.now() - startedAtReal, // eslint-disable-line no-restricted-globals
+    durationMs: elapsedMs() - startedAtReal,
   };
 }
 

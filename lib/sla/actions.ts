@@ -21,7 +21,6 @@ import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
 
-import { clockNow } from "@/lib/clock";
 import type { Tx } from "@/lib/db";
 import { appendEntry } from "@/lib/ledger/append";
 import { notifyInTx, type PendingSend } from "@/lib/notify/tx";

@@ -24,7 +24,6 @@ import {
   outbox,
   slaDeadlines,
   type ChallengeStatus,
-  type SlaKind,
 } from "./schema";
 
 /* -------------------------------------------------------------- the table */

@@ -28,7 +28,8 @@
     "verify:clock": "tsx --conditions=react-server scripts/verify-clock.mts",
     "verify:sla": "tsx --conditions=react-server scripts/verify-sla.mts",
     "sla:backfill": "tsx --conditions=react-server scripts/sla-backfill.mts",
-    "ledger:seal": "tsx --conditions=react-server scripts/ledger-seal.mts"
+    "ledger:seal": "tsx --conditions=react-server scripts/ledger-seal.mts",
+    "verify:gov": "tsx --conditions=react-server scripts/verify-gov.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
