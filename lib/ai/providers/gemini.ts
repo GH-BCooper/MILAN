@@ -22,12 +22,22 @@ import { elapsedMs } from "@/lib/clock";
 
 /**
  * CLAUDE.md section 3 locks the stack to "Gemini 2.5 Flash". As of this build
- * the API answers `models/gemini-2.5-flash` with a 404: "no longer available to
- * new users ... use models/gemini-3.6-flash". So we run the current Flash tier
- * of the same family, pinned rather than floating on `-latest` so that demo day
- * gets the model we tested. Overridable with GEMINI_MODEL.
+ * the API answers `models/gemini-2.5-flash` with a 404 — "no longer available
+ * to new users" — so we run the current Flash tier of the same family, pinned
+ * rather than floating on `-latest` so that demo day gets the model we tested.
+ *
+ * The Lite tier, not the full one, and the reason is measured rather than
+ * aesthetic. `gemini-3.6-flash` is capped at FIVE requests per minute on the
+ * free tier. One pipeline run makes five model calls, so the full model 429s
+ * partway through its own run and the trace stalls on a cool-off: 8.9s against
+ * an 8s budget. The Lite tier serves the same run comfortably, and classifying
+ * the whole seed set with it produced confidences of 0.85-0.95 — the task is
+ * constrained classification against a fixed schema, not composition.
+ *
+ * Set GEMINI_MODEL=gemini-3.6-flash on a paid key to get the larger model back.
+ * Either way the trace and every `ai_runs` row name the model that answered.
  */
-const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
+const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /** Gemini's `responseSchema` is OpenAPI-flavoured: it wants uppercase types and

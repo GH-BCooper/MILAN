@@ -699,6 +699,12 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
 function mergeable(ctx: Ctx, candidate: Candidate): boolean {
   if (candidate.id === ctx.challenge.parentId) return false;
 
+  // A systemic parent is never merged away. Its body lists its children, so it
+  // reads as semantically near-identical to every one of them and S3 will
+  // happily fold the roll-up back into a single village report — which is
+  // exactly the pattern the roll-up existed to make visible.
+  if (ctx.challenge.isParent) return false;
+
   // A merge is consequential and awkward to undo: it moves a report to a
   // terminal state and folds it into someone else's. So it only happens from a
   // state the machine says can reach MERGED.

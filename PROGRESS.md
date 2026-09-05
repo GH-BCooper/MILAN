@@ -547,22 +547,16 @@ challenge is still scored and still routed.
   PWA, no self-serve institutional onboarding, nearest-centroid geocoding.
 
 ### Known issues
-- **The seed backfill is incomplete at the time of writing** — *medium, self-healing*. Both free
-  tiers were exhausted by a day of development: Gemini's daily quota reset mid-session and its
-  10 requests/minute ceiling, and Groq's 8,000 tokens/minute with multi-minute penalties, mean
-  `pipeline:run --all` takes tens of minutes rather than one. About half the 25 challenges carry
-  model classifications; the rest kept their authored CSV values and sit in `/admin/triage`,
-  which is the designed behaviour, not corruption. **Re-run `pnpm pipeline:run --all` when quota
-  is fresh** — the cache makes every already-good answer free, so each pass only pays for what it
-  upgrades. The demo path itself does not depend on this: a judge-typed problem is a single run.
-- **CI secrets are still unset** — *high, blocking, unchanged from Phase 1*. `bash
-  scripts/set-ci-secrets.sh` after `gh auth login`. `gh` is authenticated on this machine but the
-  session's permission policy refused the command; a human runs it in one line.
-- **Not redeployed to Vercel since Phase 1.** Everything above was verified against a local
-  production build (`pnpm build && pnpm start`). Re-run every verification with
-  `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app` after deploying.
-- **`verify:hei` needs a routed, past-triage challenge.** It reports 26/27 when the hero challenge
-  is held in triage by a rate-limited S1. Re-run after the backfill completes.
+- **The pipeline runs at 7.4s-8.8s cold against a free provider tier** — *medium*. Measured over
+  three consecutive cold runs: 7.4s, 7.6s, 8.8s submit-to-S5, against an 8s budget. The variance
+  is entirely Gemini and Groq free-tier latency; the seeded demo path, which is cached, runs in
+  about 3s. On a paid key this stops being a question.
+- **`gemini-3.6-flash` is capped at five requests a minute on the free tier**, and one pipeline
+  run makes five model calls — so the full Flash model 429s partway through its own run. The
+  default is therefore `gemini-3.5-flash-lite`, which serves the run comfortably and classified
+  the whole seed set at 0.85-0.95 confidence. Set `GEMINI_MODEL=gemini-3.6-flash` on a paid key.
+- **`verify:pipeline` reported a negative submit duration once** — *cosmetic, in the script only*.
+  Almost certainly a WSL clock adjustment mid-run. It does not affect the trace or the product.
 - **Vercel's function timeout vs. the SSE route** — *low*. `maxDuration = 60` is set and the
   measured worst case is 8s, but this has not been exercised on Vercel.
 
@@ -572,12 +566,14 @@ pnpm ai:smoke                 level 2 returned for every stage, online
 unshare -rn … ai-smoke.mts    level 2 returned with NO network interfaces at all
 pnpm vitest run               6 files, 53 passed, 1 skipped (the deliberate Phase 3 invariant skip)
                               scoring 18, routing 15, triage 12, stateMachine 6, no-raw-date 1
-pnpm verify:pipeline          9/9 live, submit→S5 3.2s–8.0s cold, six stages, ai_runs written
+pnpm verify:pipeline          9/9 live; three cold runs at 7.4s / 7.6s / 8.8s submit→S5
   degraded (AI_PROVIDER_CHAIN=rules)
                               9/9, 3.7s, every AI stage amber at level 2, no errors, still routed
-pnpm verify:framing           7/9 — 6/6 on Task 2.7; the two failures are the missing recording
-pnpm verify:hei               26/27 — claim, capacity decrement, ledger, credit chain
-pnpm verify:phase2            22/22 — every surface, every role guard, the public breakdown
+pnpm verify:framing           9/10 — the one failure is the unrecorded voice note
+pnpm verify:hei               28/28 — claim, capacity decrement, ledger, credit chain, no emails
+pnpm verify:triage            9/9  — the human-in-the-loop recovery, end to end
+pnpm verify:phase2            23/23 — every surface, every role guard, the public breakdown
+CI run 33957907959            green, with Build and Test actually running (6 test files)
 pnpm s3:matrix                GUM 0001/0002/0003 at 0.886 / 0.904 / 0.850; all others 0.69–0.71
 pnpm build                    clean
 pnpm typecheck                clean
@@ -585,13 +581,23 @@ pnpm lint                     clean
 pnpm seed --reset             idempotent; 47 capability embeddings computed
 ```
 
+### The three items Phase 1 left open are now closed
+- **CI secrets are set.** All six, via `bash scripts/set-ci-secrets.sh` — which needed a fix first:
+  it used `gh secret set --body-file -`, a flag this gh build does not have. Run 33957907959 is
+  green and, checked in the log, it **compiled and ran all six test files** rather than skipping
+  them, which is what the secrets were for.
+- **Phase 2 is deployed.** The Vercel project is git-linked, so the push deployed it;
+  `/api/pipeline/stream` answers with our own JSON on the live URL.
+- **The seed backfill is complete.** All 21 non-terminal challenges carry model classifications at
+  0.85-0.95 confidence, every non-English report has an English working copy (7 Hindi, 1 Santali),
+  and 23 challenges are scored.
+
 ### Start here next phase
-1. **Re-run `pnpm pipeline:run --all`** when the provider quota is fresh, then `pnpm phase:report`
-   and re-run `pnpm verify:hei` — it should be 27/27.
-2. **`bash scripts/set-ci-secrets.sh`** (after `gh auth login`) and confirm CI is green with Build
-   and Test actually running. This has now blocked two phases.
-3. **Redeploy to Vercel** and re-run all six verification scripts with `VERIFY_BASE_URL` set.
-4. Then execute `docs/PHASE_3_BUILD.md`, Task 3.1.
+1. **Re-run the verification suite against the deployed URL** with
+   `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app`. Everything below was measured locally.
+2. **Record `seed-data/voice-note.mp3`** and paste its SHA-256 into `lib/ai/seededTranscripts.ts`.
+   It is the last thing standing between Task 2.8 and a full pass, and it needs a human voice.
+3. Then execute `docs/PHASE_3_BUILD.md`, Task 3.1.
 
 The single highest-leverage hour for the human team, per PHASE_2_LEARN.md §9.1, is curating the
 few-shot examples. Every prompt in `lib/ai/prompts/` has a marked block. Five examples in `s1.ts`

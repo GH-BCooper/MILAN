@@ -242,7 +242,25 @@ for (const c of credits) console.log(`    ${String(c.relation).padEnd(14)} ${c.d
 
 const relations = credits.map((c) => c.relation);
 record("the citizen is the ORIGINATOR", relations.includes("ORIGINATOR"));
-record("corroborators are credited", relations.includes("CORROBORATOR"));
+
+// A corroborator edge only exists where a duplicate was actually merged in.
+// Asserting it unconditionally would fail on a report nobody else filed, which
+// is most of them — the absence is correct, not a defect.
+const merged = await sql`
+  select count(*)::int as n from challenges where parent_id = ${challenge.id} and status = 'MERGED'`;
+if (Number(merged[0].n) > 0) {
+  record(
+    "corroborators are credited",
+    relations.includes("CORROBORATOR"),
+    `${merged[0].n} duplicate(s) merged into this report`,
+  );
+} else {
+  record(
+    "no corroborator edge, because nothing was merged into this report",
+    !relations.includes("CORROBORATOR"),
+    "correct: a corroborator edge is written by a merge, not by a claim",
+  );
+}
 record("the team is credited", relations.filter((r) => r === "TEAM_MEMBER").length >= 3);
 record("the mentor is credited", relations.includes("MENTOR"));
 record(
@@ -259,8 +277,11 @@ const publicPage = await fetch(`${BASE}/c/${target}`);
 const publicHtml = await publicPage.text();
 record("the public page renders the credit chain", publicHtml.includes("Credit chain"));
 record(
-  "the public page shows every relation",
-  ["ORIGINATOR", "CORROBORATOR", "TEAM MEMBER", "MENTOR"].every((r) => publicHtml.includes(r)),
+  "the public page shows every relation this challenge has",
+  [...new Set(relations)]
+    .map((r) => String(r).replaceAll("_", " "))
+    .every((r) => publicHtml.includes(r)),
+  [...new Set(relations)].join(", "),
 );
 
 /* -------------------------------------------------------- the workspaces */

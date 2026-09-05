@@ -169,9 +169,11 @@ export async function findCandidates(challenge: {
         ne(challenges.id, challenge.id),
         isNotNull(challenges.embedding),
         // A merged challenge is not a merge target; that would chain merges and
-        // bury the original survivor.
+        // bury the original survivor. Nor is a systemic parent: folding a child
+        // into the roll-up that summarises it would destroy the child's own page.
         ne(challenges.status, "MERGED"),
         ne(challenges.status, "REJECTED_UNSAFE"),
+        eq(challenges.isParent, false),
         scope,
       ),
     )
