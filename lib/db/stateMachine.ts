@@ -16,10 +16,11 @@ import { createHash } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
+import { appendEntry } from "@/lib/ledger/append";
+import { deadlinesFor } from "@/lib/sla/deadlines";
 import type { Tx } from "./index";
 import {
   challenges,
-  ledgerEntries,
   outbox,
   slaDeadlines,
   type ChallengeStatus,
@@ -137,29 +138,24 @@ export class ChallengeNotFoundError extends Error {
 
 /* ------------------------------------------------------------- deadlines */
 
-export interface DeadlineSpec {
-  kind: SlaKind;
-  dueAt: Date;
-  payload?: Record<string, unknown>;
-}
-
 /**
  * Which SLA deadlines a state opens, and which it closes.
  *
- * Phase 1 returns nothing: the engine, the ladders and the reaper are Phase 3
- * Task 3.2, and `tests/invariant.test.ts` is skipped until then with a pointer
- * to that task. The hook exists now so that Phase 3 is a change to one function
- * rather than a change to every caller.
+ * Phase 3 Task 3.2 filled the hook Phase 1 stubbed. The table itself lives in
+ * `lib/sla/deadlines.ts`, which is pure and separately tested; this file's job
+ * is to write the rows inside the caller's transaction so that a state change,
+ * its ledger append, its deadlines and its outbox event are one atomic fact.
  */
-export function deadlinesFor(_to: ChallengeStatus): DeadlineSpec[] {
-  return [];
-}
+export type { DeadlineSpec } from "@/lib/sla/deadlines";
 
 /* ------------------------------------------------------------ the writer */
 
 export interface TransitionInput {
   challengeId: string;
   to: ChallengeStatus;
+  /** Passed through to `deadlinesFor` — the SILENT ladders are measured from it. */
+  projectId?: string | null;
+  lastActivityAt?: Date | null;
   actorId?: string | null;
   /** Mandatory for a human override; recorded in the ledger payload either way. */
   reason?: string | null;
@@ -209,22 +205,16 @@ export async function transition(tx: Tx, input: TransitionInput): Promise<Transi
 
   await tx.update(challenges).set({ status: to, updatedAt: at }).where(eq(challenges.id, challengeId));
 
-  // The ledger append. Phase 1 computes content_hash and leaves prev_hash and
-  // entry_hash null.
-  // TODO(Phase 3 Task 3.4): read the tip of the chain inside this same
-  // transaction, set prev_hash and entry_hash, and make both columns NOT NULL.
+  // The ledger append, chain-linked inside this same transaction (Task 3.4).
   const payload = { from, to, reason, actorId, trackingId: row.trackingId, at: at.toISOString(), ...meta };
-  const [entry] = await tx
-    .insert(ledgerEntries)
-    .values({
-      challengeId,
-      kind: "STATE_CHANGE",
-      contentHash: contentHashOf(payload),
-      authorId: actorId,
-      payload,
-      createdAt: at,
-    })
-    .returning({ id: ledgerEntries.id });
+  const entry = await appendEntry(tx, {
+    challengeId,
+    projectId: input.projectId ?? null,
+    kind: "STATE_CHANGE",
+    authorId: actorId,
+    payload,
+    at,
+  });
 
   await tx.insert(outbox).values({
     topic: "challenge.status_changed",
@@ -246,11 +236,16 @@ export async function transition(tx: Tx, input: TransitionInput): Promise<Transi
     )
     .returning({ id: slaDeadlines.id });
 
-  const specs = deadlinesFor(to);
+  const specs = deadlinesFor(to, {
+    now: at,
+    projectId: input.projectId ?? null,
+    lastActivityAt: input.lastActivityAt ?? null,
+  });
   if (specs.length > 0) {
     await tx.insert(slaDeadlines).values(
       specs.map((s) => ({
         challengeId,
+        projectId: s.projectId ?? input.projectId ?? null,
         kind: s.kind,
         dueAt: s.dueAt,
         payload: s.payload ?? {},

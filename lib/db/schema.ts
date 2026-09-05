@@ -133,6 +133,14 @@ export const slaKindEnum = pgEnum("sla_kind", [
   "SILENT_45",
   "IMPACT_UNCONFIRMED_30",
   "ANNUAL_REVIEW",
+  // Phase 3 Task 3.2. Invariant 1 says EVERY non-terminal state carries an open
+  // deadline, not only the seven the ladder table names. These four cover the
+  // pipeline states, the human gate, the closure step and a dispute, so that no
+  // challenge can sit in any state at all without a clock running on it.
+  "STAGE_TIMEOUT",
+  "GATE_TIMEOUT",
+  "CLOSURE_DUE",
+  "DISPUTE_REVIEW",
 ]);
 
 export const ledgerKindEnum = pgEnum("ledger_kind", [
@@ -323,6 +331,29 @@ export const challenges = pgTable(
 
     /** Invariant 7: flipped only at CITIZEN_VERIFIED. Not on publish, not on funding. */
     impactConfirmed: boolean("impact_confirmed").notNull().default(false),
+    /** "Partly" is a real answer and it is counted separately, never rounded up to a success. */
+    impactPartial: boolean("impact_partial").notNull().default(false),
+    /** The citizen said nothing changed. The implementer's claim is shown as disputed. */
+    impactDisputed: boolean("impact_disputed").notNull().default(false),
+    citizenVerifiedAt: timestamp("citizen_verified_at", { withTimezone: true }),
+    citizenVerificationNote: text("citizen_verification_note"),
+
+    // Phase 3 SLA ladder state. Every one of these is set by lib/sla/actions.ts
+    // and by nothing else, so "why is this on the bounty board" has one answer.
+    /** Set by the BREACH rung. Days overdue on /gov/sla is measured from here. */
+    slaBreachedAt: timestamp("sla_breached_at", { withTimezone: true }),
+    /** WIDEN -> OPEN_ALL -> BREACH -> GRAND_CHALLENGE, or null before any rung fires. */
+    escalationStage: text("escalation_stage"),
+    /** OPEN_ALL: visible in every /hei/challenge-bank, claimable by anyone. */
+    openToAll: boolean("open_to_all").notNull().default(false),
+    /** GRAND_CHALLENGE: in the annual Jharkhand Grand Challenges set. */
+    grandChallenge: boolean("grand_challenge").notNull().default(false),
+    /** SILENT_45: another team may fork the work, with the first team credited. */
+    forkOpen: boolean("fork_open").notNull().default(false),
+    /** SILENT_30: shown publicly as at risk while the team is still nominally on it. */
+    atRiskFlag: boolean("at_risk_flag").notNull().default(false),
+    /** When the challenge was first offered to anyone. "Days unclaimed" on /bounties. */
+    routedAt: timestamp("routed_at", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -778,6 +809,61 @@ export const industryInterests = pgTable(
   (t) => [index("industry_interests_challenge_idx").on(t.challengeId), index("industry_interests_org_idx").on(t.orgId)],
 );
 
+/**
+ * A request to read a RESTRICTED artifact.
+ *
+ * "We do not stop people from sharing work. We make it impossible to erase who
+ * did it." A restricted artifact is still readable — by a named person, from a
+ * named organisation, for a stated purpose, and every read is logged. This table
+ * is the request half; `access_log` is the read half.
+ */
+export const accessRequests = pgTable(
+  "access_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    artifactId: uuid("artifact_id")
+      .notNull()
+      .references(() => artifacts.id, { onDelete: "cascade" }),
+    requesterId: text("requester_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    orgId: text("org_id").references(() => organization.id),
+    purpose: text("purpose").notNull(),
+    /** PENDING | GRANTED | DENIED */
+    state: text("state").notNull().default("PENDING"),
+    decidedBy: text("decided_by").references(() => user.id),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decisionNote: text("decision_note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("access_requests_artifact_idx").on(t.artifactId),
+    uniqueIndex("access_requests_uniq").on(t.artifactId, t.requesterId),
+  ],
+);
+
+/**
+ * The citizen's answer at /me/verify/[id]. Invariant 7 lives here: the impact
+ * counter moves when a row lands in this table with answer = YES, and at no
+ * other moment in the product.
+ */
+export const impactConfirmations = pgTable(
+  "impact_confirmations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id),
+    /** YES | PARTLY | NO */
+    answer: text("answer").notNull(),
+    note: text("note"),
+    photoKey: text("photo_key"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("impact_confirmations_challenge_idx").on(t.challengeId)],
+);
+
 /* ------------------------------------------------------------- type aliases */
 
 export type ChallengeStatus = (typeof challengeStatusEnum.enumValues)[number];
@@ -791,3 +877,7 @@ export type Challenge = typeof challenges.$inferSelect;
 export type Capability = typeof capabilities.$inferSelect;
 export type AiRun = typeof aiRuns.$inferSelect;
 export type NewChallenge = typeof challenges.$inferInsert;
+export type SlaDeadline = typeof slaDeadlines.$inferSelect;
+export type LedgerEntry = typeof ledgerEntries.$inferSelect;
+export type Artifact = typeof artifacts.$inferSelect;
+export type AccessRequest = typeof accessRequests.$inferSelect;

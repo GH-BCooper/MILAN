@@ -65,6 +65,14 @@ jobs:
         if: env.DATABASE_URL != ''
         run: pnpm vitest run
 
+      # CLAUDE.md invariant 1, as a required check rather than as a hope.
+      # Phase 3 Task 3.2 un-skipped this; it must return 0. If it fails, a state
+      # in lib/sla/deadlines.ts has no clock on it and a challenge can die
+      # silently. Fix the table, never the test.
+      - name: Invariant 1 — no challenge may silently die
+        if: env.DATABASE_URL != ''
+        run: pnpm vitest run tests/invariant.test.ts
+
       - name: Warn when secrets are unavailable
         if: env.DATABASE_URL == ''
         run: |

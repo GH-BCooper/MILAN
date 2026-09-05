@@ -228,7 +228,7 @@ export function capacityWindowCovers(
  * saying no three times. A challenge that nobody claims must have been offered
  * to three genuinely different places before the SLA ladder widens it.
  */
-export function shortlist(matches: Match[], n = ROUTING.shortlist): Match[] {
+export function shortlist(matches: Match[], n: number = ROUTING.shortlist): Match[] {
   const seen = new Set<string>();
   const out: Match[] = [];
   for (const match of [...matches].sort((a, b) => b.score - a.score)) {
