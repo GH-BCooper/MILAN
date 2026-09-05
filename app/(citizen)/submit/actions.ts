@@ -5,9 +5,9 @@ import { headers } from "next/headers";
 import { currentUser } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { appendEntry } from "@/lib/ledger/append";
 import { checkSubmissionRate, recordSubmission } from "@/lib/db/rateLimit";
-import { challengeMedia, challenges, creditEdges, ledgerEntries, outbox } from "@/lib/db/schema";
-import { contentHashOf } from "@/lib/db/stateMachine";
+import { challengeMedia, challenges, creditEdges, outbox } from "@/lib/db/schema";
 import { nextTrackingId } from "@/lib/db/trackingId";
 import { MediaRejectedError, processImage } from "@/lib/media/upload";
 import { putObject } from "@/lib/media/storage";
@@ -272,24 +272,19 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
       // TODO(Phase 3 Task 3.4): link prev_hash/entry_hash to the chain tip
       // inside this transaction. The append-only trigger permits exactly one
       // write of those two columns, from NULL.
-      await tx.insert(ledgerEntries).values({
+      await appendEntry(tx, {
         challengeId: challenge.id,
         kind: "PROBLEM_TEXT",
-        contentHash: contentHashOf({
-          trackingId,
-          bodyOriginal: input.bodyOriginal,
-          bodyLang: input.bodyLang,
-          reporterName: input.reporterName ?? user?.fullName ?? null,
-          media: input.media.map((m) => m.contentHash),
-        }),
         authorId: user?.id ?? null,
+        at: now,
         payload: {
           trackingId,
           source: "web",
+          bodyLang: input.bodyLang,
           reporterName: input.reporterName ?? user?.fullName ?? null,
           mediaHashes: input.media.map((m) => m.contentHash),
+          at: now.toISOString(),
         },
-        createdAt: now,
       });
 
       await tx.insert(outbox).values({

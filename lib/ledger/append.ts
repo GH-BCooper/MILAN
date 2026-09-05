@@ -52,8 +52,19 @@ export async function appendEntry(tx: Tx, input: AppendInput): Promise<AppendedE
   const at = input.at ?? clockNow();
   const contentHash = input.contentHash ?? contentHashOf(input.payload);
 
+  /**
+   * The tip is the last entry that actually HAS a hash, not simply the last row.
+   *
+   * This was a real break. A code path that inserted into `ledger_entries`
+   * directly left a row with a null `entry_hash`; the next append read that row
+   * as the tip, found null, and chained itself to genesis — forking the chain
+   * at a point that could never be repaired, because `prev_hash` seals on first
+   * write. `tests/ledger.test.ts` now fails the build if any module outside this
+   * file inserts into the table, and this query means an unlinked row can no
+   * longer poison the append that follows it.
+   */
   const tip = (await tx.execute<{ entry_hash: string | null }>(
-    sql`SELECT entry_hash FROM ledger_entries ORDER BY seq DESC LIMIT 1`,
+    sql`SELECT entry_hash FROM ledger_entries WHERE entry_hash IS NOT NULL ORDER BY seq DESC LIMIT 1`,
   )) as unknown as Array<{ entry_hash: string | null }>;
   const prevHash = tip[0]?.entry_hash ?? GENESIS_HASH;
 

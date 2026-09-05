@@ -51,13 +51,24 @@ interface LegacySeal {
   hashes: Record<string, string>;
 }
 
+/** Every seal, merged. Seals accumulate; see the comment in seal.ts. */
 async function loadSeal(): Promise<LegacySeal | null> {
   const rows = (await db.execute<{ payload: { seal?: LegacySeal } }>(
     sql`SELECT payload FROM ledger_entries
         WHERE kind = 'ANCHOR' AND payload->>'event' = 'LEGACY_PAYLOAD_SEAL'
-        ORDER BY seq LIMIT 1`,
+        ORDER BY seq`,
   )) as unknown as Array<{ payload: { seal?: LegacySeal } }>;
-  return rows[0]?.payload?.seal ?? null;
+  if (rows.length === 0) return null;
+
+  const merged: LegacySeal = { fromSeq: Number.POSITIVE_INFINITY, toSeq: 0, hashes: {} };
+  for (const row of rows) {
+    const seal = row.payload?.seal;
+    if (!seal) continue;
+    merged.fromSeq = Math.min(merged.fromSeq, seal.fromSeq);
+    merged.toSeq = Math.max(merged.toSeq, seal.toSeq);
+    Object.assign(merged.hashes, seal.hashes);
+  }
+  return Number.isFinite(merged.fromSeq) ? merged : null;
 }
 
 interface Row extends Record<string, unknown> {

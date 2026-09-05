@@ -42,7 +42,7 @@ const {
 } = await import("@/lib/db/schema");
 const { clockNow } = await import("@/lib/clock");
 const { nextTrackingId } = await import("@/lib/db/trackingId");
-const { contentHashOf } = await import("@/lib/db/stateMachine");
+const { appendEntry } = await import("@/lib/ledger/append");
 
 const DATA_DIR = join(process.cwd(), "seed-data");
 const RESET = process.argv.includes("--reset");
@@ -839,18 +839,18 @@ async function main() {
           createdAt,
         });
 
-        await tx.insert(ledgerEntries).values({
+        await appendEntry(tx, {
           challengeId: inserted.id,
           kind: "PROBLEM_TEXT",
-          contentHash: contentHashOf({
+          authorId: index === 0 ? sunitaId : null,
+          at: createdAt,
+          payload: {
             trackingId,
-            bodyOriginal: values.bodyOriginal,
+            source: "seed",
             bodyLang: values.bodyLang,
             reporterName: values.reporterName,
-          }),
-          authorId: index === 0 ? sunitaId : null,
-          payload: { trackingId, source: "seed", reporterName: values.reporterName },
-          createdAt,
+            at: createdAt.toISOString(),
+          },
         });
 
         return inserted.id;

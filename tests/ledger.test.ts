@@ -135,6 +135,56 @@ describe("the database refuses to be corrected", () => {
   });
 });
 
+/**
+ * The structural guarantee behind the chain.
+ *
+ * `appendEntry` is the only thing that may write to `ledger_entries`, because it
+ * is the only thing that takes the advisory lock and sets `prev_hash`. Six Phase
+ * 1/2 call sites inserted directly, which left rows with a null `entry_hash` —
+ * and the next append then read that null tip and chained itself to genesis,
+ * forking the chain at a point that could never be repaired since `prev_hash`
+ * seals on first write. This test is why a seventh cannot appear.
+ */
+describe("appendEntry is the only writer", () => {
+  it("no module outside lib/ledger inserts into ledger_entries", async () => {
+    const { readdirSync, readFileSync, statSync } = await import("node:fs");
+    const { join, relative, sep } = await import("node:path");
+
+    function walk(dir: string, out: string[] = []): string[] {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          if (entry === "node_modules" || entry === ".next") continue;
+          walk(full, out);
+        } else if (/\.(ts|tsx|mts)$/.test(entry)) out.push(full);
+      }
+      return out;
+    }
+
+    const offences: string[] = [];
+    for (const root of ["app", "lib", "seed", "scripts"]) {
+      let files: string[];
+      try {
+        files = walk(root);
+      } catch {
+        continue;
+      }
+      for (const file of files) {
+        const rel = relative(process.cwd(), file);
+        if (rel.startsWith(`lib${sep}ledger${sep}`)) continue;
+        readFileSync(file, "utf8")
+          .split(/\r?\n/)
+          .forEach((line, i) => {
+            if (/insert\s*\(\s*ledgerEntries\s*\)/.test(line)) {
+              offences.push(`${rel}:${i + 1} inserts into ledger_entries directly — use appendEntry() from lib/ledger/append`);
+            }
+          });
+      }
+    }
+    expect(offences, offences.join("\n")).toEqual([]);
+  });
+});
+
 describe("the live chain", () => {
   it("verifies clean, from genesis to head", async () => {
     const result = await verifyChain();

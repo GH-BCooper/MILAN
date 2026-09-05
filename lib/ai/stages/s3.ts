@@ -17,15 +17,15 @@ import { and, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { transition } from "@/lib/db/stateMachine";
+import { appendEntry } from "@/lib/ledger/append";
 import {
   challenges,
   clusters,
   corroborations,
   creditEdges,
-  ledgerEntries,
   type Tx,
 } from "@/lib/db";
-import { contentHashOf, transition } from "@/lib/db/stateMachine";
 import { runWithChain } from "../providers/chain";
 import { haversineKm } from "../routing";
 import { toVectorLiteral } from "../providers/embed";
@@ -327,24 +327,19 @@ export async function mergeInto(args: {
       createdAt: at,
     });
 
-    await tx.insert(ledgerEntries).values({
+    await appendEntry(tx, {
       challengeId: loser.id,
       kind: "CREDIT_EDGE",
-      contentHash: contentHashOf({
-        merged: loser.trackingId,
-        into: survivor.trackingId,
-        similarity: args.similarity,
-        at: at.toISOString(),
-      }),
+      at,
       payload: {
         merged: loser.trackingId,
         into: survivor.trackingId,
         similarity: args.similarity,
         rationale: args.rationale,
+        at: at.toISOString(),
         // Said plainly, because this is the sentence a suspicious judge needs.
         note: "Nothing was discarded. This report keeps its own page and its own credit edge; the survivor gained a corroboration.",
       },
-      createdAt: at,
     });
 
     // `cluster_id` points both rows at the same cluster so the public page can
@@ -447,22 +442,18 @@ export async function rollUp(args: {
         .where(eq(challenges.id, child.id));
     }
 
-    await tx.insert(ledgerEntries).values({
+    await appendEntry(tx, {
       challengeId: parent.id,
       kind: "STATE_CHANGE",
-      contentHash: contentHashOf({
-        kind: "BLOCK_SYSTEMIC",
-        children: args.children.map((c) => c.trackingId),
-        at: at.toISOString(),
-      }),
+      at,
       payload: {
         kind: "BLOCK_SYSTEMIC",
         blockCode: args.blockCode,
         children: args.children.map((c) => c.trackingId),
         corroborationsRolledUp: totalCorroborations,
+        at: at.toISOString(),
         note: "Children keep their own pages and their own credit chains. Nothing is discarded.",
       },
-      createdAt: at,
     });
 
     return trackingId;

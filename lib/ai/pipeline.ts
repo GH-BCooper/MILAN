@@ -22,16 +22,16 @@ import { and, eq, like } from "drizzle-orm";
 
 import { clockNow, elapsedMs } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { appendEntry } from "@/lib/ledger/append";
 import {
   blocks,
   challengeMedia,
   challenges,
   districts,
-  ledgerEntries,
   notifications,
   type ChallengeStatus,
 } from "@/lib/db/schema";
-import { canTransition, contentHashOf, transition } from "@/lib/db/stateMachine";
+import { canTransition, transition } from "@/lib/db/stateMachine";
 import { removeObjects } from "@/lib/media/storage";
 import { getObject } from "@/lib/media/storage";
 import { embed } from "./providers/embed";
@@ -959,14 +959,15 @@ async function rejectUnsafe(ctx: Ctx, category: string, rationale: string): Prom
       reason: rationale,
       meta: { category, mediaPurged: purged.length, by: "pipeline" },
     });
-    await tx.insert(ledgerEntries).values({
+    // The payload carries the decision, not the text: a rejected report's words
+    // are not copied into a public, permanent, append-only table. Since the hash
+    // is computed from the payload, that exclusion is structural rather than a
+    // second hand-written hash that could drift from what is stored.
+    await appendEntry(tx, {
       challengeId: ctx.challenge.id,
       kind: "OVERRIDE",
-      // The hash covers the decision, not the text: a rejected report's words
-      // are not copied into a public, permanent, append-only table.
-      contentHash: contentHashOf({ decision: "REJECTED_UNSAFE", category, at: at.toISOString() }),
-      payload: { decision: "REJECTED_UNSAFE", category, mediaPurged: media.length, by: "S1" },
-      createdAt: at,
+      at,
+      payload: { decision: "REJECTED_UNSAFE", category, mediaPurged: media.length, by: "S1", at: at.toISOString() },
     });
   });
   ctx.challenge = { ...ctx.challenge, status: "REJECTED_UNSAFE" };

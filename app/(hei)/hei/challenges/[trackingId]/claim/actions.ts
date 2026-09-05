@@ -21,19 +21,19 @@ import { z } from "zod";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { transition } from "@/lib/db/stateMachine";
+import { appendEntry } from "@/lib/ledger/append";
 import {
   capabilities,
   challenges,
   creditEdges,
-  ledgerEntries,
   projectMembers,
   projects,
   routes,
   user as userTable,
   userProfiles,
 } from "@/lib/db/schema";
-import { contentHashOf, transition } from "@/lib/db/stateMachine";
-import { requireRole } from "@/lib/auth/guards";
+import { requireRole, type MilanUser } from "@/lib/auth/guards";
 import { notify } from "@/lib/notify";
 
 const MemberSchema = z.object({
@@ -70,7 +70,22 @@ export type ClaimResult =
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export async function claimChallengeAction(raw: unknown): Promise<ClaimResult> {
-  const user = await requireRole("HEI_MEMBER");
+  return claimAs(await requireRole("HEI_MEMBER"), raw);
+}
+
+/**
+ * The claim itself, with the acting user passed in.
+ *
+ * Split out so that the /demo console's "HOD claims it" button can run the
+ * IDENTICAL code — the same capacity decrement, the same credit edges, the same
+ * ledger append — while acting as the seeded department head rather than as the
+ * admin who pressed the button. ADMIN is deliberately not a wildcard in
+ * `requireRole`, so a demo shortcut that ran as the admin would either be
+ * refused or would need a second, weaker code path. This is neither.
+ *
+ * Every caller must do its own authorisation before calling this.
+ */
+export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResult> {
   if (!user.orgId) {
     return { ok: false, error: "Your account is not attached to an institution." };
   }
@@ -269,30 +284,25 @@ export async function claimChallengeAction(raw: unknown): Promise<ClaimResult> {
 
       /* the ledger and the state change --------------------------------- */
 
-      await tx.insert(ledgerEntries).values({
+      await appendEntry(tx, {
         challengeId: challenge.id,
         projectId: project.id,
         kind: "PROPOSAL",
-        contentHash: contentHashOf({
-          trackingId: challenge.trackingId,
-          orgId: user.orgId,
-          title: input.title,
-          ipTrack: input.ipTrack,
-          members: input.members.map((m) => `${m.name}:${m.declaredRole}`).sort(),
-          mentor: input.mentorEmail,
-          at: at.toISOString(),
-        }),
         authorId: user.id,
+        at,
         payload: {
+          trackingId: challenge.trackingId,
           claimedBy: user.orgId,
           department: capability.department,
           title: input.title,
           ipTrack: input.ipTrack,
           teamSize: input.members.length,
+          // Names, never emails: the public chain credits people by name.
+          members: input.members.map((m) => `${m.name}:${m.declaredRole}`).sort(),
           citizenCredited: input.creditCitizen,
           citizenRole: input.citizenRole,
+          at: at.toISOString(),
         },
-        createdAt: at,
       });
 
       await transition(tx, {

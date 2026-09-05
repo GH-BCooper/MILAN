@@ -19,16 +19,15 @@ import { z } from "zod";
 
 import { clockNow, clockPlusDays } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { appendEntry } from "@/lib/ledger/append";
 import {
   auditLog,
   capabilities,
   challenges,
-  ledgerEntries,
   organization,
   routes,
   trainingCorrections,
 } from "@/lib/db/schema";
-import { contentHashOf } from "@/lib/db/stateMachine";
 import { requireRole } from "@/lib/auth/guards";
 import { ROUTING } from "@/lib/ai/routing";
 import { releaseNotifications } from "@/lib/ai/stages/s5";
@@ -124,23 +123,18 @@ export async function rerouteAction(raw: unknown): Promise<RerouteResult> {
         createdAt: at,
       });
 
-      await tx.insert(ledgerEntries).values({
+      await appendEntry(tx, {
         challengeId: challenge.id,
         kind: "OVERRIDE",
-        contentHash: contentHashOf({
-          action: "REROUTE",
-          to: capability.orgId,
-          reason: input.reason,
-          at: at.toISOString(),
-        }),
         authorId: user.id,
+        at,
         payload: {
           action: "REROUTE",
-          to: { org: capability.orgName, department: capability.department },
+          to: { orgId: capability.orgId, org: capability.orgName, department: capability.department },
           replaced: existing.length,
           reason: input.reason,
+          at: at.toISOString(),
         },
-        createdAt: at,
       });
 
       await tx.insert(auditLog).values({
