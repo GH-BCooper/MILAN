@@ -615,3 +615,261 @@ The single highest-leverage hour for the human team, per PHASE_2_LEARN.md §9.1,
 few-shot examples. Every prompt in `lib/ai/prompts/` has a marked block. Five examples in `s1.ts`
 were added during this phase to fix real misclassifications found by running the pipeline over the
 seed set — that is the loop to keep running.
+
+---
+
+## Phase 3 — completed 2026-09-05 13:45
+
+### Status
+The full six-minute demo runs end to end without anyone touching a terminal. On `/demo` a judge
+presses **+21 days**; the clock moves, the reaper runs in the same click, and a live log names every
+ladder action that fired with the challenge it fired on and the status it reached. The escalated
+challenge appears on the public bounty board with days unclaimed and its score breakdown, and on the
+District Collector's dashboard as a breach, most overdue first. `/ledger` verifies the hash chain in
+the browser and comes back green. The citizen's confirmation SMS is readable on the console without a
+phone, and pressing **Citizen confirms** is the only thing in the product that moves the impact
+counter — measured, 2 → 3, with Partly and No leaving it alone.
+
+`tests/invariant.test.ts` is un-skipped, returns **0**, and is a required CI check. The ledger is
+append-only at the database level, tampering is detectable, and `appendEntry` is now provably the
+only writer.
+
+**Measured, end to end:** `pnpm verify:demo` runs all thirteen beats in **60.5 s** of wall clock,
+every beat passing, driven only through `/demo` and the normal UI.
+
+### Tasks completed
+- [x] Task 3.0 — Preconditions — 34 challenges, `CRON_SECRET` present, 0 SLA rows, 0 linked ledger entries
+- [x] Task 3.1 — `clockNow()` and the demo state — `pnpm verify:clock`: SQL `clock_now()` and app
+      `clockNow()` agree at offset 0, +7 and after reset; drift is round-trip latency only
+- [x] Task 3.2 — The SLA engine and the reaper — `pnpm verify:sla`: WIDEN at +7 offered five more
+      institutions, OPEN_ALL at +14, BREACH at +21 → BOUNTY_LISTED, GRAND_CHALLENGE at +45.
+      83 firings, 0 errors. **Invariant orphans: 0**
+- [x] Task 3.3 — Bounty board, DC dashboard, emergency — `pnpm verify:gov` **21/21**, including the
+      DC of Gumla refused both a Dhanbad page and a Dhanbad CSV export
+- [x] Task 3.4 — The provenance ledger — `tests/ledger.test.ts` **14/14**; UPDATE and DELETE refused
+      by the real database; chain verifies clean from genesis
+- [x] Task 3.5 — Credit chain, licensing, access log — `pnpm verify:provenance` **15/15**
+- [x] Task 3.6 — The citizen confirmation loop — `pnpm verify:impact` **9/9**: Yes 3→4, Partly leaves
+      confirmed at 4 and moves partly 1→2, No leaves the counter alone and marks the claim disputed
+- [x] Task 3.7 — Industry and CSR — `pnpm verify:industry` **21/21**, MoU generated and hashed,
+      confirmed (1,800 beneficiaries) and unconfirmed (0) separated in the page, the CSV and the PDF
+- [x] Task 3.8 — `/demo`, the judge console — `pnpm verify:demo` **13/13**, 60.5 s
+- [x] Task 3.9 — Hardening — `pnpm verify:perf` **6/6** inside the 2 s budget; `pnpm verify:seedguard`
+      clean; error boundaries on every route group; README, runbook and loopholes written
+- [x] Task 3.10 — Close the project — this section
+
+### Files created or changed
+
+**`lib/clock/`** — `offset.ts` (the process-level cell `clockNow()` reads), `server.ts`
+(`syncClockOffset`, `advanceClock`, `resetClock`, `emergencyState`), `index.ts` rewired
+
+**`lib/sla/`** — `deadlines.ts` (the pure table, all 22 non-terminal states), `actions.ts` (thirteen
+ladder actions), `reaper.ts` (`FOR UPDATE SKIP LOCKED`, one transaction per row), `prepare.ts`
+(everything slow, done before the transaction opens), `deliver.ts`
+
+**`lib/ledger/`** — `hash.ts` (`canonicalJson`, `computeEntryHash`), `append.ts` (advisory lock,
+caller's transaction), `verify.ts` (paged walk from genesis), `seal.ts`, `anchor.ts` (OpenTimestamps
+behind an interface with a local no-op)
+
+**`lib/`** — `impact/counter.ts` (the ONE definition of the impact counter), `impact/implemented.ts`,
+`verify/token.ts` (HMAC confirmation links), `credit/citation.ts`, `artifacts/publish.ts`,
+`csr/report.ts`, `pdf/simple.ts` (a 130-line PDF writer, taken instead of a dependency),
+`demo/reset.ts`, `outbox/drain.ts`, `notify/tx.ts`
+
+**`app/`** — `(admin)/demo/` (console, actions, page), `(gov)/gov/` (dashboard, `gate/`,
+`verification/`, `sla/`, `emergency/`), `(public)/bounties/`, `(public)/ledger/`,
+`(public)/artifacts/[id]/`, `(public)/credit/[userId]/`, `(citizen)/me/verify/[token]/`,
+`(industry)/industry/` (`discover`, `challenges/[trackingId]`, `interests/[id]`, `csr`),
+`api/cron/reaper`, `api/cron/nightly`, `api/ledger/verify`, `api/gov/export`,
+`api/artifacts/download`, `api/industry/{csr,mou,accept}`, `api/me/export`, `api/verify/confirm`,
+`api/demo/{clock,beat,reset,impact}`, error boundaries on all six route groups plus `global-error.tsx`
+
+**`components/`** — `demo-clock-banner`, `impact-counter` (`ImpactCounter`, `ConfirmationGap`,
+`UnconfirmedTag`), `credit-chain`, `citation-block`, `verify-chain-button`, `ledger-entry-row`,
+`error-panel`
+
+**`tests/`** — `sla.test.ts` (9), `ledger.test.ts` (14); `invariant.test.ts` un-skipped;
+`stateMachine.test.ts` updated for the now-linked chain
+
+**Root** — `docker-compose.yml`, `.env.offline`, `.nvmrc`, `README.md`, `vercel.json` (nightly cron),
+`docs/DEMO_RUNBOOK.md`, `docs/LOOPHOLES.md`
+
+### Database
+- **Tables added:** `access_requests`, `impact_confirmations`
+- **Columns added to `challenges`:** `impact_partial`, `impact_disputed`, `citizen_verified_at`,
+  `citizen_verification_note`, `sla_breached_at`, `escalation_stage`, `open_to_all`,
+  `grand_challenge`, `fork_open`, `at_risk_flag`, `routed_at`
+- **Enum values added to `sla_kind`:** `STAGE_TIMEOUT`, `GATE_TIMEOUT`, `CLOSURE_DUE`, `DISPUTE_REVIEW`
+- **SQL functions:** `clock_now()`, `milan_entry_hash()` — the SQL twins of `clockNow()` and
+  `computeEntryHash()`, so the reaper and the app can never disagree
+- **Migrations applied:** `0007_demo_clock`, `0008_phase3_sla_and_provenance`,
+  `0009_ledger_chain_backfill`, `0010_phase3_indexes`
+- **Final seed counts:** districts=24, blocks=263, organisations=20, capabilities=47, challenges=25,
+  corroborations=183, credit_edges=33, sla_deadlines=220 (22 open), ledger_entries=182, artifacts=2
+
+### Environment variables consumed this phase
+- `CRON_SECRET` — without it `/api/cron/reaper` and `/api/cron/nightly` refuse everything, including
+  Vercel Cron. Compared in constant time.
+- `BETTER_AUTH_SECRET` — also signs the `/me/verify/[token]` confirmation links. Rotating it
+  invalidates every link already sent to a citizen.
+- `CLOCK_OFFSET_DAYS` — now only the fallback, used before the first read of `demo_state` and if the
+  database is unreachable. `demo_state.clock_offset_days` is the authority.
+- `OPENTIMESTAMPS_ENABLED` (new, default off) — `true` submits the daily anchor to a public calendar
+  server. Off, the anchor is still written and `/ledger` says there is no third-party timestamp
+  rather than implying one.
+- `DEMO_HERO_TRACKING_ID` (new, default `JH-2026-GUM-0001`) — which challenge the `/demo` scenario
+  buttons act on.
+- `PERF_RUNS` (new, default 5) — samples per route in `verify:perf`.
+
+### Decisions taken
+- **`deadlinesFor()` covers all 22 non-terminal states, not the 7 in the build file's table.**
+  Invariant 1 is a claim about every state; a challenge stuck at CLASSIFIED because the pipeline
+  crashed is exactly the silent death it exists to prevent. Cost: four new `sla_kind` values.
+- **The escalation states carry the REMAINDER of the ladder, not a fresh copy.** A state change
+  cancels open deadlines — it must, they belong to the state being left — so without this the ladder
+  would reset itself every time it climbed a rung. `UNCLAIMED_ESCALATED` opens OPEN_ALL at +7, which
+  is day 14 from routing, the same absolute date the ROUTED row named.
+- **Anything slow happens before the transaction opens.** WIDEN re-runs S5 and ANNUAL_REVIEW
+  rescores; both are computed in `lib/sla/prepare.ts` and handed to the action as plain data, so a
+  four-second provider call can never hold a row lock on stage.
+- **The reaper has an explicit invariant-1 backstop** (`ensureOpenDeadline`). Most actions open their
+  own follow-on deadline; this asserts the invariant against the database afterwards rather than
+  trusting each action to have remembered, and says so in the ledger payload if it ever fires.
+- **The Phase 1/2 ledger entries are SEALED, not re-hashed.** They were hashed with
+  `JSON.stringify` before `canonicalJson` existed and jsonb does not preserve key order, so their
+  content hash can never be recomputed — and the ledger is append-only, so they cannot be corrected.
+  One chained entry records the canonical hash of each; altering one now disagrees with the seal and
+  altering the seal breaks the chain. `/ledger` says exactly this. Cost: a paragraph to explain.
+- **Six Phase 1/2 call sites were inserting into `ledger_entries` directly.** They left rows with a
+  null `entry_hash`; `appendEntry` then read one as the tip, found null and chained itself to
+  genesis — forking the chain at a point that can never be repaired, because `prev_hash` seals on
+  first write. Found by running the demo, not by reading. All six now go through `appendEntry`,
+  `appendEntry` reads the last entry that actually has a hash, and `tests/ledger.test.ts` fails the
+  build if a seventh appears. **This is the single most important fix in the phase.**
+- **One definition of the impact counter, in `lib/impact/counter.ts`.** `/stats` previously filtered
+  on `status = 'CITIZEN_VERIFIED'`, which silently stopped counting a confirmed outcome the day it
+  was CLOSED. Every surface now reads the durable `impact_confirmed` flag.
+- **The confirmation link is HMAC-signed and needs no login.** A login wall on the one action that
+  moves the impact counter would quietly turn the most credible number in the product into a small
+  one. Valid 90 days, authorises exactly one answer about one challenge.
+- **A 130-line PDF writer instead of a PDF dependency.** CLAUDE.md §3 locks the stack and we make a
+  slide out of the four dependencies we removed; two documents did not justify a fifth. Cost: no
+  Devanagari in the PDFs — non-Latin text is dropped with a visible marker and the web page, which
+  does render it, is cited on the document.
+- **The `/demo` reset writes `challenges.status` directly, bypassing the state machine.** The same
+  exception migration 0002 makes for TRUNCATE: a demo reset is an operational reset, not a state
+  transition. There is no legal edge out of CLOSED and adding one so a button could work would put a
+  hole in the lifecycle for the product's life.
+- **The `/demo` publish and implement beats walk intermediate states one legal edge at a time.** A
+  shortcut that jumped straight to SOLUTION_PUBLISHED would leave the hero challenge with a history
+  that is a lie, on the page a judge is most likely to open.
+- **The `/demo` claim beat acts as the seeded head of department**, via a new exported `claimAs()`.
+  ADMIN is deliberately not a wildcard, so a shortcut running as the admin would have needed a
+  second, weaker claim path. The impersonation is written to `audit_log`.
+- **`Foo` and `Bar` are not in the seed guard's pattern**, contrary to the build file. `<Bar/>` is a
+  Recharts component and Barharwa, Barhi, Bardiha, Barwadih and Barhait are real Jharkhand blocks. A
+  check that cries wolf gets suppressed, which is worse than no check.
+- **`/gov/emergency` is labelled a filter on the screen a District Collector uses.** It changes
+  display and sorting and touches no stored score. Calling it what it is, on the screen, is the
+  difference between a declared stub and a lie.
+
+### Stubbed / deferred (the declared-stubs slide)
+- **IVR and WhatsApp Business API intake** — `/api/intake` is the seam.
+- **SMS and WhatsApp delivery** — mock inboxes. A real gateway needs a DLT-registered sender ID and
+  template approval. The exact message is written to `outbox` verbatim and shown on `/demo`.
+- **Offline PWA sync** — not built; `localStorage` drafts are the substitute.
+- **Fine-tuned models** — no labelled data, no GPU budget. Few-shot plus an embedding kNN prior;
+  every human correction lands in `training_corrections`.
+- **Full 10-language coverage** — Hindi, English and one Santali sample.
+- **Live CPGRAMS / JharSewa API** — neither exposes a public write API; Milan renders the exact JSON
+  payload it would POST.
+- **Real institutional onboarding** — no self-serve organisation creation.
+- **E-signature, payment rails and MoU negotiation threads** — the MoU is generated from a template
+  and hashed into the ledger; nobody signs anything and the EOI page says so.
+- **Patent / DOI integration and an IP dispute adjudication UI** — the prior-art panel is what exists.
+- **Face and number-plate blurring** — not implemented; `challenge_media.faces_blurred` records false.
+- **Full Emergency Mode** — `/gov/emergency` is the toggle only: a banner, a map filter and a display
+  re-sort. Surge routing, a separate response queue and hazard-specific SLA compression are not built.
+- **Live multilingual ASR** — the stage and the live path are real; the demo uses a seeded transcript
+  keyed by content hash, and `seed-data/voice-note.mp3` is still empty.
+- **No PMTiles basemap** — `NEXT_PUBLIC_PMTILES_URL` unset; markers draw on a blank canvas and the map
+  says so.
+- **Nearest-centroid geocoding, not point-in-polygon.**
+- **The daily anchor has no third-party timestamp by default** — `OPENTIMESTAMPS_ENABLED=false`, and
+  `/ledger` says the anchor is unattested rather than implying otherwise.
+- **The Phase 1/2 ledger entries are covered by a seal rather than by their own content hash** — see
+  Decisions. Coverage is complete from genesis; only the mechanism differs.
+
+### Known issues
+- **The offline stack is written but not executed on this machine** — *medium*. Docker is not
+  installed in this WSL distro (`docker` is not on the PATH), so `docker-compose.yml` and
+  `.env.offline` are unverified end to end. What **is** verified is the part that matters most:
+  `AI_PROVIDER_CHAIN=rules` returns **fallback level 2 for every stage**, proven again this phase,
+  which is CLAUDE.md invariant 8. Someone with Docker Desktop should run the four commands in the
+  README before stage day.
+- **The reaper takes 30–40 s locally when many deadlines are due** — *low*. It is round trips from
+  WSL to Supabase in Mumbai, not compute; each firing is its own transaction by design. On the
+  deployed instance in `bom1` this is a few seconds. The `/demo` +21 button is the place it shows.
+- **`requireDistrict` still returns HTTP 500, not 403** — *low, presentation fixed*. The refusal is
+  correct and the new `(gov)/error.tsx` presents it calmly as "Refused", but the status code is still
+  a 500 because the guard throws rather than returning a typed response.
+- **`/gov` is the slowest route at a 1019 ms median** — *low*. Inside the 2 s budget with the new
+  indexes; it is seven aggregate queries and a map.
+- **Node 18 cannot build this repo** — *low*. `next build` fails with `Unexpected token 'with'` on
+  import attributes. `.nvmrc` pins 22; use `nvm use`.
+- **Not tested on a physical phone** — *medium*, carried from Phase 1.
+- **`seed-data/voice-note.mp3` is still empty** — *medium*, carried from Phase 1 and 2.
+- **The Hindi and Santali reports are still unchecked by a native speaker** — *medium*, carried.
+
+### Verification evidence
+```
+pnpm build                 clean (Node 22)
+pnpm typecheck             clean
+pnpm lint                  clean
+pnpm vitest run            8 files, 77 passed, 0 skipped
+                           invariant.test.ts: 0 orphans, UN-SKIPPED and required in CI
+                           ledger.test.ts:    14/14, UPDATE and DELETE refused by the real database
+                           sla.test.ts:        9/9, every non-terminal state opens a deadline
+
+pnpm verify:clock          SQL clock_now() and app clockNow() agree at 0, +7 and reset
+pnpm verify:sla            WIDEN/OPEN_ALL/BREACH/GRAND_CHALLENGE all fired; 83 firings, 0 errors
+pnpm verify:gov            21/21, DC of Gumla refused Dhanbad twice
+pnpm verify:provenance     15/15, dedup proven, access log and ACCESS ledger entry written
+pnpm verify:impact          9/9, counter 3→4 on Yes, unmoved on Partly and No
+pnpm verify:industry       21/21, MoU hashed into the ledger, CSR CSV and PDF exported
+pnpm verify:demo           13/13 beats, 60.5 s total, no terminal used
+pnpm verify:perf            6/6 inside 2 s — /challenges 140ms, /c/[id] 223ms, /bounties 123ms,
+                           /gov 1019ms, /stats 185ms, /ledger 230ms (medians of 5)
+pnpm verify:seedguard      clean
+AI_PROVIDER_CHAIN=rules pnpm ai:smoke
+                           level 2 returned for every stage — invariant 8
+
+backups/phase3-demo.sql    1073 rows across 24 tables, committed
+```
+
+### Final handoff
+- **Deployed URL:** https://milan-ruddy-chi.vercel.app — **this phase has not been pushed or
+  redeployed yet.** Everything above is verified against a local production build. Push to deploy.
+- **Credentials:** password `milan2026` for every seeded account.
+  `sunita@demo.milan.in` (citizen) · `hod.civil@bitsindri.demo.milan.in` (HEI) ·
+  `dc.gumla@jh.gov.demo.milan.in` (government, Gumla only) ·
+  `csr@tatasteelfoundation.demo.milan.in` (industry) · `admin@milan.demo.milan.in` (admin, `/demo`)
+- **Hero tracking ID:** `JH-2026-GUM-0001` — the South Koel embankment crack near Basia, Gumla
+- **Ledger head hash:** `f3ebb28d428c225ee97895e65dd7994f7131014711af50462442fc77e5e899f9`
+  (182 entries, seq 277, verifies clean from genesis, 0 legacy-sealed after the clean re-seed)
+- **Seed counts:** districts=24, blocks=263, organisations=20, capabilities=47, challenges=25,
+  corroborations=183, credit_edges=33, sla_deadlines=220 (22 open), ledger_entries=182
+- **Invariant status:** **GREEN — 0 orphans.** `tests/invariant.test.ts` is un-skipped and a required
+  CI check.
+
+### Start here next phase
+1. **Push and redeploy**, then re-run every verification against the deployed URL with
+   `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app pnpm verify:phase3`. Confirm the Vercel
+   function region is Mumbai (`bom1`) first — see `docs/VERCEL_REGION.md`.
+2. **Run the offline stack once, on a machine with Docker**, following the four commands in the
+   README, and record which stages used fallback level 2. It is the only Phase 3 item written but
+   not executed.
+3. **Rehearse the six-minute script from `docs/DEMO_RUNBOOK.md`** twice, end to end, pressing
+   **Reset** on `/demo` between runs. Time each beat against the runbook.
+4. Record `seed-data/voice-note.mp3` and paste its SHA-256 into `lib/ai/seededTranscripts.ts` — the
+   last item carried from Phase 1.
