@@ -387,3 +387,213 @@ backup               649 rows across 13 tables
 ### Start here next phase
 Run `bash scripts/set-ci-secrets.sh` (after `gh auth login`), confirm CI is green with Build and
 Test actually running, then execute `docs/PHASE_2_BUILD.md`, Task 2.1.
+
+---
+
+## Phase 2 — completed 2026-09-05 09:05
+
+### Status
+A judge types a problem into `/submit` and watches six stage cards tick over on
+`/submit/success/<id>`: language, safety and triage, domain and hazard, duplicates, an
+explainable score with the whole breakdown open, and a ranked shortlist of three real Jharkhand
+institutions each with a written reason. Measured cold on a live server, submit to S5 complete
+runs **3.2s to 8.0s** depending on how loaded the free provider tier is. Every tick corresponds to
+a row in `ai_runs`, and `/admin/ai-runs` shows them with p50/p95 per stage.
+
+The priority breakdown is on the **public** challenge page with no login, every term links to its
+source, and the arithmetic checks out by hand. The human gate fires at severity ≥ 0.70: the
+shortlist is written, `notified_at` stays null, and nothing is sent until a District Collector
+releases it. An HOD then opens the notification link, claims it, forms a team, and the public
+credit chain reads citizen → corroborators → team → mentor, with the citizen on the team as
+Domain Informant.
+
+Unplug the network and it still works. Verified in a network namespace with no interfaces: every
+stage returns at level 2, the trace renders amber "fallback: rules" rather than an error, and the
+challenge is still scored and still routed.
+
+### Tasks completed
+- [x] Task 2.0 — Preconditions — toolchain, both API keys, `pgvector` 0.8.2 enabled, `pnpm seed` runs
+- [x] Task 2.1 — Provider chain — `pnpm ai:smoke` online and in a network namespace with no
+      interfaces; level 2 returned for every stage both times
+- [x] Task 2.2 — S1 and S2 — `pnpm pipeline:run --all`; both seeded grievances forwarded with a
+      reference and a visible handoff contract
+- [x] Task 2.3 — S3 — the three planted Basia duplicates sit at 0.886 / 0.904 / 0.850 with each
+      other and 0.69–0.71 against every other water challenge; they merge, the Garhwa wells and the
+      Chandil dam do not. A `BLOCK_SYSTEMIC` parent formed over three Palamu blocks.
+- [x] Task 2.4 — `packages/scoring` — 18/18 unit tests, weights sum to 1.00, purity asserted by
+      reading the source of every file in the directory
+- [x] Task 2.5 — S5 — three distinct real institutions for the Sunita embankment, led by BIT
+      Sindri's Hydraulics and Water Resources Laboratory; 15/15 guardrail tests
+- [x] Task 2.6 — SSE trace and the two admin receipts — `pnpm verify:pipeline` 9/9 live
+- [x] Task 2.7 — Citizen-approved framing — `pnpm verify:framing`, both paths
+- [x] Task 2.8 — P0 voice and translation — translation verified; the recording is a declared stub
+- [x] Task 2.9 — HEI inbox, claim, workspace — `pnpm verify:hei` 26/27, `pnpm verify:phase2` 22/22
+- [x] Task 2.10 — `pnpm phase:report`, this file
+
+### Files created or changed
+
+**`lib/ai/`**
+- `types.ts`, `schemas.ts`, `hash.ts` — stage vocabulary, one Zod schema per stage, canonical hashing
+- `gazetteer.ts` — the deterministic knowledge base: keyword→domain, keyword→hazard, grievance and
+  unsafe phrase lists, district hazard priors, and the grievance-evidence list
+- `providers/` — `types.ts`, `jsonSchema.ts` (Zod→provider schema), `gemini.ts`, `groq.ts`,
+  `rules.ts`, `chain.ts`, `cache.ts`, `embed.ts`, `throttle.ts`
+- `prompts/` — `p0.ts`, `p1.ts`, `s1.ts`, `s2.ts`, `s3.ts`, `s5.ts`, each with a marked
+  `// HUMAN: add curated Jharkhand examples here` block
+- `stages/` — `p0.ts`, `p1_framing.ts`, `s1.ts`, `s2.ts`, `s3.ts`, `s4.ts`, `s5.ts`
+- `triage.ts`, `routing.ts` — the pure decision layers, testable with no database
+- `pipeline.ts` — the orchestrator and the SSE event contract
+- `seededTranscripts.ts` — ground truth for the seeded voice note
+
+**`packages/scoring/`** — `weights.ts`, `normalise.ts`, `score.ts`, `index.ts`. Pure.
+
+**`app/`**
+- `api/pipeline/stream/route.ts`, `api/intake/framing/route.ts`, `api/hei/claim/route.ts`
+- `(admin)/admin/ai-runs/`, `(admin)/admin/triage/` (queue, actions, card),
+  `(admin)/admin/routing/` (page, actions, form)
+- `(hei)/hei/` — dashboard, `inbox/`, `capability/`, `challenge-bank/`,
+  `challenges/[trackingId]/claim/`, `projects/[id]/`, `claim-constants.ts`
+- `(public)/c/[trackingId]/page.tsx` — breakdown, routing shortlist, grievance contract, the
+  three-panel voice result, the replayable trace
+- `(citizen)/submit/` — step 5 rewritten as the side-by-side framing
+
+**`lib/`** — `hei/queries.ts`, `notify/index.ts`, `clock/browser.ts`, `media/storage.ts` (purge)
+
+**`components/`** — `priority-breakdown.tsx`, `pipeline-trace.tsx`, `claim-countdown.tsx`
+
+**`tests/`** — `scoring.test.ts` (18), `routing.test.ts` (15), `triage.test.ts` (12)
+
+**`scripts/`** — `ai-smoke.mts`, `pipeline.mts`, `similarity-matrix.mts`, `phase-report.mts`,
+`verify-pipeline.mts`, `verify-framing.mts`, `verify-hei.mts`, `verify-phase2-routes.mts`
+
+### Database
+- **Tables added:** `ai_cache`, `training_corrections`
+- **Migrations applied:** `0005_yummy_reavers` (both tables, HNSW indexes on `challenges.embedding`
+  and `capabilities.embedding`, `challenges_parent_idx`), `0006_body_original_comment` (column
+  comments recording invariant 6 in the database itself)
+- **Seed counts:** districts=24, blocks=263, organisations=20, users=5, capabilities=47
+  (all 47 embedded by the seed), challenges=25, corroborations=183, credit_edges=25,
+  ledger_entries=49, ai_cache=243 entries with 261 hits
+
+### Environment variables consumed this phase
+- `GEMINI_API_KEY` — level 0. Absent, the chain starts at Groq and says so on every run row.
+- `GROQ_API_KEY` — level 1. Absent, the chain drops to the rule tier.
+- `AI_PROVIDER_CHAIN` (default `gemini,groq,rules`) — set it to `rules` to run the demo
+  deliberately degraded without editing code. `rules` is always appended whatever it says.
+- `AI_TIMEOUT_MS` (default 3000) — the per-stage budget. Below ~2500 every Gemini call is thrown away.
+- `AI_CACHE=off` — bypass `ai_cache` for a genuinely live run.
+- `GEMINI_MIN_INTERVAL_MS` / `GROQ_MIN_INTERVAL_MS` / `AI_MIN_INTERVAL_MS` — batch pacing. Unset
+  in production so a live request never waits.
+- `GEMINI_MODEL`, `GROQ_MODEL`, `GEMINI_EMBED_MODEL`, `GROQ_ASR_MODEL` — overrides.
+- `RESEND_API_KEY`, `NOTIFY_FROM` — without them notifications are written in-app only and the
+  result records `email: not configured` rather than pretending.
+- `SEED_SKIP_EMBED=1` — skip the seed's 47 capability embeddings when iterating on CSVs.
+
+### Decisions taken
+- **Gemini 2.5 Flash is gone.** The API answers `models/gemini-2.5-flash` with a 404 for new keys
+  and points at `gemini-3.6-flash`. CLAUDE.md §3 locks the former; we run the current Flash tier of
+  the same family, pinned rather than floating on `-latest`, overridable by `GEMINI_MODEL`. Costs
+  us: the slide should say "Gemini Flash", not a version number.
+- **Groq's model is `openai/gpt-oss-120b`.** `llama-3.3-70b-versatile` is no longer served.
+- **The decision layers are pure modules** (`lib/ai/triage.ts`, `lib/ai/routing.ts`) separate from
+  the stages that call providers. That is what lets 27 tests exercise every threshold and the
+  routing guardrail with no database and no network. Costs us one extra file per stage.
+- **Level 2 answers are never cached.** A rules answer is deterministic and costs a millisecond;
+  caching it would pin a challenge to the gazetteer for the life of the key after one rate-limited
+  run. Costs us nothing.
+- **A level-2 answer never overwrites an existing classification.** Replacing an authored domain
+  and hazard with a 0.45-confidence keyword guess makes the data worse. It is recorded as a
+  proposal and sent to /admin/triage. Costs us: a rate-limited run leaves items in triage.
+- **Forwarding a grievance requires hard evidence in the text**, not just the model's confidence.
+  `FORWARDED_EXTERNAL` is terminal, so a false positive costs a citizen their report with no way
+  back. The model must say grievance AND the text must name a scheme, sanctioned work, a withheld
+  entitlement or a bribe. Both seeded grievances still forward. Costs us: a genuine grievance
+  phrased without any of those words goes to a human instead of straight to CPGRAMS.
+- **A merge only happens from a state that can legally reach MERGED, and always keeps the OLDER
+  report.** The first person to notice a problem stays its originator whatever order a batch runs in.
+- **S1∥S2, and S5's ranking alongside S3 and S4.** Four sequential model calls put the whole budget
+  on the critical path. Nothing speculative is ever written. Costs us one wasted classification on
+  the minority of reports S1 stops.
+- **The claim URL carries the tracking ID**, not a UUID. It is what the email says and what a
+  professor can forward. The build file writes `[id]`.
+- **Team members are credited by NAME on the public chain**, never by email. The email links an
+  account and sends the notification and stays in `project_members` and the ledger.
+- **`body_en` stays null when translation fails**, rather than being filled with the original as
+  the build file suggests. Rendering Devanagari under a heading that says "English working copy" is
+  a small lie on a page whose whole argument is that we do not tell them. The page already says
+  "not translated yet", and nothing is blocked either way.
+
+### Stubbed / deferred (must appear on the "declared stubs" slide)
+- **No fine-tuned models.** No labelled data, no GPU budget. Few-shot prompts plus an embedding kNN
+  prior over already-classified challenges, declared honestly. Every human correction at
+  /admin/triage lands in `training_corrections` and improves the next prior without retraining.
+- **Live multilingual ASR is a declared stub.** The stage is real, the pipeline is real, and the
+  live path (Groq `whisper-large-v3`) is implemented and typechecked — but the demo uses a seeded
+  ground-truth transcript keyed by content hash. `seed-data/voice-note.mp3` is **still 0 bytes**, so
+  no recording is attached at all; the hash placeholder in `lib/ai/seededTranscripts.ts` needs the
+  real value once someone records it.
+- **Language coverage is Hindi, English and one Santali sample**, not ten languages.
+- **CPGRAMS / JharSewa are a mock handoff.** Neither exposes a public write API to a hackathon
+  build, so Milan generates the reference locally and renders the exact JSON payload it would POST
+  on the challenge page. That contract is the answer to "why not just use CPGRAMS".
+- **The local embedding fallback is lexical, not semantic.** A hashed bag-of-words projection into
+  the same 768 dimensions. It captures shared vocabulary, not shared meaning. Always available.
+- **SMS and WhatsApp are mock inboxes.** A real gateway needs a DLT-registered sender ID and
+  template approval. The message that would have been sent is written to `outbox` verbatim.
+- **`/gov/gate` itself is Phase 3.** The gate *mechanism* is complete and enforced — routes are
+  created unnotified, `releaseGate()` is the release path and it is exercised by the verification
+  harness — but the District Collector's screen is Phase 3's task.
+- Everything Phase 1 declared remains declared: no PMTiles basemap, no face blurring, no offline
+  PWA, no self-serve institutional onboarding, nearest-centroid geocoding.
+
+### Known issues
+- **The seed backfill is incomplete at the time of writing** — *medium, self-healing*. Both free
+  tiers were exhausted by a day of development: Gemini's daily quota reset mid-session and its
+  10 requests/minute ceiling, and Groq's 8,000 tokens/minute with multi-minute penalties, mean
+  `pipeline:run --all` takes tens of minutes rather than one. About half the 25 challenges carry
+  model classifications; the rest kept their authored CSV values and sit in `/admin/triage`,
+  which is the designed behaviour, not corruption. **Re-run `pnpm pipeline:run --all` when quota
+  is fresh** — the cache makes every already-good answer free, so each pass only pays for what it
+  upgrades. The demo path itself does not depend on this: a judge-typed problem is a single run.
+- **CI secrets are still unset** — *high, blocking, unchanged from Phase 1*. `bash
+  scripts/set-ci-secrets.sh` after `gh auth login`. `gh` is authenticated on this machine but the
+  session's permission policy refused the command; a human runs it in one line.
+- **Not redeployed to Vercel since Phase 1.** Everything above was verified against a local
+  production build (`pnpm build && pnpm start`). Re-run every verification with
+  `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app` after deploying.
+- **`verify:hei` needs a routed, past-triage challenge.** It reports 26/27 when the hero challenge
+  is held in triage by a rate-limited S1. Re-run after the backfill completes.
+- **Vercel's function timeout vs. the SSE route** — *low*. `maxDuration = 60` is set and the
+  measured worst case is 8s, but this has not been exercised on Vercel.
+
+### Verification evidence
+```
+pnpm ai:smoke                 level 2 returned for every stage, online
+unshare -rn … ai-smoke.mts    level 2 returned with NO network interfaces at all
+pnpm vitest run               6 files, 53 passed, 1 skipped (the deliberate Phase 3 invariant skip)
+                              scoring 18, routing 15, triage 12, stateMachine 6, no-raw-date 1
+pnpm verify:pipeline          9/9 live, submit→S5 3.2s–8.0s cold, six stages, ai_runs written
+  degraded (AI_PROVIDER_CHAIN=rules)
+                              9/9, 3.7s, every AI stage amber at level 2, no errors, still routed
+pnpm verify:framing           7/9 — 6/6 on Task 2.7; the two failures are the missing recording
+pnpm verify:hei               26/27 — claim, capacity decrement, ledger, credit chain
+pnpm verify:phase2            22/22 — every surface, every role guard, the public breakdown
+pnpm s3:matrix                GUM 0001/0002/0003 at 0.886 / 0.904 / 0.850; all others 0.69–0.71
+pnpm build                    clean
+pnpm typecheck                clean
+pnpm lint                     clean
+pnpm seed --reset             idempotent; 47 capability embeddings computed
+```
+
+### Start here next phase
+1. **Re-run `pnpm pipeline:run --all`** when the provider quota is fresh, then `pnpm phase:report`
+   and re-run `pnpm verify:hei` — it should be 27/27.
+2. **`bash scripts/set-ci-secrets.sh`** (after `gh auth login`) and confirm CI is green with Build
+   and Test actually running. This has now blocked two phases.
+3. **Redeploy to Vercel** and re-run all six verification scripts with `VERIFY_BASE_URL` set.
+4. Then execute `docs/PHASE_3_BUILD.md`, Task 3.1.
+
+The single highest-leverage hour for the human team, per PHASE_2_LEARN.md §9.1, is curating the
+few-shot examples. Every prompt in `lib/ai/prompts/` has a marked block. Five examples in `s1.ts`
+were added during this phase to fix real misclassifications found by running the pipeline over the
+seed set — that is the loop to keep running.
