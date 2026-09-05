@@ -101,7 +101,9 @@ record(
   `severity ${challenge.severity}, ${heldAtGate ? "held for a district officer" : "released automatically"}`,
 );
 
-const gated = challenge.status === "VERIFIED";
+// Held is a property of the OFFERS, not of one status: a challenge waits at the
+// gate when a shortlist exists and nobody has been told about it.
+const gated = offers.length > 0 && offers.every((o) => o.notified_at === null);
 
 /**
  * Release the gate the way a District Collector would.

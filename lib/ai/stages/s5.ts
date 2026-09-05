@@ -231,12 +231,29 @@ export async function persistRoutes(args: {
   challengeId: string;
   trackingId: string;
   severity: number | null;
+  /** False when the challenge is still held for a human and must not be offered. */
+  canRoute?: boolean;
   matches: Match[];
   reasons: ReasonResult[];
 }): Promise<S5Result> {
   const at = clockNow();
   const claimWindowEndsAt = clockPlusDays(ROUTING.claimWindowDays);
-  const gated = (args.severity ?? 0) >= ROUTING.humanGateSeverity;
+
+  /**
+   * Two independent reasons to hold everything back.
+   *
+   * The first is the human gate: severity at or above 0.7 waits for a District
+   * Collector (PHASE_2_LEARN.md section 8).
+   *
+   * The second is subtler and was a real bug. A challenge S1 held for human
+   * triage is still SUBMITTED, and `advance()` correctly refuses to move it to
+   * ROUTED — but nothing stopped S5 emailing three institutions about it first.
+   * The state machine would then refuse every claim they tried to make.
+   * Nothing is offered to a university until the platform is confident enough
+   * to have moved the challenge past triage.
+   */
+  const readyToRoute = args.canRoute !== false;
+  const gated = (args.severity ?? 0) >= ROUTING.humanGateSeverity || !readyToRoute;
 
   const rows: RouteRow[] = args.matches.map((match, i) => ({
     rank: i + 1,

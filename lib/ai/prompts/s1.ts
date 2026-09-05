@@ -12,7 +12,11 @@
  */
 import type { S1Input } from "../schemas";
 
-export const VERSION = "1.2.0";
+export const VERSION = "1.3.0";
+// 1.3.0 — same eight boundaries, roughly half the tokens. Measured, this prompt
+// was 2,131 tokens against Groq's 8,000-per-minute ceiling, which made a batch
+// backfill impossible and put avoidable prefill latency on the live demo path.
+// Every example was cut to the sentence that actually teaches the boundary.
 // 1.2.0 — the same run also forwarded the Medininagar heat-stress report and the
 // Littipara dry-toilet report, both of which end by asking for a method that does
 // not exist ("how would we know in advance when the heat will be lethal", "we need
@@ -89,123 +93,70 @@ Reports arrive in Hindi, Santali, Nagpuri or English. Judge the original text.`;
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {
     input:
-      "The mud embankment on the South Koel river beside our tola has a crack that started after " +
-      "last monsoon. It was one hand wide in October, now I can put my whole arm in it. Nobody " +
-      "from the block has come to see it even after we told the mukhiya twice.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: false,
-      grievance_target: null,
-      confidence: 0.88,
-      rationale:
-        "A widening embankment crack needs survey and design work; official inaction does not make it a grievance.",
-    }),
+      "The mud embankment on the South Koel has a crack that has widened since last monsoon. " +
+      "Nobody from the block has come, even after we told the mukhiya twice.",
+    output: shot(false, false, 0.88, "A widening embankment crack needs survey and design; official inaction does not make it a grievance."),
+  },
+  {
+    input: "The PMGSY road was sanctioned in 2022 and not one metre has been laid.",
+    output: shot(true, false, 0.92, "Sanctioned scheme not delivered: a known fix with an accountable officer.", "CPGRAMS"),
   },
   {
     input:
-      "The PMGSY road to our village was sanctioned in 2022 and the board is still standing at the " +
-      "turning, but not one metre has been laid. The contractor came once with a machine and left.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: true,
-      grievance_target: "CPGRAMS",
-      confidence: 0.92,
-      rationale: "Sanctioned scheme not delivered: a known fix with an accountable officer, not a research problem.",
-    }),
+      "Jal Jeevan Mission taps were fitted in every house in 2024 but no water has ever come through them. " +
+      "The tank was built and the pump was never connected.",
+    output: shot(true, false, 0.9, "Assets installed under a scheme but never commissioned: a delivery failure.", "CPGRAMS"),
   },
   {
     input:
-      "Jal Jeevan Mission taps were fitted in every house in 2024 but not one day of water has come " +
-      "through them. The overhead tank was built but the pump was never connected.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: true,
-      grievance_target: "CPGRAMS",
-      confidence: 0.9,
-      rationale: "Assets installed under a scheme but not commissioned: delivery failure, forwarded to the scheme owner.",
-    }),
+      "Elephants take our paddy every October. Compensation comes after a year and is small, and the forest " +
+      "department arrives in the morning. We need a way to know the herd is coming that evening.",
+    output: shot(false, false, 0.86, "They ask for a way to detect and deter a herd; no officer has a working method, so the slow compensation is context."),
   },
   {
     input:
-      "The elephant herd comes from the Dalma side into our paddy every October when the grain is " +
-      "filling. In one night twenty families lose their year. Compensation comes after a year and " +
-      "is small. Forest department comes in the morning. We need a way to know the herd is coming " +
-      "that evening, and something that keeps them out that does not kill anyone.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: false,
-      grievance_target: null,
-      confidence: 0.86,
-      rationale:
-        "They ask for a way to detect and deter a herd: no officer has a working method, so the slow compensation is context, not the problem.",
-    }),
+      "Fire comes through the sal forest every March and burns our mahua and lac. The forest guard says he has " +
+      "no people. We want to know where the fire will come from and how to stop it.",
+    output: shot(false, false, 0.87, "They want fire prediction and prevention, which nobody has; an understaffed guard post is not a delivery failure."),
   },
   {
     input:
-      "Every March fire comes through the sal forest and burns our mahua, tendu and the lac on the " +
-      "kusum trees, and twice it reached the cattle shed. Forest guard says he has no people. We " +
-      "want to know where the fire will come from and a way to stop it before it reaches us.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: false,
-      grievance_target: null,
-      confidence: 0.87,
-      rationale:
-        "They want fire prediction and prevention, which nobody currently has; the understaffed guard post does not make this a delivery failure.",
-    }),
+      "Two labourers collapsed at the pond-digging site this May and one died. There is no shade and no ORS. " +
+      "Somebody should decide how we can know in advance when the heat will be lethal.",
+    output: shot(false, false, 0.85, "They ask how lethal heat could be predicted and hours changed: research, not delivery."),
   },
   {
     input:
-      "The anganwadi building was sanctioned two years ago and never built, so the children sit " +
-      "under the tree. Also the ground floods after every rain and nobody knows why, because the " +
-      "water comes up rather than down.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: true,
-      grievance_target: "CPGRAMS",
-      confidence: 0.68,
-      rationale:
-        "Two problems in one report: an undelivered sanctioned building, and unexplained groundwater. The low confidence sends it to a human to split.",
-    }),
+      "Every house got a toilet under the mission in 2019, but there is no water from February to June so " +
+      "nobody uses them. We need a toilet that works with the little water we have.",
+    output: shot(false, false, 0.83, "The scheme delivered the asset; what is missing is a low-water sanitation design, which is what they ask for."),
   },
   {
     input:
-      "Pond-digging work runs through the afternoon in April and May. This year two labourers " +
-      "collapsed and one died in the sadar hospital. There is no shade at the site and no ORS. " +
-      "Somebody should decide how we can know in advance when the heat will be lethal and how the " +
-      "working hours should change.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: false,
-      grievance_target: null,
-      confidence: 0.85,
-      rationale:
-        "They ask how lethal heat could be predicted and how hours should change: no officer has that method, so this is research, not delivery.",
-    }),
-  },
-  {
-    input:
-      "All houses got a toilet under the mission in 2019. There is no water in the tola from " +
-      "February to June so nobody uses them and everyone goes to the field again. Building was " +
-      "easy, water was not thought about. We need a toilet that works with the little water we have.",
-    output: JSON.stringify({
-      is_unsafe: false,
-      unsafe_category: null,
-      is_grievance: false,
-      grievance_target: null,
-      confidence: 0.83,
-      rationale:
-        "The scheme delivered the asset; what is missing is a low-water sanitation design, which is exactly what they ask for.",
-    }),
+      "The anganwadi building was sanctioned two years ago and never built. Also the ground floods after every " +
+      "rain and nobody knows why, because the water comes up rather than down.",
+    output: shot(true, false, 0.68, "Two problems in one report: an undelivered building and unexplained groundwater. Low confidence sends it to a human to split.", "CPGRAMS"),
   },
 ];
+
+/** Compact worked-example output. Keeping these terse matters: eight verbose
+ *  examples cost more prompt tokens than the report being classified. */
+function shot(
+  grievance: boolean,
+  unsafe: boolean,
+  confidence: number,
+  rationale: string,
+  target: string | null = null,
+): string {
+  return JSON.stringify({
+    is_unsafe: unsafe,
+    unsafe_category: null,
+    is_grievance: grievance,
+    grievance_target: target,
+    confidence,
+    rationale,
+  });
+}
 
 export function render(input: S1Input): string {
   const lines = [

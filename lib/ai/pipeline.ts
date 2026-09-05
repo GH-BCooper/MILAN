@@ -450,34 +450,55 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
   const value = normaliseS2(run.value);
   const decision = decideS2(value);
 
-  // The classification is written whichever way the confidence falls: a
-  // proposal a human can see beats a null a human cannot review. The status
-  // only advances when the confidence clears the floor.
-  await db
-    .update(challenges)
-    .set({
+  /**
+   * A rule-tier answer never overwrites an existing classification.
+   *
+   * The gazetteer is a keyword matcher reporting 0.45 confidence. When it runs
+   * because both providers were rate-limited, replacing a domain and hazard a
+   * person authored with a keyword guess makes the data worse, not better --
+   * and it would do it silently, on every challenge, in exactly the conditions
+   * where nobody is watching.
+   *
+   * So a level-2 answer on an already-classified challenge is recorded as a
+   * proposal in `ai_runs`, shown on the trace, and sent to /admin/triage. It
+   * changes nothing. A level-0 or level-1 answer writes as normal, and so does
+   * a level-2 answer on a challenge that had no classification at all, because
+   * a weak label beats none.
+   */
+  const alreadyClassified = c.domain !== null && c.hazard !== null;
+  const keepExisting = run.meta.fallbackLevel === 2 && alreadyClassified;
+
+  if (!keepExisting) {
+    await db
+      .update(challenges)
+      .set({
+        domain: value.domain,
+        hazard: value.hazard,
+        hazardStrength: value.hazard_strength.toFixed(2),
+        severity: value.severity.toFixed(2),
+        solvability: value.solvability,
+        capitalWorks: value.capital_works,
+        updatedAt: clockNow(),
+      })
+      .where(eq(challenges.id, c.id));
+
+    ctx.challenge = {
+      ...c,
       domain: value.domain,
       hazard: value.hazard,
       hazardStrength: value.hazard_strength.toFixed(2),
       severity: value.severity.toFixed(2),
       solvability: value.solvability,
       capitalWorks: value.capital_works,
-      updatedAt: clockNow(),
-    })
-    .where(eq(challenges.id, c.id));
-
-  ctx.challenge = {
-    ...c,
-    domain: value.domain,
-    hazard: value.hazard,
-    hazardStrength: value.hazard_strength.toFixed(2),
-    severity: value.severity.toFixed(2),
-    solvability: value.solvability,
-    capitalWorks: value.capital_works,
-  };
+    };
+  }
 
   let decisionText: string;
-  if (decision.kind === "HUMAN_QUEUE") {
+  if (keepExisting) {
+    decisionText =
+      `No model was reachable, so the rule tier answered and the existing classification ` +
+      `(${c.domain} / ${c.hazard}) stands unchanged. The proposal is recorded and this is at /admin/triage.`;
+  } else if (decision.kind === "HUMAN_QUEUE") {
     decisionText = `Classification proposed but held for a human at /admin/triage. ${decision.why}`;
   } else {
     decisionText = `${value.domain} / ${value.hazard}, severity ${value.severity.toFixed(2)}.`;
@@ -823,10 +844,15 @@ async function stageS5(ctx: Ctx, emit: Emit): Promise<void> {
   }
 
   const severity = c.severity === null ? null : Number(c.severity);
+  // A challenge that cannot legally reach ROUTED is one the platform is still
+  // unsure about — S1 or S2 held it for a human. The shortlist is still
+  // computed and stored, because the reviewer wants to see it; nothing is sent.
+  const canRoute = canTransition(c.status, "VERIFIED") || c.status === "VERIFIED";
   const result = await persistRoutes({
     challengeId: c.id,
     trackingId: c.trackingId,
     severity,
+    canRoute,
     matches: top,
     reasons,
   });
@@ -835,7 +861,9 @@ async function stageS5(ctx: Ctx, emit: Emit): Promise<void> {
   // routes: the challenge moves to VERIFIED-pending and waits for the District
   // Collector at /gov/gate. Below it, routing releases automatically.
   if (result.gated) {
-    await advance(ctx, "VERIFIED", `Severity ${severity?.toFixed(2)} is at or above the ${ROUTING.humanGateSeverity} human gate.`);
+    if (canRoute) {
+      await advance(ctx, "VERIFIED", `Severity ${severity?.toFixed(2)} is at or above the ${ROUTING.humanGateSeverity} human gate.`);
+    }
   } else {
     await advance(ctx, "VERIFIED", "Below the human gate threshold; routing released automatically.");
     await advance(ctx, "ROUTED", `Offered to ${result.routes.length} institutions with a ${ROUTING.claimWindowDays}-day claim window.`);
@@ -862,7 +890,9 @@ async function stageS5(ctx: Ctx, emit: Emit): Promise<void> {
       })),
     },
     decision: result.gated
-      ? `Severity ${severity?.toFixed(2)} is at or above ${ROUTING.humanGateSeverity}: nothing has been notified. Waiting for the District Collector at /gov/gate.`
+      ? !canRoute
+        ? `A shortlist of ${result.routes.length} was computed but nothing was sent: this report is still held for a human at /admin/triage.`
+        : `Severity ${severity?.toFixed(2)} is at or above ${ROUTING.humanGateSeverity}: nothing has been notified. Waiting for the District Collector at /gov/gate.`
       : `Offered to ${result.routes.length} institutions. ${result.notified} notification(s) sent, claim window ${ROUTING.claimWindowDays} days.`,
     meta: reasons.find((r) => r.meta)?.meta ? metaOf(reasons.find((r) => r.meta)!.meta!) : null,
   });
