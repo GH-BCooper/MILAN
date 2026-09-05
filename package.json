@@ -2,7 +2,7 @@
   "name": "milan",
   "version": "0.1.0",
   "private": true,
-  "description": "Milan — citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
+  "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,7 +24,8 @@
     "verify:hei": "tsx --conditions=react-server scripts/verify-hei.mts",
     "phase:report": "tsx --conditions=react-server scripts/phase-report.mts",
     "verify:phase2": "tsx --conditions=react-server scripts/verify-phase2-routes.mts",
-    "verify:triage": "tsx --conditions=react-server scripts/verify-triage.mts"
+    "verify:triage": "tsx --conditions=react-server scripts/verify-triage.mts",
+    "verify:clock": "tsx --conditions=react-server scripts/verify-clock.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

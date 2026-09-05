@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { DemoClockBanner } from "@/components/demo-clock-banner";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${notoSans.variable} ${notoDevanagari.variable} h-full`}>
       <body className="min-h-full flex flex-col antialiased">
+        <DemoClockBanner />
         {children}
         <Toaster />
       </body>

@@ -6,20 +6,17 @@
  * nothing in the codebase calls `Date.now()` or `new Date()` directly.
  * `tests/no-raw-date.test.ts` enforces this by grepping `app/` and `lib/`.
  *
- * Phase 1: the offset comes from the `CLOCK_OFFSET_DAYS` environment variable.
- * Phase 3: `demo_state.clock_offset_days` becomes the authority and this module
- * reads it through a request-scoped cache. The signature does not change.
+ * Phase 3: `demo_state.clock_offset_days` is the authority. It is read
+ * asynchronously by `lib/clock/server.ts` (5 s TTL) into the cell in
+ * `lib/clock/offset.ts`; `CLOCK_OFFSET_DAYS` is the fallback until the first
+ * successful read. The signature of `clockNow()` did not change.
  */
+import { currentOffsetDays } from "./offset";
 
-const MS_PER_DAY = 86_400_000;
+export const MS_PER_DAY = 86_400_000;
 
-/** Parsed once per process. An unparseable value is treated as zero offset — the
- *  demo console must never be able to crash production time. */
 function offsetDays(): number {
-  const raw = process.env.CLOCK_OFFSET_DAYS;
-  if (!raw) return 0;
-  const parsed = Number.parseFloat(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return currentOffsetDays();
 }
 
 /** The current time as Milan understands it. Use this everywhere. */
@@ -44,9 +41,14 @@ export function clockPlusHours(hours: number): Date {
   return new Date(clockNowMs() + hours * 3_600_000);
 }
 
-/** The active demo offset, for display in the admin console. */
+/** The active demo offset, for display in the admin console and the banner. */
 export function currentClockOffsetDays(): number {
   return offsetDays();
+}
+
+/** Real wall-clock time, ignoring the demo offset entirely. */
+export function realNow(): Date {
+  return new Date(Date.now());
 }
 
 /**

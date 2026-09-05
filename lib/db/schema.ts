@@ -755,6 +755,8 @@ export const demoState = pgTable("demo_state", {
   id: integer("id").primaryKey().default(1),
   clockOffsetDays: integer("clock_offset_days").notNull().default(0),
   emergencyMode: boolean("emergency_mode").notNull().default(false),
+  /** Which hazard the emergency filter is pinned to. Display and sort only — never the stored score. */
+  emergencyHazard: text("emergency_hazard"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
