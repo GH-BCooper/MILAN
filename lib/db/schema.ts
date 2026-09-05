@@ -872,6 +872,7 @@ export type Domain = (typeof domainEnum.enumValues)[number];
 export type Hazard = (typeof hazardEnum.enumValues)[number];
 export type SlaKind = (typeof slaKindEnum.enumValues)[number];
 export type LedgerKind = (typeof ledgerKindEnum.enumValues)[number];
+export type Licence = (typeof licenceEnum.enumValues)[number];
 export type OrgType = (typeof orgTypeEnum.enumValues)[number];
 export type Challenge = typeof challenges.$inferSelect;
 export type Capability = typeof capabilities.$inferSelect;

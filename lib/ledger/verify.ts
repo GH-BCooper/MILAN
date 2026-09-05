@@ -113,7 +113,35 @@ export async function verifyChain(options: { verifyPayloads?: boolean } = {}): P
       // The payload check is what catches tampering with the *content* rather
       // than with the links. An UPDATE is refused by the database, but a
       // restore from a doctored dump would not be, and this is what finds it.
-      if (verifyPayloads && row.payload !== null) {
+      /**
+       * Two kinds of entry, and they are checked differently on purpose.
+       *
+       * Most entries commit to their own payload, so content_hash is the hash of
+       * that payload and recomputing it is the check. An entry about a FILE
+       * (a published artifact, a photograph) commits to the file's bytes
+       * instead — that is the whole point, since it is what lets a reader
+       * holding the file prove it is the file. Such an entry declares the same
+       * hash inside its payload, so the check there is that the declaration and
+       * the column agree; the bytes themselves are checked by the reader.
+       */
+      const declared =
+        row.payload !== null && typeof (row.payload as { contentHash?: unknown }).contentHash === "string"
+          ? ((row.payload as { contentHash: string }).contentHash)
+          : null;
+
+      if (verifyPayloads && declared !== null) {
+        if (declared !== row.content_hash) {
+          return {
+            ok: false,
+            checked,
+            brokenAtSeq: seq,
+            reason: "the payload declares a different content hash from the one recorded on the entry",
+            headHash,
+            headSeq,
+            sealedLegacy,
+          };
+        }
+      } else if (verifyPayloads && row.payload !== null) {
         const recomputed = contentHashOf(row.payload);
         const sealed = seal && seq >= seal.fromSeq && seq <= seal.toSeq ? seal.hashes[String(seq)] : undefined;
         if (recomputed !== row.content_hash) {

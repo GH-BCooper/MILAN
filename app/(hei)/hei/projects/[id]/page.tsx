@@ -16,17 +16,22 @@ import { requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
 import {
+  accessRequests,
+  artifacts,
   auditLog,
   challenges,
   creditEdges,
   districts,
   ledgerEntries,
   milestones,
+  organization,
   projectMembers,
   projects,
   userProfiles,
 } from "@/lib/db/schema";
 import type { ChallengeStatus } from "@/lib/db/schema";
+import { canTransition } from "@/lib/db/stateMachine";
+import { AccessRequests, PublishForm, type AccessRequestView, type ArtifactView } from "./artifact-panel";
 import { Milestones } from "./milestones";
 
 export const dynamic = "force-dynamic";
@@ -68,7 +73,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   if (!row) notFound();
 
-  const [stones, members, credits, activity, ledger] = await Promise.all([
+  const [stones, members, credits, activity, ledger, published, requests] = await Promise.all([
     db.select().from(milestones).where(eq(milestones.projectId, id)).orderBy(asc(milestones.dueAt)),
     db
       .select({
@@ -97,9 +102,58 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       .where(or(eq(ledgerEntries.projectId, id), eq(ledgerEntries.challengeId, row.challengeId)))
       .orderBy(desc(ledgerEntries.createdAt))
       .limit(30),
+    db
+      .select({
+        id: artifacts.id,
+        title: artifacts.title,
+        abstract: artifacts.abstract,
+        kind: artifacts.kind,
+        licence: artifacts.licence,
+        contentHash: artifacts.contentHash,
+        publishedAt: artifacts.publishedAt,
+      })
+      .from(artifacts)
+      .where(eq(artifacts.projectId, id))
+      .orderBy(desc(artifacts.publishedAt)),
+    db
+      .select({
+        id: accessRequests.id,
+        artifactTitle: artifacts.title,
+        requesterName: userProfiles.fullName,
+        orgName: organization.name,
+        purpose: accessRequests.purpose,
+        state: accessRequests.state,
+        createdAt: accessRequests.createdAt,
+      })
+      .from(accessRequests)
+      .innerJoin(artifacts, eq(artifacts.id, accessRequests.artifactId))
+      .leftJoin(userProfiles, eq(userProfiles.userId, accessRequests.requesterId))
+      .leftJoin(organization, eq(organization.id, accessRequests.orgId))
+      .where(eq(artifacts.projectId, id))
+      .orderBy(desc(accessRequests.createdAt)),
   ]);
 
   const p = row.project;
+
+  const publishedArtifacts: ArtifactView[] = published.map((a) => ({
+    id: a.id,
+    title: a.title,
+    abstract: a.abstract,
+    kind: a.kind,
+    licence: a.licence,
+    contentHash: a.contentHash,
+    publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
+  }));
+
+  const accessRequestViews: AccessRequestView[] = requests.map((r) => ({
+    id: r.id,
+    artifactTitle: r.artifactTitle,
+    requesterName: r.requesterName ?? "Unnamed account",
+    orgName: r.orgName,
+    purpose: r.purpose,
+    state: r.state,
+    createdAt: r.createdAt.toISOString(),
+  }));
   const silentDays = p.lastActivityAt
     ? Math.floor((clockNow().getTime() - p.lastActivityAt.getTime()) / 86_400_000)
     : null;
@@ -190,6 +244,49 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             {members.length} of them have a Milan account and can edit this project today.
           </p>
         ) : null}
+      </section>
+
+      {/* Publishing: the licence choice, the content hash, and who has read it. */}
+      <section className="mt-8" aria-labelledby="artifact-heading">
+        <h2 id="artifact-heading" className="text-lg font-semibold">
+          Artifacts
+        </h2>
+        <p className="mb-3 mt-1 text-sm text-muted-foreground">
+          Publishing writes an append-only ledger entry that commits to the file&rsquo;s own SHA-256.
+          That is what makes the work prior art the day it lands, rather than the day someone else
+          tries to patent it.
+        </p>
+
+        {publishedArtifacts.length > 0 ? (
+          <ul className="mb-4 divide-y divide-border rounded-lg border border-border">
+            {publishedArtifacts.map((a) => (
+              <li key={a.id} className="p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Link href={`/artifacts/${a.id}`} className="text-sm font-semibold underline-offset-4 hover:underline">
+                    {a.title}
+                  </Link>
+                  <span
+                    className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}`}
+                  >
+                    {a.licence === "CC_BY" ? "CC-BY" : "restricted"}
+                  </span>
+                </div>
+                <p className="mt-1 break-all font-mono text-[11px] text-muted-foreground">
+                  sha256 {a.contentHash ?? "—"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <PublishForm projectId={id} canMarkPublished={canTransition(row.challengeStatus as ChallengeStatus, "SOLUTION_PUBLISHED")} />
+
+        <h3 className="mt-6 text-sm font-semibold">Access requests</h3>
+        <p className="mb-2 mt-1 text-xs text-muted-foreground">
+          Someone asking to read a restricted artifact, by name, from a named organisation, with a
+          stated purpose. Granting is a decision the lead makes, not a checkbox we make for them.
+        </p>
+        <AccessRequests requests={accessRequestViews} />
       </section>
 
       <section className="mt-8" aria-labelledby="activity-heading">

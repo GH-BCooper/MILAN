@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 
+import { alias } from "drizzle-orm/pg-core";
+
+import { CitationBlock } from "@/components/citation-block";
 import { CorroborateButton } from "@/components/corroborate-button";
+import { CreditChain } from "@/components/credit-chain";
+import { bibtex, citationString, type CitationInput } from "@/lib/credit/citation";
 import { PipelineTrace } from "@/components/pipeline-trace";
 import { PriorityBreakdown } from "@/components/priority-breakdown";
 import { parseBreakdown } from "@/packages/scoring";
@@ -22,7 +27,16 @@ import {
   districts,
   organization,
   routes,
+  userProfiles,
 } from "@/lib/db/schema";
+
+/**
+ * A credit edge points at a person and, separately, at an organisation. Both are
+ * joined here under their own aliases so the chain can render "Prof. R. Kumar ·
+ * BIT Sindri" without a second round trip per node.
+ */
+const creditProfile = alias(userProfiles, "credit_profile");
+const creditOrg = alias(organization, "credit_org");
 import { publicUrlFor } from "@/lib/media/storage";
 
 export const dynamic = "force-dynamic";
@@ -72,11 +86,26 @@ export default async function ChallengePage({
     approved: c.framingApprovedByCitizen,
   });
 
+  const host = (process.env.BETTER_AUTH_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+
   const [media, credits, offers] = await Promise.all([
     db.select().from(challengeMedia).where(eq(challengeMedia.challengeId, c.id)),
+    // The credit chain, with the names resolved. Team members are credited by
+    // NAME on the public chain, never by email — the email links an account and
+    // sends the notification, and it stays in project_members and the ledger.
     db
-      .select()
+      .select({
+        id: creditEdges.id,
+        relation: creditEdges.relation,
+        declaredRole: creditEdges.declaredRole,
+        createdAt: creditEdges.createdAt,
+        toUserId: creditEdges.toUserId,
+        toName: creditProfile.fullName,
+        orgName: creditOrg.name,
+      })
       .from(creditEdges)
+      .leftJoin(creditProfile, eq(creditProfile.userId, creditEdges.toUserId))
+      .leftJoin(creditOrg, eq(creditOrg.id, creditEdges.orgId))
       .where(eq(creditEdges.challengeId, c.id))
       .orderBy(asc(creditEdges.createdAt)),
     db
@@ -97,6 +126,27 @@ export default async function ChallengePage({
       .where(eq(routes.challengeId, c.id))
       .orderBy(asc(routes.rank)),
   ]);
+
+  /**
+   * The citation. The team name is the organisation on the first TEAM_MEMBER or
+   * MENTOR edge — a department, not an individual, because that is how a
+   * final-year project is cited. Before anyone claims it there is no team, and
+   * the citation is the citizen alone, which is correct rather than incomplete.
+   */
+  const teamOrg =
+    credits.find((e) => e.relation === "TEAM_MEMBER" && e.orgName)?.orgName ??
+    credits.find((e) => e.relation === "MENTOR" && e.orgName)?.orgName ??
+    null;
+
+  const citationInput: CitationInput = {
+    trackingId: c.trackingId,
+    originatorName: c.reporterName,
+    teamName: teamOrg,
+    title: c.title,
+    place: row.blockName ?? row.districtName ?? null,
+    year: c.createdAt.getUTCFullYear(),
+    host,
+  };
 
   // The gate is held when routes exist but none has been notified: S5 wrote the
   // shortlist and deliberately sent nothing.
@@ -487,31 +537,43 @@ export default async function ChallengePage({
           />
         </div>
 
-        <section className="mt-8" aria-labelledby="credit-heading">
+        <section className="mt-8" aria-labelledby="credit-heading" id="credit">
           <h2 id="credit-heading" className="text-lg font-semibold">
             Credit chain
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We do not stop people from sharing work. We make it impossible to erase who did it.
+          <p className="mb-3 mt-1 text-sm text-muted-foreground">
+            We do not stop people from sharing work. We make it impossible to erase who did it. Every
+            edge below is also a row in the{" "}
+            <Link href={`/ledger?c=${c.trackingId}`} className="text-primary underline underline-offset-4">
+              append-only ledger
+            </Link>
+            , which the database physically refuses to update or delete.
           </p>
-          <ol className="mt-3 divide-y divide-border rounded-lg border border-border">
-            {credits.map((edge) => (
-              <li key={edge.id} className="flex flex-wrap items-center gap-3 p-4">
-                <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
-                  {edge.relation.replaceAll("_", " ")}
-                </span>
-                <span className="text-sm font-medium">
-                  {edge.declaredRole ?? "Anonymous reporter"}
-                </span>
-                <span className="ms-auto text-xs text-muted-foreground">
-                  {formatDate(edge.createdAt)}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <CreditChain
+            trackingId={c.trackingId}
+            nodes={credits.map((edge) => ({
+              id: edge.id,
+              relation: edge.relation,
+              name:
+                edge.toName ??
+                (edge.relation === "ORIGINATOR" ? c.reporterName ?? "Anonymous reporter" : edge.orgName ?? "Anonymous"),
+              declaredRole: edge.declaredRole,
+              orgName: edge.orgName,
+              userId: edge.toUserId,
+              at: edge.createdAt,
+            }))}
+          />
           <p className="mt-2 text-xs text-muted-foreground">
-            Team members, mentors, funders and implementers join this chain as the work moves.
+            Team members, mentors, funders and implementers join this chain as the work moves. A report
+            merged into this one appears as a corroborator rather than disappearing.
           </p>
+
+          <div className="mt-4">
+            <CitationBlock
+              citation={citationString(citationInput)}
+              bibtex={bibtex(citationInput)}
+            />
+          </div>
         </section>
 
         <p className="mt-10 text-sm">
