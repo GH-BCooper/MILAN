@@ -801,6 +801,11 @@ behind an interface with a local no-op)
   Decisions. Coverage is complete from genesis; only the mechanism differs.
 
 ### Known issues
+- **The reaper's Vercel cron is daily, not every five minutes** — *medium, and it is a plan limit
+  rather than a defect*. Hobby refuses a sub-daily cron by failing the whole deployment. One line in
+  `vercel.json` on Pro, or point a free external scheduler at `/api/cron/reaper` with `CRON_SECRET`.
+  Deadlines are durable rows compared against `clock_now()`, so a late reaper fires everything that
+  became due while it was not running, in `due_at` order. See `docs/CRON_SCHEDULE.md`.
 - **The offline stack is written but not executed on this machine** — *medium*. Docker is not
   installed in this WSL distro (`docker` is not on the PATH), so `docker-compose.yml` and
   `.env.offline` are unverified end to end. What **is** verified is the part that matters most:
@@ -847,9 +852,35 @@ AI_PROVIDER_CHAIN=rules pnpm ai:smoke
 backups/phase3-demo.sql    1073 rows across 24 tables, committed
 ```
 
+### Verified against production — https://milan-ruddy-chi.vercel.app
+```
+verify:demo          13/13 beats, 15.4 s total   (60.5 s locally — the bom1 region is doing its job)
+verify:gov           21/21, DC of Gumla refused Dhanbad twice
+verify:provenance    15/15, chain verifies clean from genesis, 337 entries
+verify:impact         8/8, counter 2→3 on Yes, unmoved on Partly and No
+verify:industry      21/21, MoU hashed, CSR CSV and PDF exported
+verify:perf           6/6 — /challenges 120ms, /c/[id] 128ms, /bounties 85ms,
+                     /gov 144ms, /stats 106ms, /ledger 131ms (medians of 5)
+GET /api/ledger/verify   {"ok":true, ...} in production
+```
+
+### Three deployment failures found on the way, and what they were
+- **Production had silently sat on the Phase 2 build for the whole of Phase 3.** `vercel.json` asked
+  for the reaper on `*/5 * * * *`, which is the right schedule; **Vercel Hobby refuses any cron that
+  runs more than once a day, and it refuses it by failing the entire deployment.** So every
+  git-triggered deploy since that line was added had been rejected, with nothing in the repository to
+  show for it. Now `0 1 * * *`, with `docs/CRON_SCHEDULE.md` recording that it is a one-line change
+  back on Pro, that nothing on the demo path depends on it, and how to drive `/api/cron/reaper` from
+  a free external scheduler in the meantime.
+- **`.vercel/repo.json` carried a `projectId` that no longer exists**, so the CLI could not deploy
+  either and reported a misleading "project name" error. Relinked.
+- **The `/demo` reset read `seed-data/challenges.csv` by path, which Next does not trace**, so on
+  Vercel it silently restored nothing while working perfectly on a laptop — precisely the class of
+  failure the console exists to prevent. `outputFileTracingIncludes` in `next.config.ts` declares it.
+
 ### Final handoff
-- **Deployed URL:** https://milan-ruddy-chi.vercel.app — **this phase has not been pushed or
-  redeployed yet.** Everything above is verified against a local production build. Push to deploy.
+- **Deployed URL:** https://milan-ruddy-chi.vercel.app — **Phase 3 is live and verified against it**,
+  not only against a local build. See "Verified against production" below.
 - **Credentials:** password `milan2026` for every seeded account.
   `sunita@demo.milan.in` (citizen) · `hod.civil@bitsindri.demo.milan.in` (HEI) ·
   `dc.gumla@jh.gov.demo.milan.in` (government, Gumla only) ·
@@ -863,13 +894,10 @@ backups/phase3-demo.sql    1073 rows across 24 tables, committed
   CI check.
 
 ### Start here next phase
-1. **Push and redeploy**, then re-run every verification against the deployed URL with
-   `VERIFY_BASE_URL=https://milan-ruddy-chi.vercel.app pnpm verify:phase3`. Confirm the Vercel
-   function region is Mumbai (`bom1`) first — see `docs/VERCEL_REGION.md`.
-2. **Run the offline stack once, on a machine with Docker**, following the four commands in the
+1. **Run the offline stack once, on a machine with Docker**, following the four commands in the
    README, and record which stages used fallback level 2. It is the only Phase 3 item written but
    not executed.
-3. **Rehearse the six-minute script from `docs/DEMO_RUNBOOK.md`** twice, end to end, pressing
+2. **Rehearse the six-minute script from `docs/DEMO_RUNBOOK.md`** twice, end to end, pressing
    **Reset** on `/demo` between runs. Time each beat against the runbook.
-4. Record `seed-data/voice-note.mp3` and paste its SHA-256 into `lib/ai/seededTranscripts.ts` — the
+3. Record `seed-data/voice-note.mp3` and paste its SHA-256 into `lib/ai/seededTranscripts.ts` — the
    last item carried from Phase 1.

@@ -38,14 +38,26 @@ console.log(`\nTask 3.6 — the citizen confirmation loop\n${"-".repeat(72)}`);
  */
 const candidates = (await db.execute<{ id: string; tracking_id: string; status: string }>(sql`
   SELECT id, tracking_id, status::text AS status FROM challenges
-  WHERE status IN ('VERIFIED','ROUTED','BOUNTY_LISTED','UNCLAIMED_ESCALATED','SOLUTION_PUBLISHED','INDUSTRY_INTEREST','IN_RESEARCH','PROPOSAL_APPROVED','CLAIMED','IMPLEMENTED')
+  WHERE status IN ('SUBMITTED','TRIAGED','CLASSIFIED','CLUSTERED','PRIORITISED','VERIFIED','ROUTED','BOUNTY_LISTED','UNCLAIMED_ESCALATED','SOLUTION_PUBLISHED','INDUSTRY_INTEREST','IN_RESEARCH','PROPOSAL_APPROVED','CLAIMED','IMPLEMENTED')
   -- A challenge with a real reporter account first: the confirmation SMS is the
   -- beat being tested, and it can only be sent to somebody who exists.
   ORDER BY reporter_id IS NOT NULL DESC, status = 'IMPLEMENTED' DESC, priority_score DESC NULLS LAST
   LIMIT 12
 `)) as unknown as Array<{ id: string; tracking_id: string; status: string }>;
 
+/**
+ * Walked one legal edge at a time, from wherever the challenge happens to be.
+ * A freshly seeded database has everything at SUBMITTED, so the harness has to
+ * be able to start there — and crossing the pipeline states through the state
+ * machine rather than around it is the point: each hop writes its own ledger
+ * entry and opens its own deadlines, exactly as the real pipeline would.
+ */
 const PATH_TO_IMPLEMENTED: Record<string, string[]> = {
+  SUBMITTED: ["TRIAGED", "CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED", "ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
+  TRIAGED: ["CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED", "ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
+  CLASSIFIED: ["CLUSTERED", "PRIORITISED", "VERIFIED", "ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
+  CLUSTERED: ["PRIORITISED", "VERIFIED", "ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
+  PRIORITISED: ["VERIFIED", "ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
   BOUNTY_LISTED: ["CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
   UNCLAIMED_ESCALATED: ["CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],
   VERIFIED: ["ROUTED", "CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED", "IMPLEMENTED"],

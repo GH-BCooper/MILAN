@@ -16,17 +16,17 @@ endobj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 6 0 R >>
 endobj
 6 0 obj
-<< /Length 2897 >>
+<< /Length 4038 >>
 stream
 BT /F2 18 Tf 1 0 0 1 56 785.89 Tm (CSR impact report) Tj ET
 BT /F1 10 Tf 1 0 0 1 56 759.89 Tm (Companies Act 2013, section 135 - annexure of supported projects) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 745.89 Tm (Generated 2026-09-05 12:39:49 UTC from Milan, Government of Jharkhand) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 745.89 Tm (Generated 2026-10-12 14:04:47 UTC from Milan, Government of Jharkhand) Tj ET
 BT /F2 13 Tf 1 0 0 1 56 716.89 Tm (Summary) Tj ET
-BT /F1 10 Tf 1 0 0 1 56 699.89 Tm (Challenges supported: 1) Tj ET
-BT /F1 10 Tf 1 0 0 1 56 685.89 Tm (Districts: Sahibganj) Tj ET
-BT /F1 10 Tf 1 0 0 1 56 665.89 Tm (Confirmed by the citizen who reported the problem: 0. Partly confirmed: 1. Claimed by an) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 699.89 Tm (Challenges supported: 3) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 685.89 Tm (Districts: Gumla) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 665.89 Tm (Confirmed by the citizen who reported the problem: 3. Partly confirmed: 0. Claimed by an) Tj ET
 BT /F1 10 Tf 1 0 0 1 56 651.89 Tm (implementer but NOT confirmed by any citizen: 0. Disputed by the citizen: 0.) Tj ET
-BT /F1 10 Tf 1 0 0 1 56 631.89 Tm (Beneficiaries, confirmed outcomes only: 1800. Beneficiaries attached to unconfirmed claims,) Tj ET
+BT /F1 10 Tf 1 0 0 1 56 631.89 Tm (Beneficiaries, confirmed outcomes only: 900. Beneficiaries attached to unconfirmed claims,) Tj ET
 BT /F1 10 Tf 1 0 0 1 56 617.89 Tm (reported separately and NOT included in the figure above: 0.) Tj ET
 BT /F1 9 Tf 1 0 0 1 56 593.89 Tm (Why the two figures are separate. In Milan an outcome is counted only when the person who reported the) Tj ET
 BT /F1 9 Tf 1 0 0 1 56 580.89 Tm (problem confirms it was fixed. Publishing a solution does not count, funding it does not count, and an) Tj ET
@@ -34,18 +34,29 @@ BT /F1 9 Tf 1 0 0 1 56 567.89 Tm (implementer saying they did it does not count.
 BT /F1 9 Tf 1 0 0 1 56 554.89 Tm (awaiting that confirmation, and is presented as such here so that this annexure can be defended to an) Tj ET
 BT /F1 9 Tf 1 0 0 1 56 541.89 Tm (auditor rather than merely filed.) Tj ET
 BT /F2 13 Tf 1 0 0 1 56 512.89 Tm (Projects supported) Tj ET
-BT /F2 11 Tf 1 0 0 1 56 483.89 Tm (JH-2026-SAH-0001 - The Ganga is eating our village at Rajmahal, twelve houses gone) Tj ET
-BT /F2 11 Tf 1 0 0 1 56 468.89 Tm (in two years) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 453.89 Tm (Sahibganj, Rajmahal - WATER - NDMA hazard: FLOOD) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 440.89 Tm (Institution: BIT Sindri - supported since 2026-09-05 \(accepted\)) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 427.89 Tm (Artifacts: 0 - reporters: 14 - beneficiaries: 1800) Tj ET
-BT /F2 10 Tf 1 0 0 1 56 414.89 Tm (IMPACT: PARTLY CONFIRMED BY CITIZEN on 2026-09-05) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 400.89 Tm (Spend committed \(INR\): ______________ Spend disbursed \(INR\): ______________) Tj ET
-BT /F2 13 Tf 1 0 0 1 56 369.89 Tm (Declared limitations) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 346.89 Tm (Spend figures are left blank because payment rails are not implemented in this release; the columns are) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 333.89 Tm (provided for the filer. E-signature and MoU negotiation are likewise not implemented: the MoU is) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 320.89 Tm (generated from a template and hashed into an append-only ledger so that the version both parties) Tj ET
-BT /F1 9 Tf 1 0 0 1 56 307.89 Tm (discussed cannot later be disputed.) Tj ET
+BT /F2 11 Tf 1 0 0 1 56 483.89 Tm (JH-2026-GUM-0001 - Crack spreading along the South Koel embankment near Basia) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 468.89 Tm (Gumla, Basia - WATER - NDMA hazard: FLOOD) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 455.89 Tm (Institution: BIT Sindri - supported since 2026-09-05 \(accepted\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 442.89 Tm (Artifacts: 3 \(CC_BY\) - reporters: 7 - beneficiaries: 300) Tj ET
+BT /F2 10 Tf 1 0 0 1 56 429.89 Tm (IMPACT: CONFIRMED BY CITIZEN on 2026-10-12) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 415.89 Tm (Spend committed \(INR\): ______________ Spend disbursed \(INR\): ______________) Tj ET
+BT /F2 11 Tf 1 0 0 1 56 390.89 Tm (JH-2026-GUM-0001 - Crack spreading along the South Koel embankment near Basia) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 375.89 Tm (Gumla, Basia - WATER - NDMA hazard: FLOOD) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 362.89 Tm (Institution: BIT Sindri - supported since 2026-09-05 \(accepted\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 349.89 Tm (Artifacts: 0 - reporters: 7 - beneficiaries: 300) Tj ET
+BT /F2 10 Tf 1 0 0 1 56 336.89 Tm (IMPACT: CONFIRMED BY CITIZEN on 2026-10-12) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 322.89 Tm (Spend committed \(INR\): ______________ Spend disbursed \(INR\): ______________) Tj ET
+BT /F2 11 Tf 1 0 0 1 56 297.89 Tm (JH-2026-GUM-0001 - Crack spreading along the South Koel embankment near Basia) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 282.89 Tm (Gumla, Basia - WATER - NDMA hazard: FLOOD) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 269.89 Tm (Institution: BIT Sindri - supported since 2026-09-05 \(accepted\)) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 256.89 Tm (Artifacts: 0 - reporters: 7 - beneficiaries: 300) Tj ET
+BT /F2 10 Tf 1 0 0 1 56 243.89 Tm (IMPACT: CONFIRMED BY CITIZEN on 2026-10-12) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 229.89 Tm (Spend committed \(INR\): ______________ Spend disbursed \(INR\): ______________) Tj ET
+BT /F2 13 Tf 1 0 0 1 56 198.89 Tm (Declared limitations) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 175.89 Tm (Spend figures are left blank because payment rails are not implemented in this release; the columns are) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 162.89 Tm (provided for the filer. E-signature and MoU negotiation are likewise not implemented: the MoU is) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 149.89 Tm (generated from a template and hashed into an append-only ledger so that the version both parties) Tj ET
+BT /F1 9 Tf 1 0 0 1 56 136.89 Tm (discussed cannot later be disputed.) Tj ET
 endstream
 endobj
 xref
@@ -60,5 +71,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-3425
+4566
 %%EOF

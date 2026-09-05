@@ -46,31 +46,55 @@ console.log(`\nTask 3.3 — the District Collector's surfaces, against ${BASE}\n
 
 /* --- pick a Gumla challenge and put it on the ROUTED ladder ---------------- */
 
-// The BREACH rung that is closest to firing on a Gumla challenge, and how many
-// days the demo clock has to move to reach it. Hard-coding "+21" would only work
-// on a database whose ladders all started today; the demo runs on one that has
-// already been fast-forwarded, so the offset is computed rather than assumed.
-const [target] = await sql<Array<{ tracking_id: string; status: string; days_needed: number }>>`
-  SELECT c.tracking_id, c.status::text AS status,
-         CEIL(EXTRACT(EPOCH FROM (d.due_at - now())) / 86400)::int + 1 AS days_needed
+/**
+ * Climb the ladder one rung at a time.
+ *
+ * A single jump to +21 does NOT reach BREACH on a freshly routed challenge, and
+ * that is correct behaviour rather than a bug: when WIDEN fires it transitions
+ * the challenge, which cancels the deadlines belonging to the state being left
+ * and opens the remainder measured from the moment the rung actually fired. So
+ * the harness advances to just past whichever rung is next, reaps, and repeats —
+ * which is also what a real clock does.
+ */
+const [target] = await sql<Array<{ tracking_id: string; status: string }>>`
+  SELECT c.tracking_id, c.status::text AS status
   FROM sla_deadlines d
   JOIN challenges c ON c.id = d.challenge_id
-  WHERE c.district_code = 'GUM' AND d.kind = 'BREACH'
+  WHERE c.district_code = 'GUM' AND d.kind IN ('WIDEN','OPEN_ALL','BREACH')
     AND d.fired_at IS NULL AND d.cancelled_at IS NULL
   ORDER BY d.due_at LIMIT 1`;
 
 if (!target) {
-  console.log("No Gumla challenge has an open BREACH deadline. Run the pipeline first.");
+  console.log("No Gumla challenge is on the routing ladder. Run the pipeline and release the gate first.");
   process.exit(1);
 }
-console.log(`target: ${target.tracking_id} (${target.status}) — BREACH is ${target.days_needed} day(s) away\n`);
+console.log(`target: ${target.tracking_id} (${target.status})\n`);
 
-/* --- fast-forward past the breach rung and reap ---------------------------- */
+let fired = 0;
+let rungs: string[] = [];
+for (let step = 0; step < 4; step++) {
+  const [next] = await sql<Array<{ kind: string; days_needed: number }>>`
+    SELECT d.kind::text AS kind,
+           CEIL(EXTRACT(EPOCH FROM (d.due_at - now())) / 86400)::int + 1 AS days_needed
+    FROM sla_deadlines d
+    JOIN challenges c ON c.id = d.challenge_id
+    WHERE c.tracking_id = ${target.tracking_id} AND d.kind IN ('WIDEN','OPEN_ALL','BREACH')
+      AND d.fired_at IS NULL AND d.cancelled_at IS NULL
+    ORDER BY d.due_at LIMIT 1`;
+  if (!next) break;
 
-await sql`UPDATE demo_state SET clock_offset_days = ${target.days_needed} WHERE id = 1`;
-const reaped = await fetch(`${BASE}/api/cron/reaper`, { headers: { authorization: `Bearer ${CRON}` } });
-const reaperResult = (await reaped.json()) as { fired: Array<{ trackingId: string; kind: string; toStatus: string }>; errors: unknown[] };
-record("the reaper answers the cron secret", reaped.ok, `${reaperResult.fired?.length ?? 0} deadline(s) fired, ${reaperResult.errors?.length ?? 0} error(s)`);
+  await sql`UPDATE demo_state SET clock_offset_days = ${next.days_needed} WHERE id = 1`;
+  const reaped = await fetch(`${BASE}/api/cron/reaper`, { headers: { authorization: `Bearer ${CRON}` } });
+  const reaperResult = (await reaped.json()) as { fired: Array<{ kind: string; trackingId: string }>; errors: unknown[] };
+  fired += reaperResult.fired?.length ?? 0;
+  rungs.push(...(reaperResult.fired ?? []).filter((f) => f.trackingId === target.tracking_id).map((f) => f.kind));
+  if (!reaped.ok) break;
+
+  const [b] = await sql<Array<{ n: number }>>`
+    SELECT count(*)::int AS n FROM challenges WHERE tracking_id = ${target.tracking_id} AND sla_breached_at IS NOT NULL`;
+  if (Number(b.n) > 0) break;
+}
+record("the reaper answers the cron secret and climbs the ladder", fired > 0, `${fired} deadline(s) fired across the rungs: ${rungs.join(" → ") || "none on the target"}`);
 
 const [breached] = await sql<Array<{ n: number }>>`
   SELECT count(*)::int AS n FROM challenges WHERE district_code = 'GUM' AND sla_breached_at IS NOT NULL`;
