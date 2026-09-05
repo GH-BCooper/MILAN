@@ -23,7 +23,8 @@
     "verify:framing": "tsx --conditions=react-server scripts/verify-framing.mts",
     "verify:hei": "tsx --conditions=react-server scripts/verify-hei.mts",
     "phase:report": "tsx --conditions=react-server scripts/phase-report.mts",
-    "verify:phase2": "tsx --conditions=react-server scripts/verify-phase2-routes.mts"
+    "verify:phase2": "tsx --conditions=react-server scripts/verify-phase2-routes.mts",
+    "verify:triage": "tsx --conditions=react-server scripts/verify-triage.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

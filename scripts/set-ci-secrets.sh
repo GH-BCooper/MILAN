@@ -43,7 +43,10 @@ read_env() {
 failed=0
 for key in "${SECRETS[@]}"; do
   if value="$(read_env "$key")" && [ -n "$value" ]; then
-    printf '%s' "$value" | gh secret set "$key" --repo "$REPO" --body-file -
+    # `--body-file -` is not in every gh build; with no --body flag gh reads the
+    # value from stdin, which every build supports and which keeps the secret
+    # off the process argument list where `ps` could read it.
+    printf '%s' "$value" | gh secret set "$key" --repo "$REPO"
     echo "  set $key"
   else
     echo "  MISSING $key in $ENV_FILE — not set"
