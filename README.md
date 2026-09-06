@@ -121,26 +121,31 @@ Then open **`/demo`** — the judge console runs the whole six-minute script wit
 
 ## Run it offline, with the wifi off
 
-Every external dependency has a local implementation. This is CLAUDE.md invariant 8 made
-operational, and it is two commands:
+Postgres, the AI provider chain and notifications all have an offline story. This is CLAUDE.md
+invariant 8 made operational:
 
 ```bash
 docker compose up -d                       # Postgres 17 + pgvector, MinIO, Ollama, Mailpit
-cp .env.local .env.online && cp .env.offline .env.local
+cp .env.local .env.online && cp .env.offline.example .env.local
 pnpm db:migrate && pnpm seed --reset
 pnpm build && pnpm demo:offline            # http://localhost:3000
 ```
 
-`.env.offline` sets `AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
+`.env.offline.example` (committed; copy of your online values goes to `.env.online`) sets
+`AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
 `lib/ai/providers/rules.ts` and the trace panel says so in amber rather than erroring. This has been
 run end to end: 4/4 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
 and **53 of 53 model calls at level 2** with no call to Gemini, Groq, Supabase or Resend.
 
-One thing to expect offline: the rule tier answers at 0.45 confidence, and a level-2 answer never
-overwrites a classification — it is recorded as a proposal for a human. So an offline run leaves the
-hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the gate. Accept it there and
-the rest of the script proceeds. That is the invariant working, not a failure. Mail lands in
-Mailpit at `http://localhost:8025`; SMS and WhatsApp are already mock inboxes on `/demo`.
+Two offline seams are declared stubs, and the run says so rather than pretending: **storage** has no
+local implementation yet (an offline photo upload degrades to "could not be stored" and the challenge
+is still created — MinIO runs in compose ahead of that adapter), and **email** still speaks only
+Resend's API, so with no key the result records `email: not configured` (Mailpit runs in compose for
+the day an SMTP path lands). One thing to expect offline: the rule tier answers at 0.45 confidence,
+and a level-2 answer never overwrites a classification — it is recorded as a proposal for a human. So
+an offline run leaves the hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the
+gate. Accept it there and the rest of the script proceeds. That is the invariant working, not a
+failure. SMS and WhatsApp are already mock inboxes on `/demo`.
 
 Restore the online profile with `cp .env.online .env.local`.
 
