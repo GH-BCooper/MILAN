@@ -166,7 +166,7 @@ nobody believes CSR reports. This one an auditor can defend."
 ## If everything goes wrong
 
 - The deployed instance is down → run locally: `pnpm build && pnpm start`.
-- The internet is down → `docker compose up -d`, `cp .env.local .env.online && cp .env.offline .env.local`,
+- The internet is down → `docker compose up -d`, `cp .env.local .env.online && cp .env.offline.example .env.local`,
   `pnpm db:migrate && pnpm seed --reset && pnpm sla:backfill`, `pnpm build && pnpm demo:offline`.
   **Rehearsed end to end:** 4/4 containers healthy, seeded in 2.9 s, all 13 demo beats passing, and
   53 of 53 model calls at fallback level 2 with no call to any external service.

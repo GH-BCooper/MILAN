@@ -65,8 +65,8 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-family: var(--font-milan-sans), "Noto Sans Devanagari", "Nirmala UI",
-      system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-milan-sans), var(--font-milan-devanagari),
+      "Nirmala UI", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   /* Accessibility: this is a citizen product used on cheap Android phones.
      44px is the WCAG 2.5.5 target size we hold every interactive element to. */

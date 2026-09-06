@@ -41,3 +41,4 @@ backups/
 *.pmtiles
 .env*.local
 .env*
+!.env*.example

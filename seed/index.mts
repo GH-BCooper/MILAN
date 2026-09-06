@@ -33,7 +33,6 @@ const {
   corroborations,
   creditEdges,
   districts,
-  ledgerEntries,
   member,
   organisationsMeta,
   organization,
