@@ -39,7 +39,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
   const [licence, setLicence] = useState<"CC_BY" | "RESTRICTED">("CC_BY");
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="milan-glass rounded-xl p-4">
       <h3 className="text-sm font-semibold">Publish an artifact</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         The file is stored under the SHA-256 of its own bytes, and that hash goes into the append-only
@@ -88,7 +88,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
         <fieldset className="space-y-2">
           <legend className="text-xs font-medium">Licence — this is permanent for everybody downstream</legend>
 
-          <label className={`block rounded-md border p-3 ${licence === "CC_BY" ? "border-emerald-400 bg-emerald-50" : "border-input"}`}>
+          <label className={`block rounded-md border p-3 ${licence === "CC_BY" ? "border-emerald-400/40 bg-emerald-500/15" : "border-input"}`}>
             <span className="flex items-center gap-2">
               <input
                 type="radio"
@@ -105,7 +105,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
             </span>
           </label>
 
-          <label className={`block rounded-md border p-3 ${licence === "RESTRICTED" ? "border-amber-400 bg-amber-50" : "border-input"}`}>
+          <label className={`block rounded-md border p-3 ${licence === "RESTRICTED" ? "border-amber-400/40 bg-amber-500/15" : "border-input"}`}>
             <span className="flex items-center gap-2">
               <input
                 type="radio"
@@ -133,7 +133,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
         </button>
 
         {state ? (
-          <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+          <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
             {state.message}
             {state.ok && state.artifactId ? (
               <>
@@ -157,7 +157,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
             Mark the challenge as SOLUTION_PUBLISHED
           </button>
           {mark ? (
-            <p className={`mt-2 text-sm ${mark.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+            <p className={`mt-2 text-sm ${mark.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
               {mark.message}
             </p>
           ) : null}
@@ -183,7 +183,7 @@ export function AccessRequests({ requests }: { requests: AccessRequestView[] }) 
   return (
     <form action={action} className="space-y-3">
       {requests.map((r) => (
-        <div key={r.id} className="rounded-lg border border-border p-3">
+        <div key={r.id} className="milan-glass rounded-xl p-3">
           <p className="text-sm font-semibold">
             {r.requesterName}
             {r.orgName ? <span className="font-normal text-muted-foreground"> · {r.orgName}</span> : null}
@@ -216,7 +216,7 @@ export function AccessRequests({ requests }: { requests: AccessRequestView[] }) 
                   if (form) (form.elements.namedItem("decision") as HTMLInputElement).value = "DENY";
                 }}
                 disabled={pending}
-                className="inline-flex h-11 items-center rounded-md border border-red-300 px-4 text-sm font-semibold text-red-700 disabled:opacity-50"
+                className="inline-flex h-11 items-center rounded-md border border-red-400/40 px-4 text-sm font-semibold text-red-200 disabled:opacity-50"
               >
                 Decline
               </button>
@@ -226,7 +226,7 @@ export function AccessRequests({ requests }: { requests: AccessRequestView[] }) 
       ))}
       <input type="hidden" name="decision" defaultValue="GRANT" />
       {state ? (
-        <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+        <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
           {state.message}
         </p>
       ) : null}

@@ -31,7 +31,7 @@ export default async function HeiHome() {
   if (!user.orgId) {
     return (
       <RoleShell title="University workspace" subtitle={`Signed in as ${user.fullName}.`}>
-        <div className="rounded-lg border border-border p-6">
+        <div className="milan-glass rounded-xl p-6">
           <p className="text-sm font-medium">Your account is not attached to an institution.</p>
           <p className="mt-1 text-sm text-muted-foreground">
             Milan routes to departments, not to individuals, so nothing can reach you until an
@@ -50,14 +50,14 @@ export default async function HeiHome() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/hei/inbox"
-          className="rounded-lg border border-border p-4 transition-colors hover:bg-accent"
+          className="milan-glass rounded-xl p-4 transition-colors hover:bg-accent"
         >
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Waiting on you</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{summary.inboxCount}</p>
           <p className="mt-1 text-xs text-muted-foreground">routed problems in your inbox</p>
         </Link>
 
-        <div className="rounded-lg border border-border p-4">
+        <div className="milan-glass rounded-xl p-4">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Soonest deadline</p>
           <p className="mt-1 text-2xl font-bold">
             {summary.soonestDeadline ? (
@@ -76,7 +76,7 @@ export default async function HeiHome() {
 
         <Link
           href="/hei/capability"
-          className="rounded-lg border border-border p-4 transition-colors hover:bg-accent"
+          className="milan-glass rounded-xl p-4 transition-colors hover:bg-accent"
         >
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Capacity open</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{summary.capacityRemaining}</p>
@@ -85,7 +85,7 @@ export default async function HeiHome() {
           </p>
         </Link>
 
-        <div className="rounded-lg border border-border p-4">
+        <div className="milan-glass rounded-xl p-4">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Active projects</p>
           <p className="mt-1 text-3xl font-bold tabular-nums">{summary.activeProjects}</p>
           <p className="mt-1 text-xs text-muted-foreground">claimed and running</p>
@@ -117,7 +117,7 @@ export default async function HeiHome() {
             </p>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {projects.map((project) => (
               <li key={project.id} className="p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">

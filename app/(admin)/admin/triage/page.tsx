@@ -47,7 +47,7 @@ export default async function AdminTriage() {
       title="Triage"
       subtitle={`Signed in as ${user.fullName}. ${queue.length} item${queue.length === 1 ? "" : "s"} waiting on a human.`}
     >
-      <p className="rounded-lg border border-border bg-muted p-4 text-sm">
+      <p className="milan-glass rounded-xl bg-muted p-4 text-sm">
         Nothing on this page was decided by the model. Each item came back below its stage&apos;s
         confidence floor, so the platform stopped and asked. Your decision is recorded with its
         reason and becomes labelled data — {corrections[0]?.n ?? 0} correction
@@ -98,7 +98,7 @@ export default async function AdminTriage() {
           <h2 id="corrections-heading" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Recent human decisions — the training set
           </h2>
-          <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-2 divide-y divide-border milan-glass rounded-xl">
             {recent.map((row) => (
               <li key={row.id} className="p-3">
                 <p className="font-mono text-xs text-muted-foreground">{row.stage}</p>

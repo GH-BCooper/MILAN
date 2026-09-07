@@ -33,7 +33,7 @@ const BLANK_STYLE: StyleSpecification = {
   version: 8,
   glyphs: undefined,
   sources: {},
-  layers: [{ id: "background", type: "background", paint: { "background-color": "#eef1f5" } }],
+  layers: [{ id: "background", type: "background", paint: { "background-color": "#070a1a" } }],
 };
 
 function pmtilesStyle(url: string): StyleSpecification {
@@ -43,41 +43,41 @@ function pmtilesStyle(url: string): StyleSpecification {
       protomaps: { type: "vector", url: `pmtiles://${url}`, attribution: "© OpenStreetMap, Protomaps" },
     },
     layers: [
-      { id: "background", type: "background", paint: { "background-color": "#eef1f5" } },
+      { id: "background", type: "background", paint: { "background-color": "#070a1a" } },
       {
         id: "earth",
         type: "fill",
         source: "protomaps",
         "source-layer": "earth",
-        paint: { "fill-color": "#f7f8fa" },
+        paint: { "fill-color": "#0b1024" },
       },
       {
         id: "water",
         type: "fill",
         source: "protomaps",
         "source-layer": "water",
-        paint: { "fill-color": "#c6d9e8" },
+        paint: { "fill-color": "#10224a" },
       },
       {
         id: "landuse",
         type: "fill",
         source: "protomaps",
         "source-layer": "landuse",
-        paint: { "fill-color": "#e8eee4" },
+        paint: { "fill-color": "#0f1533" },
       },
       {
         id: "roads",
         type: "line",
         source: "protomaps",
         "source-layer": "roads",
-        paint: { "line-color": "#d9dee5", "line-width": 1 },
+        paint: { "line-color": "#2a3468", "line-width": 1 },
       },
       {
         id: "boundaries",
         type: "line",
         source: "protomaps",
         "source-layer": "boundaries",
-        paint: { "line-color": "#9aa5b1", "line-width": 1, "line-dasharray": [2, 2] },
+        paint: { "line-color": "#7c5cff", "line-width": 1, "line-dasharray": [2, 2] },
       },
     ],
   };
@@ -119,7 +119,13 @@ export function MilanMap({
     const protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
 
-    const pmtilesUrl = process.env.NEXT_PUBLIC_PMTILES_URL;
+    // A root-relative value (the default: the archive ships in public/) is made
+    // absolute here. MapLibre hands the style URL to the pmtiles protocol
+    // verbatim, and a bare "/x.pmtiles" is not guaranteed to survive that path.
+    const configured = process.env.NEXT_PUBLIC_PMTILES_URL;
+    const pmtilesUrl = configured?.startsWith("/")
+      ? `${window.location.origin}${configured}`
+      : configured;
     const instance = new maplibregl.Map({
       container: container.current,
       style: pmtilesUrl ? pmtilesStyle(pmtilesUrl) : BLANK_STYLE,
@@ -218,7 +224,7 @@ export function MilanMap({
         ref={container}
         role="application"
         aria-label={ariaLabel}
-        className="h-full w-full rounded-lg border border-border"
+        className="h-full w-full milan-glass rounded-xl"
       />
       {basemap === "blank" ? (
         <p className="mt-1 text-xs text-muted-foreground">

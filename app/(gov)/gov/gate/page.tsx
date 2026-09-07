@@ -89,11 +89,11 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
       title="Human gate"
       subtitle={`${rows.length} high-severity challenge${rows.length === 1 ? "" : "s"} in ${district} waiting for a decision. Nothing below has been sent to any institution.`}
     >
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-lg border border-amber-400/40 bg-amber-500/15 p-4 text-sm text-amber-200">
         <p className="font-semibold">Why you are seeing these and not a machine&rsquo;s decision.</p>
         <p className="mt-1">
           Milan routes a challenge automatically below severity 0.70. At or above it, the shortlist is
-          written but every notification is held with <code className="rounded bg-amber-100 px-1">notified_at = null</code> until
+          written but every notification is held with <code className="rounded bg-amber-500/15 px-1">notified_at = null</code> until
           a district officer confirms. Your override is recorded with your reason and becomes labelled
           training data — the system learns from you rather than from itself.
         </p>
@@ -111,7 +111,7 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
             const terms = r.priority_breakdown?.terms ?? [];
             const top = [...terms].sort((a, b) => b.contribution - a.contribution);
             return (
-              <li key={r.tracking_id} className="rounded-lg border border-border p-4">
+              <li key={r.tracking_id} className="milan-glass rounded-xl p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Link href={`/c/${r.tracking_id}`} className="text-base font-semibold underline-offset-4 hover:underline">
@@ -124,7 +124,7 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
                   </div>
                   <div className="text-right">
                     <p className="text-xs uppercase tracking-wide text-muted-foreground">Severity</p>
-                    <p className="text-2xl font-bold tabular-nums text-amber-700">
+                    <p className="text-2xl font-bold tabular-nums text-amber-200">
                       {r.severity ? Number(r.severity).toFixed(2) : "—"}
                     </p>
                   </div>
@@ -192,7 +192,7 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
                           <span className="ml-2 text-xs tabular-nums text-muted-foreground">
                             match {s.score ? Number(s.score).toFixed(3) : "—"}
                           </span>
-                          <span className={`ml-2 rounded px-1.5 py-0.5 text-[11px] ${s.notified ? "bg-emerald-100 text-emerald-900" : "bg-neutral-100 text-neutral-600"}`}>
+                          <span className={`ml-2 rounded px-1.5 py-0.5 text-[11px] ${s.notified ? "bg-emerald-500/15 text-emerald-200" : "bg-neutral-500/15 text-neutral-300"}`}>
                             {s.notified ? "notified" : "not notified — held at this gate"}
                           </span>
                           <p className="mt-1 text-xs text-muted-foreground">{s.reason}</p>

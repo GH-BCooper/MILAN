@@ -84,23 +84,23 @@ export default async function StatsPage() {
         </p>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-sm text-muted-foreground">Problems reported</p>
             <p className="mt-1 text-4xl font-bold tabular-nums">{totalN.toLocaleString("en-IN")}</p>
           </div>
 
-          <div className="rounded-lg border-2 border-emerald-600 bg-emerald-50 p-4">
-            <p className="text-sm font-medium text-emerald-900">Confirmed impact</p>
-            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-950">
+          <div className="rounded-lg border-2 border-emerald-400/40 bg-emerald-500/15 p-4">
+            <p className="text-sm font-medium text-emerald-200">Confirmed impact</p>
+            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-200">
               {impactN.toLocaleString("en-IN")}
             </p>
-            <p className="mt-2 text-xs font-medium text-emerald-900">
+            <p className="mt-2 text-xs font-medium text-emerald-200">
               Impact counts only citizen-confirmed outcomes.
               {impact.partial > 0 ? ` ${impact.partial} more were confirmed as partly fixed and are counted separately.` : ""}
             </p>
           </div>
 
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-sm text-muted-foreground">Median time to route</p>
             <p className="mt-1 text-4xl font-bold tabular-nums">
               {medianHours === null ? "—" : `${Number(medianHours).toFixed(0)}h`}
@@ -113,7 +113,7 @@ export default async function StatsPage() {
           </div>
         </section>
 
-        <p className="mt-4 rounded-lg border border-border bg-muted p-4 text-sm">
+        <p className="mt-4 milan-glass rounded-xl bg-muted p-4 text-sm">
           <strong className="font-semibold">Why the impact number is small.</strong> A problem counts
           as impact only when the people who reported it confirm it was actually fixed. Publishing a
           solution does not count. Funding it does not count. An implementer saying they did it does

@@ -17,25 +17,25 @@ import type { ImpactCounts } from "@/lib/impact/counter";
 export function ImpactCounter({ counts, scopeLabel }: { counts: ImpactCounts; scopeLabel?: string }) {
   return (
     <div className="grid gap-3 sm:grid-cols-3">
-      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-        <p className="text-3xl font-bold tabular-nums text-emerald-900">{counts.confirmed}</p>
-        <p className="mt-1 text-sm font-semibold text-emerald-900">Confirmed by the citizen</p>
-        <p className="mt-1 text-xs text-emerald-800">
+      <div className="rounded-xl border border-emerald-400/40 bg-gradient-to-br from-emerald-500/20 to-teal-500/5 p-4 shadow-[0_0_30px_-14px_rgba(16,217,160,0.9)] backdrop-blur-md">
+        <p className="text-3xl font-bold tabular-nums text-emerald-200">{counts.confirmed}</p>
+        <p className="mt-1 text-sm font-semibold text-emerald-200">Confirmed by the citizen</p>
+        <p className="mt-1 text-xs text-emerald-200">
           The person who reported the problem says it is fixed. This is the only thing that moves this
           number{scopeLabel ? ` in ${scopeLabel}` : ""}.
         </p>
       </div>
 
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <p className="text-3xl font-bold tabular-nums text-amber-900">{counts.partial}</p>
-        <p className="mt-1 text-sm font-semibold text-amber-900">Partly fixed</p>
-        <p className="mt-1 text-xs text-amber-800">
+      <div className="rounded-xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 to-orange-500/5 p-4 shadow-[0_0_30px_-14px_rgba(251,191,36,0.8)] backdrop-blur-md">
+        <p className="text-3xl font-bold tabular-nums text-amber-200">{counts.partial}</p>
+        <p className="mt-1 text-sm font-semibold text-amber-200">Partly fixed</p>
+        <p className="mt-1 text-xs text-amber-200">
           The citizen answered &ldquo;partly&rdquo;. Counted separately and never rounded up into the
           number on the left.
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-muted p-4">
+      <div className="rounded-xl border border-border bg-white/5 p-4 backdrop-blur-md">
         <p className="text-3xl font-bold tabular-nums text-muted-foreground">{counts.claimedUnconfirmed}</p>
         <p className="mt-1 text-sm font-semibold text-muted-foreground">Claimed, not confirmed</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -53,7 +53,7 @@ export function ConfirmationGap({ counts, href = "/stats" }: { counts: ImpactCou
   const pct = claimed === 0 ? 0 : Math.round(((counts.confirmed + counts.partial) / claimed) * 100);
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="milan-glass rounded-xl p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold">The confirmation gap</h3>
         <Link href={href} className="text-xs text-primary underline underline-offset-4">
@@ -66,20 +66,20 @@ export function ConfirmationGap({ counts, href = "/stats" }: { counts: ImpactCou
         {counts.disputed > 0 ? `, ${counts.disputed} disputed` : ""}.
       </p>
 
-      <div className="mt-3 h-6 w-full overflow-hidden rounded border border-border bg-muted">
+      <div className="mt-3 h-6 w-full overflow-hidden rounded-full border border-border bg-white/5">
         <div className="flex h-full">
           <div
-            className="h-full bg-emerald-600"
+            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
             style={{ width: `${claimed === 0 ? 0 : (counts.confirmed / claimed) * 100}%` }}
             title={`${counts.confirmed} confirmed`}
           />
           <div
-            className="h-full bg-amber-500"
+            className="h-full bg-gradient-to-r from-amber-500 to-orange-400"
             style={{ width: `${claimed === 0 ? 0 : (counts.partial / claimed) * 100}%` }}
             title={`${counts.partial} partly fixed`}
           />
           <div
-            className="h-full bg-neutral-400"
+            className="h-full bg-white/20"
             style={{ width: `${claimed === 0 ? 0 : (counts.claimedUnconfirmed / claimed) * 100}%` }}
             title={`${counts.claimedUnconfirmed} claimed, not confirmed`}
           />
@@ -97,7 +97,7 @@ export function ConfirmationGap({ counts, href = "/stats" }: { counts: ImpactCou
 export function UnconfirmedTag({ className = "" }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-[11px] font-medium text-neutral-600 ${className}`}
+      className={`inline-flex items-center rounded border border-neutral-400/40 bg-neutral-500/15 px-1.5 py-0.5 text-[11px] font-medium text-neutral-300 ${className}`}
       title="An implementer says this is done. The citizen who reported the problem has not confirmed it, so it does not count towards confirmed impact anywhere in Milan, including the CSR export."
     >
       claimed, not confirmed

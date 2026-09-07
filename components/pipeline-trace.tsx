@@ -144,7 +144,7 @@ export function PipelineTrace({
     <section aria-labelledby="trace-heading" className="mt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
-          <h2 id="trace-heading" className="text-lg font-semibold">
+          <h2 id="trace-heading" className="text-lg font-semibold milan-gradient-text">
             {heading}
           </h2>
           <p className="text-sm text-muted-foreground">
@@ -170,7 +170,7 @@ export function PipelineTrace({
       </div>
 
       {error ? (
-        <p role="status" className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p role="status" className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
           {error}
         </p>
       ) : null}
@@ -194,7 +194,7 @@ export function PipelineTrace({
       </ol>
 
       {finished ? (
-        <p className="mt-4 rounded-md border border-border bg-muted p-3 text-sm">
+        <p className="milan-glass mt-4 rounded-xl p-3 text-sm">
           Finished in <strong className="tabular-nums">{(finished.totalMs / 1000).toFixed(1)}s</strong>.
           The report is now <strong>{finished.status.replaceAll("_", " ").toLowerCase()}</strong>.
         </p>
@@ -221,24 +221,37 @@ function StageCard({
   districtCode: string | null;
 }) {
   const degraded = state.status === "degraded";
-  const border = degraded
-    ? "border-amber-300 bg-amber-50/40"
+  /* Colour is a second signal only — every card also carries its status icon
+     and, when degraded, the words "fallback: rules". */
+  const skin = degraded
+    ? "border-amber-400/50 bg-amber-500/10 shadow-[0_0_34px_-16px_rgba(251,191,36,0.9)]"
     : state.status === "done"
-      ? "border-emerald-300"
-      : "border-border";
+      ? "border-emerald-400/45 bg-emerald-500/[0.07] shadow-[0_0_34px_-16px_rgba(16,217,160,0.9)]"
+      : state.status === "running"
+        ? "border-[var(--grad-2)] bg-white/5 shadow-[0_0_44px_-18px_rgba(79,140,255,0.95)]"
+        : "border-border bg-white/[0.03]";
 
   return (
-    <div className={`rounded-lg border p-4 ${border}`}>
+    <div
+      className={`relative overflow-hidden rounded-xl border p-4 backdrop-blur-md transition-all ${skin}`}
+    >
+      {/* the running stage gets a live gradient rail down its leading edge */}
+      <span
+        aria-hidden
+        className={`absolute inset-y-0 start-0 w-[3px] ${
+          state.status === "waiting" ? "opacity-25" : "opacity-100"
+        } bg-gradient-to-b from-[var(--grad-1)] via-[var(--grad-2)] to-[var(--grad-3)]`}
+      />
       <div className="flex items-start gap-3">
         <StatusIcon status={state.status} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-medium">{title}</h3>
-            <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+            <h3 className="font-semibold tracking-tight">{title}</h3>
+            <span className="rounded-full border border-[var(--grad-1)]/40 bg-white/5 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest milan-gradient-text">
               {stageKey}
             </span>
             {degraded ? (
-              <span className="rounded border border-amber-400 bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900">
+              <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
                 fallback: rules
               </span>
             ) : null}
@@ -250,9 +263,9 @@ function StageCard({
           </div>
           <p className="text-sm text-muted-foreground">{blurb}</p>
 
-          {state.decision ? <p className="mt-2 text-sm font-medium">{state.decision}</p> : null}
+          {state.decision ? <p className="mt-2 text-sm font-semibold text-white">{state.decision}</p> : null}
           {state.rationale ? (
-            <p className="mt-1 text-sm italic text-muted-foreground">&ldquo;{state.rationale}&rdquo;</p>
+            <p className="mt-2 rounded-lg border-s-2 border-[var(--grad-3)] bg-white/[0.04] px-3 py-2 text-sm italic text-[#cfe9ff]">&ldquo;{state.rationale}&rdquo;</p>
           ) : null}
           {state.note && !state.decision ? (
             <p className="mt-2 text-sm text-muted-foreground">{state.note}</p>
@@ -303,9 +316,9 @@ function StatusIcon({ status }: { status: StageStatus }) {
     case "running":
       return <Loader2 className={`${base} animate-spin text-primary`} aria-label="Running" />;
     case "done":
-      return <Check className={`${base} text-emerald-700`} aria-label="Done" />;
+      return <Check className={`${base} text-emerald-200`} aria-label="Done" />;
     case "degraded":
-      return <AlertTriangle className={`${base} text-amber-600`} aria-label="Degraded to the rule fallback" />;
+      return <AlertTriangle className={`${base} text-amber-300`} aria-label="Degraded to the rule fallback" />;
     case "skipped":
       return <MinusCircle className={`${base} text-muted-foreground`} aria-label="Skipped" />;
     default:
@@ -342,7 +355,7 @@ function S5Panel({ result }: { result: unknown }) {
   return (
     <div className="space-y-2">
       {data.gated ? (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
           Severity is at or above 0.70, so nothing has been sent yet. A District Collector confirms
           or overrides this shortlist before any institution is contacted, and every override is
           recorded with a written reason.

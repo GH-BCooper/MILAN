@@ -115,7 +115,7 @@ export default async function AdminRouting() {
       title="Routing"
       subtitle={`Signed in as ${user.fullName}. ${counts?.n ?? 0} open offer${(counts?.n ?? 0) === 1 ? "" : "s"} across ${byChallenge.size} challenge${byChallenge.size === 1 ? "" : "s"}.`}
     >
-      <p className="rounded-lg border border-border bg-muted p-4 text-sm">
+      <p className="milan-glass rounded-xl bg-muted p-4 text-sm">
         Matches are scored on five signals — semantic fit {Math.round(MATCH_WEIGHTS.semantic * 100)}%,
         tag overlap {Math.round(MATCH_WEIGHTS.tagOverlap * 100)}%, distance{" "}
         {Math.round(MATCH_WEIGHTS.distance * 100)}%, declared capacity{" "}
@@ -136,7 +136,7 @@ export default async function AdminRouting() {
             const head = group[0];
             const gated = group.every((g) => g.notifiedAt === null && g.state === "OFFERED");
             return (
-              <li key={head.challengeId} className="rounded-lg border border-border p-4">
+              <li key={head.challengeId} className="milan-glass rounded-xl p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div>
                     <Link
@@ -162,7 +162,7 @@ export default async function AdminRouting() {
                 </div>
 
                 {gated ? (
-                  <p className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+                  <p className="mt-2 rounded border border-amber-400/40 bg-amber-500/15 p-2 text-xs text-amber-200">
                     Held at the human gate — severity {head.severity ? Number(head.severity).toFixed(2) : "—"}.
                     Nothing has been notified. A District Collector releases it at /gov/gate.
                   </p>
@@ -214,7 +214,7 @@ export default async function AdminRouting() {
           >
             Recent routing overrides
           </h2>
-          <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-2 divide-y divide-border milan-glass rounded-xl">
             {overrides.map((o) => (
               <li key={o.id} className="p-3">
                 <p className="font-mono text-xs text-muted-foreground">{o.trackingId}</p>

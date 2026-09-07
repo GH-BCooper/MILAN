@@ -76,7 +76,7 @@ export default async function IndustryChallengePage({ params }: { params: Promis
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded bg-muted px-2 py-1">{(c.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()}</span>
           {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded bg-amber-100 px-2 py-1 text-amber-900">NDMA hazard: {c.hazard.replace(/_/g, " ").toLowerCase()}</span>
+            <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-200">NDMA hazard: {c.hazard.replace(/_/g, " ").toLowerCase()}</span>
           ) : null}
           <span className="rounded bg-muted px-2 py-1">{c.corroboration_count} reporters</span>
           {c.people_affected ? <span className="rounded bg-muted px-2 py-1">~{c.people_affected} people affected</span> : null}
@@ -86,20 +86,20 @@ export default async function IndustryChallengePage({ params }: { params: Promis
 
         {/* Invariant 6, on an industry screen too. */}
         <section className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               The citizen&rsquo;s own words ({c.body_lang})
             </p>
             <p className="mt-2 text-sm">{c.body_original}</p>
           </div>
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">English working copy</p>
             <p className="mt-2 text-sm">{c.body_en ?? <span className="text-muted-foreground">Not translated yet.</span>}</p>
           </div>
         </section>
 
         {c.framed_statement ? (
-          <section className="rounded-lg border border-border bg-muted p-4">
+          <section className="milan-glass rounded-xl bg-muted p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               The research question, as the citizen approved it
             </p>
@@ -117,12 +117,12 @@ export default async function IndustryChallengePage({ params }: { params: Promis
           ) : (
             <ul className="mt-2 space-y-2">
               {c.artifacts.map((a) => (
-                <li key={a.id} className="rounded-lg border border-border p-3">
+                <li key={a.id} className="milan-glass rounded-xl p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <Link href={`/artifacts/${a.id}`} className="text-sm font-semibold underline-offset-4 hover:underline">
                       {a.title}
                     </Link>
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}`}>
+                    <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}>
                       {a.licence === "CC_BY" ? "CC-BY" : "restricted"}
                     </span>
                   </div>
@@ -154,7 +154,7 @@ export default async function IndustryChallengePage({ params }: { params: Promis
             <h2 className="text-lg font-semibold">Expressions of interest on this challenge</h2>
             <ul className="mt-2 space-y-2">
               {mine.map((i) => (
-                <li key={i.id} className="rounded-lg border border-border p-3 text-sm">
+                <li key={i.id} className="milan-glass rounded-xl p-3 text-sm">
                   <Link href={`/industry/interests/${i.id}`} className="font-semibold underline-offset-4 hover:underline">
                     {i.org}
                   </Link>

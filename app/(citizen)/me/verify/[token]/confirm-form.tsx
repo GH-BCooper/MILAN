@@ -19,7 +19,7 @@ export function ConfirmForm({ token }: { token: string }) {
     return (
       <div
         role="status"
-        className={`rounded-lg border p-5 ${state.answer === "NO" ? "border-amber-300 bg-amber-50" : "border-emerald-300 bg-emerald-50"}`}
+        className={`rounded-lg border p-5 ${state.answer === "NO" ? "border-amber-400/40 bg-amber-500/15" : "border-emerald-400/40 bg-emerald-500/15"}`}
       >
         <p className="text-lg font-bold">Recorded.</p>
         <p className="mt-2 text-sm">{state.message}</p>
@@ -61,10 +61,10 @@ export function ConfirmForm({ token }: { token: string }) {
           name="answer"
           value="PARTLY"
           disabled={pending}
-          className="flex w-full flex-col items-start rounded-lg border-2 border-amber-500 bg-amber-50 px-5 py-4 text-left disabled:opacity-50"
+          className="flex w-full flex-col items-start rounded-lg border-2 border-amber-400/40 bg-amber-500/15 px-5 py-4 text-left disabled:opacity-50"
         >
-          <span className="text-lg font-bold text-amber-900">Partly</span>
-          <span className="mt-1 text-sm text-amber-900">
+          <span className="text-lg font-bold text-amber-200">Partly</span>
+          <span className="mt-1 text-sm text-amber-200">
             Counted on its own, separately. It will never be shown as a full fix.
           </span>
         </button>
@@ -73,10 +73,10 @@ export function ConfirmForm({ token }: { token: string }) {
           name="answer"
           value="NO"
           disabled={pending}
-          className="flex w-full flex-col items-start rounded-lg border-2 border-red-400 bg-white px-5 py-4 text-left disabled:opacity-50"
+          className="flex w-full flex-col items-start rounded-lg border-2 border-red-400/40 bg-white/5 px-5 py-4 text-left disabled:opacity-50"
         >
-          <span className="text-lg font-bold text-red-800">No, nothing changed</span>
-          <span className="mt-1 text-sm text-red-800">
+          <span className="text-lg font-bold text-red-200">No, nothing changed</span>
+          <span className="mt-1 text-sm text-red-200">
             The claim is marked disputed, the District Collector is told, and nothing is counted.
           </span>
         </button>
@@ -84,7 +84,7 @@ export function ConfirmForm({ token }: { token: string }) {
 
       {pending ? <p className="text-sm text-muted-foreground">Recording your answer…</p> : null}
       {state && !state.ok ? (
-        <p className="text-sm text-red-700" role="status">
+        <p className="text-sm text-red-200" role="status">
           {state.message}
         </p>
       ) : null}
