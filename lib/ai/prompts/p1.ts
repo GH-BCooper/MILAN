@@ -33,11 +33,12 @@ cut off during the July rains" is better than "a report is submitted".
 Return a calibrated confidence 0 to 1 that this framing is faithful to what the citizen wrote.`;
 
 /**
- * HUMAN: add curated Jharkhand examples here.
- * Two starters below plus one deliberately messy input. What is still missing:
- * a report where the citizen has already proposed their own (wrong) solution,
- * so the model learns to frame the problem rather than adopt their diagnosis;
- * and a very short report, where the temptation to invent detail is strongest.
+ * Curated Jharkhand examples, per PHASE_2_LEARN 9.1.
+ * Coverage now: the hero embankment, MGNREGA heat-stress, a deliberately messy
+ * broken-English report, a citizen proposing their own (wrong) solution, and
+ * a three-line report — the last two are the DRAFTs this note used to ask for.
+ * STILL HUMAN: read the two DRAFT framings once during the native-speaker
+ * review and delete any framing you would not say to the citizen's face.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {

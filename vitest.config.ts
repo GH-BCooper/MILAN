@@ -21,7 +21,10 @@ export default defineConfig({
     // ap-south-1 and a GitHub runner is not, so every one of those transitions
     // pays a much larger round trip: the sweep takes ~53s here and blew past
     // 180s on the runner. This is latency, not a slow test — the same run's
-    // terminal-edge sweep went 14s -> 81s alongside it.
+    // terminal-edge sweep went 14s -> 81s alongside it. Slow uplinks exist
+    // off-CI too, so the legal-edge sweep itself declares the same 600s
+    // ceiling in tests/stateMachine.test.ts; this default only bounds the
+    // smaller tests.
     testTimeout: process.env.CI ? 600_000 : 180_000,
     hookTimeout: 60_000,
     // Database-backed tests open real connections; keep them serial.

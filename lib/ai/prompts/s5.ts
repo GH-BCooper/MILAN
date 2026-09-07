@@ -42,12 +42,14 @@ Rules, absolutely:
 Return the sentence and a calibrated confidence 0 to 1 that it is faithful to the supplied facts.`;
 
 /**
- * HUMAN: add curated Jharkhand examples here.
- * These two cover the shapes the score actually produces — one match with a
- * named laboratory, one without. Worth adding once
- * the seed capabilities settle: a match driven mostly by distance (a nearby
- * polytechnic), and one where capacity is the third term rather than the first,
- * so the model does not learn to always lead on specialisation.
+ * Curated Jharkhand examples, per PHASE_2_LEARN 9.1.
+ * Coverage now: one match with a named laboratory, one without, one led by
+ * distance (a nearby polytechnic), and one where declared capacity is the
+ * third term rather than the first — the last two are the DRAFTs this note
+ * asked for, so the model does not learn to always lead on specialisation.
+ * STILL HUMAN: keep the count at four. 1.1.0 measured each extra example as
+ * ~400 tokens of prefill on three concurrent calls against Groq's TPM
+ * ceiling; add a fifth only after measuring again.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {

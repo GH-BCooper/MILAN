@@ -83,6 +83,14 @@ Columns: `district_code,district_name,district_name_hi,block_code,block_name,lat
   status. Write a one-line note on how you derived it — a judge will ask.
 - Source: JSDMA district disaster management plans, Census 2011 block list.
 
+### `seed-data/districts-enrichment.csv`
+One row per district: the JDIP Part 4.1 reference columns the district pages read
+(`division`, `population`, `internet_penetration`, `tribal_population_pct`, `disaster_vulnerability` jsonb).
+Merged over `districts.csv` by `district_code`; an unknown code or a hazard key outside the enum
+fails loudly in the seed log. Provenance: Census 2011 population and tribal share, the state's five
+administrative divisions, and NFHS-5-based planning estimates for internet penetration — reconcile
+against the JDIP 4.1 table when it is supplied (tracked in BACKLOG.md).
+
 ### `seed-data/heis.csv`
 **8–12 real Jharkhand higher-education institutions**.
 Columns: `hei_code,hei_name,district_code,lat,lng,type,website`

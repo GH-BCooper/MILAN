@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { and, asc, desc, eq, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { STATUS_COLOUR } from "@/components/status-colour";
+import { SEVERITY_BANDS, SeverityChip, isSeverityBandKey } from "@/components/severity-chip";
 import type { MapMarker } from "@/components/milan-map";
 import { emergencyState } from "@/lib/clock/server";
 import { db } from "@/lib/db";
@@ -26,10 +27,51 @@ export const dynamic = "force-dynamic";
 const selectClass =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-auto";
 
+/**
+ * Lifecycle bands (Task 4.8): the 28-state machine is honest, but a citizen
+ * scanning the board thinks in chapters, not states. A band is a set of
+ * statuses; composing `band` with `status` is legal and simply narrows.
+ */
+const LIFECYCLE_BANDS = {
+  intake: {
+    label: "Intake — reported, being processed",
+    statuses: ["SUBMITTED", "NEEDS_MORE_INFO", "TRIAGED", "CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED"],
+  },
+  open: {
+    label: "Open for a team to claim",
+    statuses: ["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"],
+  },
+  research: {
+    label: "In research",
+    statuses: ["CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "AT_RISK", "AGREEMENT_SIGNED", "PILOT"],
+  },
+  solution: {
+    label: "Solution published",
+    statuses: ["SOLUTION_PUBLISHED", "INDUSTRY_INTEREST", "FORKED"],
+  },
+  done: {
+    label: "Implemented",
+    statuses: ["IMPLEMENTED", "CITIZEN_VERIFIED", "CLOSED"],
+  },
+  archived: {
+    label: "Off the board (merged, forwarded, parked)",
+    statuses: ["REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "PARKED", "WITHDRAWN", "DISPUTED"],
+  },
+} as const satisfies Record<string, { label: string; statuses: readonly ChallengeStatus[] }>;
+
+type LifecycleBandKey = keyof typeof LIFECYCLE_BANDS;
+
 export default async function ChallengesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ district?: string; domain?: string; hazard?: string; status?: string }>;
+  searchParams: Promise<{
+    district?: string;
+    domain?: string;
+    hazard?: string;
+    status?: string;
+    band?: string;
+    severity?: string;
+  }>;
 }) {
   const filters = await searchParams;
 
@@ -45,11 +87,29 @@ export default async function ChallengesPage({
   const status = challengeStatusEnum.enumValues.includes(filters.status as ChallengeStatus)
     ? (filters.status as ChallengeStatus)
     : undefined;
+  const band = (
+    filters.band && filters.band in LIFECYCLE_BANDS ? filters.band : undefined
+  ) as LifecycleBandKey | undefined;
+  // The JDIP wireframe calls this "severity"; it bands the same priority
+  // score the cards badge, so the filter and the chip can never drift apart.
+  const severity = isSeverityBandKey(filters.severity) ? filters.severity : undefined;
 
   if (district) where.push(eq(challenges.districtCode, district));
   if (domain) where.push(eq(challenges.domain, domain));
   if (hazard) where.push(eq(challenges.hazard, hazard));
   if (status) where.push(eq(challenges.status, status));
+  if (band) where.push(inArray(challenges.status, [...LIFECYCLE_BANDS[band].statuses]));
+  if (severity === "unscored") {
+    where.push(isNull(challenges.priorityScore));
+  } else if (severity) {
+    const sev = SEVERITY_BANDS.find((b) => b.key === severity);
+    if (sev?.min !== null && sev?.min !== undefined) {
+      where.push(sql`${challenges.priorityScore} >= ${sev.min}`);
+    }
+    if (sev?.max !== null && sev?.max !== undefined) {
+      where.push(sql`${challenges.priorityScore} < ${sev.max}`);
+    }
+  }
 
   const [rows, districtRows] = await Promise.all([
     db
@@ -164,8 +224,36 @@ export default async function ChallengesPage({
           </div>
 
           <div className="sm:w-56">
+            <label htmlFor="severity" className="text-xs font-medium text-muted-foreground">
+              Severity
+            </label>
+            <select id="severity" name="severity" defaultValue={severity ?? ""} className={selectClass}>
+              <option value="">All severities</option>
+              <option value="critical">Critical (75–100)</option>
+              <option value="high">High (50–74)</option>
+              <option value="moderate">Moderate (25–49)</option>
+              <option value="low">Low (under 25)</option>
+              <option value="unscored">Not scored yet</option>
+            </select>
+          </div>
+
+          <div className="sm:w-64">
+            <label htmlFor="band" className="text-xs font-medium text-muted-foreground">
+              Lifecycle
+            </label>
+            <select id="band" name="band" defaultValue={band ?? ""} className={selectClass}>
+              <option value="">Every stage of life</option>
+              {(Object.keys(LIFECYCLE_BANDS) as LifecycleBandKey[]).map((key) => (
+                <option key={key} value={key}>
+                  {LIFECYCLE_BANDS[key].label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:w-56">
             <label htmlFor="status" className="text-xs font-medium text-muted-foreground">
-              Status
+              Status (exact)
             </label>
             <select id="status" name="status" defaultValue={status ?? ""} className={selectClass}>
               <option value="">All statuses</option>
@@ -211,13 +299,20 @@ export default async function ChallengesPage({
         ) : null}
 
         {displayRows.length === 0 ? (
-          <p className="mt-3 text-sm text-muted-foreground">
-            Nothing matches those filters.{" "}
-            <Link className="text-primary underline underline-offset-4" href="/challenges">
-              Clear them
-            </Link>
-            .
-          </p>
+          <div className="milan-glass mt-3 rounded-xl p-5 text-sm">
+            <p className="font-semibold">Nothing matches that combination.</p>
+            <p className="mt-1 text-muted-foreground">
+              The filters are exact on purpose — what you see is all there is, never a sample.
+              Loosen one and the board fills back in: a district the pipeline is still processing
+              will sit under <em>Intake</em>, and a report the scoring stage has not reached yet is
+              under <em>Not scored yet</em>.
+            </p>
+            <p className="mt-2">
+              <Link className="text-primary underline underline-offset-4" href="/challenges">
+                Clear the filters
+              </Link>
+            </p>
+          </div>
         ) : (
           <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {displayRows.map(({ row: r, surge }) => (
@@ -230,6 +325,7 @@ export default async function ChallengesPage({
                     {r.trackingId}
                   </Link>
                   <StatusBadge status={r.status} />
+                  <SeverityChip score={r.priorityScore === null ? null : Number(r.priorityScore)} />
                   {r.hazard && r.hazard !== "NONE" ? (
                     <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
                       {r.hazard.replaceAll("_", " ")}

@@ -84,7 +84,7 @@ forwarded, with the citizen told where they went.
 
 One Next.js deployable. Every module is its own folder, so it splits out later without a rewrite.
 
-**Stack:** Next.js 15 (App Router, RSC) · React 19 · Tailwind v4 + shadcn/ui · MapLibre + Protomaps ·
+**Stack:** Next.js 15 (App Router, RSC) · React 19 · Tailwind v4 + shadcn/ui · Leaflet + Protomaps (PMTiles, offline) ·
 Recharts · Better Auth · Drizzle + Zod · Supabase PostgreSQL 17 (pgvector HNSW, FTS, pg_trgm) ·
 Supabase Storage keyed by content hash · Gemini Flash → Groq → deterministic rules · SSE · Vercel +
 Vercel Cron · GitHub Actions · pnpm.
@@ -103,7 +103,9 @@ prior, declared honestly), and a separate API and inference service.
 pnpm install
 cp .env.example .env.local          # then fill in DATABASE_URL, DIRECT_URL, BETTER_AUTH_SECRET
 pnpm db:migrate
-pnpm seed --reset                   # 24 districts, 263 blocks, 20 orgs, 25 challenges
+pnpm seed --reset                   # 24 districts (incl. the JDIP 4.1 reference columns), 263 blocks, 20 orgs, 25 challenges
+pnpm seed:ai                        # optional: pre-sync every seed through the real pipeline (receipts on first load)
+pnpm seed:states                    # optional: walk a fixed cast through the real lifecycle (/stats, /bounties, /gov/sla get shape; idempotent)
 pnpm dev                            # http://localhost:3000
 ```
 

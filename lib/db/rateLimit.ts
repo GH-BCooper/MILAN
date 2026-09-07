@@ -71,3 +71,50 @@ export async function recordSubmission(
     createdAt: clockNow(),
   });
 }
+
+/* ---------------------------------------------------------------------------
+ * Comments get their own counter, at six times the submission rate: discussion
+ * is cheaper than reporting, and the difference between a conversation and a
+ * flood is volume. The mechanism is the same audit_log counter on purpose —
+ * serverless means in-memory means nonexistent (see the note above).
+ * ------------------------------------------------------------------------ */
+export const COMMENTS_PER_HOUR = 30;
+
+export async function checkCommentRate(userId: string): Promise<RateLimitVerdict> {
+  const since = new Date(clockNow().getTime() - 3_600_000);
+
+  const [row] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(auditLog)
+    .where(
+      and(
+        eq(auditLog.action, "comment.posted"),
+        eq(auditLog.targetType, "rate_key"),
+        eq(auditLog.targetId, userId),
+        gte(auditLog.createdAt, since),
+      ),
+    );
+
+  const used = Number(row?.n ?? 0);
+  return {
+    allowed: used < COMMENTS_PER_HOUR,
+    used,
+    limit: COMMENTS_PER_HOUR,
+    retryAfterMinutes: 60,
+  };
+}
+
+/** Records one posted comment against the counter. Called inside the comment transaction. */
+export async function recordComment(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  key: { userId: string; commentId: string; challengeId: string; trackingId: string },
+) {
+  await tx.insert(auditLog).values({
+    actorId: key.userId,
+    action: "comment.posted",
+    targetType: "rate_key",
+    targetId: key.userId,
+    meta: { commentId: key.commentId, challengeId: key.challengeId, trackingId: key.trackingId },
+    createdAt: clockNow(),
+  });
+}
