@@ -140,8 +140,7 @@ and **53 of 53 model calls at level 2** with no call to Gemini, Groq, Supabase o
 Two offline seams are declared stubs, and the run says so rather than pretending: **storage** has no
 local implementation yet (an offline photo upload degrades to "could not be stored" and the challenge
 is still created — MinIO runs in compose ahead of that adapter), and **email** still speaks only
-Resend's API, so with no key the result records `email: not configured` (Mailpit runs in compose for
-the day an SMTP path lands). One thing to expect offline: the rule tier answers at 0.45 confidence,
+Resend's API; with no Resend key but `MAILPIT_URL` set, the offline demo delivers email into Mailpit's inbox at localhost:8025; with neither set it records `email: not configured`. One thing to expect offline: the rule tier answers at 0.45 confidence,
 and a level-2 answer never overwrites a classification — it is recorded as a proposal for a human. So
 an offline run leaves the hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the
 gate. Accept it there and the rest of the script proceeds. That is the invariant working, not a
