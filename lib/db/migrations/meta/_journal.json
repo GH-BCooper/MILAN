@@ -85,6 +85,13 @@
       "when": 1788764099242,
       "tag": "0011_trust_writer",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788793588920,
+      "tag": "0012_challenge_comments",
+      "breakpoints": true
     }
   ]
 }

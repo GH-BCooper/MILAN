@@ -84,7 +84,7 @@ forwarded, with the citizen told where they went.
 
 One Next.js deployable. Every module is its own folder, so it splits out later without a rewrite.
 
-**Stack:** Next.js 15 (App Router, RSC) · React 19 · Tailwind v4 + shadcn/ui · MapLibre + Protomaps ·
+**Stack:** Next.js 15 (App Router, RSC) · React 19 · Tailwind v4 + shadcn/ui · Leaflet + Protomaps (PMTiles, offline) ·
 Recharts · Better Auth · Drizzle + Zod · Supabase PostgreSQL 17 (pgvector HNSW, FTS, pg_trgm) ·
 Supabase Storage keyed by content hash · Gemini Flash → Groq → deterministic rules · SSE · Vercel +
 Vercel Cron · GitHub Actions · pnpm.

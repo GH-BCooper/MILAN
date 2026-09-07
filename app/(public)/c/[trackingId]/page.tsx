@@ -5,7 +5,9 @@ import { asc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { CitationBlock } from "@/components/citation-block";
+import { ChallengeComments } from "@/components/challenge-comments";
 import { CorroborateButton } from "@/components/corroborate-button";
+import { commentCount, listComments } from "@/lib/comments";
 import { UnconfirmedTag } from "@/components/impact-counter";
 import { CreditChain } from "@/components/credit-chain";
 import { bibtex, citationString, type CitationInput } from "@/lib/credit/citation";
@@ -67,6 +69,7 @@ export default async function ChallengePage({
   const user = await currentUser();
 
   const [row] = await db
+
     .select({
       challenge: challenges,
       districtName: districts.name,
@@ -89,7 +92,7 @@ export default async function ChallengePage({
 
   const host = (process.env.BETTER_AUTH_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 
-  const [media, credits, offers] = await Promise.all([
+  const [media, credits, offers, discussion] = await Promise.all([
     db.select().from(challengeMedia).where(eq(challengeMedia.challengeId, c.id)),
     // The credit chain, with the names resolved. Team members are credited by
     // NAME on the public chain, never by email — the email links an account and
@@ -126,6 +129,7 @@ export default async function ChallengePage({
       .leftJoin(capabilities, eq(capabilities.id, routes.capabilityId))
       .where(eq(routes.challengeId, c.id))
       .orderBy(asc(routes.rank)),
+    listComments(db, { challengeId: c.id, viewerId: user?.id ?? null }),
   ]);
 
   /**
@@ -431,6 +435,23 @@ export default async function ChallengePage({
               <CorroborateButton trackingId={c.trackingId} signedIn={Boolean(user)} />
             </div>
           </div>
+        </section>
+
+        {/* Discussion. There is deliberately no vote count here: a number can
+            be brigaded into looking like consensus, a sentence cannot — and
+            every sentence below belongs to a named account. */}
+        <section className="mt-8" id="discussion" aria-labelledby="discussion-heading">
+          <h2 id="discussion-heading" className="text-lg font-semibold">
+            Discussion{" "}
+            <span className="text-base font-normal text-muted-foreground">
+              ({commentCount(discussion)})
+            </span>
+          </h2>
+          <ChallengeComments
+            trackingId={c.trackingId}
+            comments={discussion}
+            signedIn={Boolean(user)}
+          />
         </section>
 
         {/* Invariant 10: every number is clickable through to its derivation.

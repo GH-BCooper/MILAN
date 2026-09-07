@@ -10,6 +10,12 @@ import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
 import { challenges, corroborations, userProfiles } from "@/lib/db/schema";
 import { corroborationWeight } from "@/lib/credit/trust";
+import {
+  COMMENT_MAX_LENGTH,
+  CommentRejectedError,
+  insertComment,
+} from "@/lib/comments";
+import { checkCommentRate, recordComment } from "@/lib/db/rateLimit";
 
 const Input = z.object({
   trackingId: z.string().trim().min(1).max(40),
@@ -110,4 +116,74 @@ export async function corroborateAction(raw: unknown): Promise<CorroborateResult
     console.error("[corroborate] failed", e);
     return { ok: false, error: "That did not save. Please try again." };
   }
+}
+
+/* ----------------------------------------------------------------- comments */
+
+const CommentInput = z.object({
+  trackingId: z.string().trim().min(1).max(40),
+  content: z.string().min(1).max(COMMENT_MAX_LENGTH + 200), // the hard cap is enforced in lib/comments
+
+  parentCommentId: z.string().uuid().nullish(),
+});
+
+export type CommentResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Post a comment on a public challenge. Signed-in only: the no-account signal
+ * is "This happens to me too" (corroboration), and the reason comments get no
+ * anonymous tier at all is documented in lib/comments.ts — an unsigned word is
+ * the brigading vector, not an unsigned tap.
+ */
+export async function postCommentAction(raw: unknown): Promise<CommentResult> {
+  const parsed = CommentInput.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: "That did not read as a comment. Please try again." };
+
+  const user = await currentUser();
+  if (!user) {
+    return {
+      ok: false,
+      error: "Sign in to join the discussion. Reporting and corroborating need no account; a comment carries your name.",
+    };
+  }
+
+  const [challenge] = await db
+    .select({ id: challenges.id, status: challenges.status })
+    .from(challenges)
+    .where(eq(challenges.trackingId, parsed.data.trackingId.toUpperCase()))
+    .limit(1);
+
+  if (!challenge) return { ok: false, error: "That report could not be found." };
+
+  const rate = await checkCommentRate(user.id);
+  if (!rate.allowed) {
+    return {
+      ok: false,
+      error: `You have commented ${rate.used} times in the last hour. The limit is ${rate.limit} — a conversation, not a flood. Try again later.`,
+    };
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      const commentId = await insertComment(tx, {
+        challengeId: challenge.id,
+        userId: user.id,
+        content: parsed.data.content,
+        parentCommentId: parsed.data.parentCommentId ?? null,
+      });
+      await recordComment(tx, {
+        userId: user.id,
+        commentId,
+        challengeId: challenge.id,
+        trackingId: parsed.data.trackingId.toUpperCase(),
+      });
+    });
+  } catch (e) {
+    if (e instanceof CommentRejectedError) return { ok: false, error: e.message };
+    console.error("[comments] post failed", e);
+    return { ok: false, error: "That did not save. Please try again." };
+  }
+
+  revalidatePath(`/c/${parsed.data.trackingId}`);
+  return { ok: true };
 }

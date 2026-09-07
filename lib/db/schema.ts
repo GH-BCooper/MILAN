@@ -31,6 +31,7 @@ import {
   uniqueIndex,
   uuid,
   vector,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { organization, user } from "./auth-schema";
@@ -419,6 +420,43 @@ export const corroborations = pgTable(
     // The anti-brigading constraint. One account, one corroboration per challenge.
     uniqueIndex("corroborations_challenge_user_uniq").on(t.challengeId, t.userId),
     index("corroborations_challenge_idx").on(t.challengeId),
+  ],
+);
+
+/**
+ * Discussion on a public challenge. The JDIP document asked for upvotes and
+ * comments; the team chose comments alone, on the record: a number can be
+ * brigaded into looking like consensus (LOOPHOLES row 7), a sentence cannot,
+ * and every sentence here belongs to a named, signed-in account behind the
+ * trust score and the per-hour comment rate limit. The no-account signal is
+ * "This happens to me too" — a corroboration.
+ *
+ * Deliberately NOT written to the ledger: the ledger is the provenance chain,
+ * the record of who did what to the challenge. A comment changes none of that,
+ * and a table that can grow unboundedly does not belong in an append-only
+ * chain. Comments are content, provenance is events; the two stores answer
+ * different questions.
+ */
+export const challengeComments = pgTable(
+  "challenge_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** One nesting level, enforced in application code (lib/comments.ts). */
+    parentCommentId: uuid("parent_comment_id").references(
+      (): AnyPgColumn => challengeComments.id,
+    ),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("challenge_comments_challenge_idx").on(t.challengeId),
+    index("challenge_comments_user_idx").on(t.userId),
   ],
 );
 
