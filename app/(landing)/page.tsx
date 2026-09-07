@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sql } from "drizzle-orm";
 import {
   ArrowRight,
   Building2,
@@ -12,8 +13,10 @@ import {
 
 import { IndiaMap } from "@/components/india-map";
 import { Button } from "@/components/ui/button";
+import { execRaw } from "@/lib/db/raw";
+import { impactCounts } from "@/lib/impact/counter";
 
-import { LandingFooter, LandingHeader } from "./landing-chrome";
+import { LandingFooter, LandingHeader, StepList } from "./landing-chrome";
 
 /** The three doors. Each one leads to a portal overview page, which in turn
  *  routes into that role's real dashboard. Citizens get the shallow door on
@@ -91,7 +94,77 @@ const MECHANISMS = [
   },
 ] as const;
 
-export default function LandingPage() {
+/** The five-stage pipeline (S1–S5), stated once here in plain language. S4 —
+ *  score, route, merge — runs zero model calls, per invariant 3; that line is
+ *  worth keeping in front of a judge, not just in the code comments. */
+const PIPELINE_STEPS = [
+  {
+    title: "Intake & framing",
+    body:
+      "A citizen files a report in Hindi or English. It is never destroyed or hidden — the original renders beside the English working copy at equal size and weight, always.",
+  },
+  {
+    title: "Classify & verify",
+    body:
+      "The AI proposes a hazard linkage, a domain and a confidence. A grievance with a known fix is forwarded to CPGRAMS, with the citizen told exactly where it went.",
+  },
+  {
+    title: "Cluster, don't discard",
+    body:
+      "Duplicate reports merge and increment corroboration instead of being dropped. Every reporter on a merged challenge is credited on the ledger.",
+  },
+  {
+    title: "Score & route — deterministically",
+    body:
+      "Plain TypeScript weighs hazard linkage, severity and corroboration into one auditable score. Severity ≥ 0.7 always waits at /gov/gate for a human, no exception.",
+  },
+  {
+    title: "Assign & clock it",
+    body:
+      "A matched university team claims a scoped, time-bound assignment. An open SLA deadline exists for every non-terminal challenge — a five-minute reaper escalates the ones at risk.",
+  },
+  {
+    title: "Confirm & credit",
+    body:
+      "The impact counter moves only when the citizen confirms the fix. Every contributor's work lands as an append-only, hash-chained ledger entry nobody can edit or erase.",
+  },
+] as const;
+
+const FAQS = [
+  {
+    q: "Is this just another grievance portal, like CPGRAMS or JharSewa?",
+    a: "No. Those route a complaint with a known fix to an accountable officer. Milan routes an unsolved problem to a university research team with a deadline. When intake recognises a grievance with a known fix, it forwards it to CPGRAMS and tells the citizen where it went.",
+  },
+  {
+    q: "What happens for a severe problem — does an AI decide anything risky?",
+    a: "No. The AI only proposes structured facts and a confidence score. Any challenge scoring severity ≥ 0.7 routes to a human at /gov/gate and waits. Every override a government officer makes is logged with a mandatory reason.",
+  },
+  {
+    q: "Can someone erase or edit who gets credit for a contribution?",
+    a: "No. Every credited action is an append-only ledger row carrying a SHA-256 content hash chained to the one before it. A Postgres rule blocks UPDATE and DELETE on the table outright — verify the whole chain at /ledger.",
+  },
+  {
+    q: "What if Gemini, Groq, or another third-party API is down during the demo?",
+    a: "Every AI stage sits behind an interface with a deterministic, rule-based fallback and falls through Gemini → Groq → rules automatically, recording the fallback level it used. Nothing on the core path depends on a live third-party call succeeding.",
+  },
+  {
+    q: "How is 'impact' counted — can a company inflate its CSR numbers?",
+    a: "The impact counter increments only at citizen confirmation — never on publish, funding, or an implementer's claim. Unconfirmed claims render visibly grey everywhere a number appears, including in CSR exports.",
+  },
+] as const;
+
+export default async function LandingPage() {
+  /* Real numbers only — CLAUDE.md forbids manufactured metrics. One round
+     trip, same pattern as /stats: this connection pool does not tolerate
+     concurrent raw queries. */
+  const [totals] = await execRaw<{ total: number; districts: number }>(sql`
+    SELECT count(*)::int AS total, count(DISTINCT district_code)::int AS districts
+    FROM challenges
+  `);
+  const impact = await impactCounts();
+  const totalN = Number(totals?.total ?? 0);
+  const districtN = Number(totals?.districts ?? 0);
+
   return (
     <>
       <LandingHeader />
@@ -151,6 +224,36 @@ export default function LandingPage() {
               </p>
             </div>
           </div>
+        </section>
+
+        {/* ── Live numbers, not projections ─────────────────────────────── */}
+        <section aria-labelledby="trust-heading" className="mx-auto w-full max-w-6xl px-4 pb-4 sm:px-6">
+          <div className="milan-glass grid gap-6 rounded-2xl p-6 sm:grid-cols-3">
+            <div>
+              <p id="trust-heading" className="text-sm text-muted-foreground">
+                Problems reported
+              </p>
+              <p className="mt-1 text-4xl font-bold tabular-nums">{totalN.toLocaleString("en-IN")}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Confirmed impact</p>
+              <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-500">
+                {impact.confirmed.toLocaleString("en-IN")}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Districts covered</p>
+              <p className="mt-1 text-4xl font-bold tabular-nums">{districtN.toLocaleString("en-IN")}</p>
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Computed live from the database, not a projection. The impact figure moves only when the
+            citizen who filed the report confirms it was fixed — see{" "}
+            <Link href="/stats" className="underline underline-offset-4 hover:text-[var(--grad-3)]">
+              the full breakdown
+            </Link>
+            .
+          </p>
         </section>
 
         {/* ── The three portals ──────────────────────────────────────────── */}
@@ -246,6 +349,11 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── How it works ───────────────────────────────────────────────── */}
+        <section className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <StepList heading="What happens after you submit" steps={PIPELINE_STEPS} />
+        </section>
+
         {/* ── Government strip ───────────────────────────────────────────── */}
         <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
           <div className="milan-glass flex flex-col gap-4 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between">
@@ -259,6 +367,56 @@ export default function LandingPage() {
             <Button asChild variant="outline" size="lg" className="shrink-0">
               <Link href="/gov">Open the government console</Link>
             </Button>
+          </div>
+        </section>
+
+        {/* ── FAQ ─────────────────────────────────────────────────────────── */}
+        <section aria-labelledby="faq-heading" className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+          <h2 id="faq-heading" className="text-2xl font-bold tracking-tight sm:text-3xl">
+            Before you ask
+          </h2>
+          <div className="mt-6 space-y-3">
+            {FAQS.map(({ q, a }) => (
+              <details key={q} className="milan-glass group rounded-xl p-5 open:pb-5">
+                <summary className="cursor-pointer list-none text-base font-semibold marker:content-none">
+                  <span className="flex items-center justify-between gap-4">
+                    {q}
+                    <ArrowRight
+                      aria-hidden
+                      className="size-4 shrink-0 text-[var(--grad-3)] transition-transform group-open:rotate-90"
+                    />
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Final CTA ───────────────────────────────────────────────────── */}
+        <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+          <div className="milan-glass relative overflow-hidden rounded-2xl p-8 text-center sm:p-12">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--grad-2),transparent_65%)] opacity-20"
+            />
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              An unsolved problem belongs in a lab, with a clock on it.
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+              Report a problem, claim a routed assignment, or discover verified demand — every path
+              starts from the same hazard-linked, hash-chained pipeline.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Button asChild size="lg">
+                <Link href="/submit">
+                  Report a problem <ArrowRight aria-hidden className="size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="/portals/universities">Claim a challenge</Link>
+              </Button>
+            </div>
           </div>
         </section>
       </main>
