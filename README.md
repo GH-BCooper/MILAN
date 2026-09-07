@@ -125,7 +125,7 @@ Postgres, the AI provider chain and notifications all have an offline story. Thi
 invariant 8 made operational:
 
 ```bash
-docker compose up -d                       # Postgres 17 + pgvector, MinIO, Ollama, Mailpit
+docker compose up -d                       # Postgres 17 + pgvector, MinIO, Mailpit
 cp .env.local .env.online && cp .env.offline.example .env.local
 pnpm db:migrate && pnpm seed --reset
 pnpm build && pnpm demo:offline            # http://localhost:3000
@@ -134,7 +134,7 @@ pnpm build && pnpm demo:offline            # http://localhost:3000
 `.env.offline.example` (committed; copy of your online values goes to `.env.online`) sets
 `AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
 `lib/ai/providers/rules.ts` and the trace panel says so in amber rather than erroring. This has been
-run end to end: 4/4 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
+run end to end: 3/3 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
 and **53 of 53 model calls at level 2** with no call to Gemini, Groq, Supabase or Resend.
 
 Two offline seams are declared stubs, and the run says so rather than pretending: **storage** has no
@@ -220,7 +220,8 @@ We declare our stubs on a slide. Judges forgive honest stubs and punish fake dep
 - **Full Emergency Mode** — `/gov/emergency` is the toggle only: a banner, a map filter and a display
   re-sort. It changes nothing stored, and the page says so.
 - **Live multilingual ASR** — the stage and the live path are real; the demo uses a seeded
-  ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is still empty.
+  ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is now recorded
+  (its SHA-256 is wired into `lib/ai/seededTranscripts.ts`). Live ASR is Groq whisper-large-v3.
 - **No PMTiles basemap** — `NEXT_PUBLIC_PMTILES_URL` is unset, so the map draws markers on a blank
   canvas and says so.
 - **Nearest-centroid geocoding, not point-in-polygon** — wrong near district boundaries; the
