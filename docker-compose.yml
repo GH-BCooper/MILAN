@@ -13,9 +13,11 @@
 # What each service replaces:
 #   postgres  -> Supabase PostgreSQL (pgvector for the embedding kNN prior)
 #   minio     -> Supabase Storage (objects keyed by SHA-256, same as production)
-#   ollama    -> Gemini and Groq. Absent it, the provider chain still lands on
-#                the deterministic rule tier and every stage returns at level 2.
 #   mailpit   -> Resend. SMS and WhatsApp are already mock inboxes at /demo.
+#
+# Local inference (Ollama) is intentionally NOT in this stack: nothing reads
+# OLLAMA_BASE_URL, and the offline demo is built to run on the deterministic
+# rules tier. Local model inference is a declared future stub, not a hidden dep.
 
 services:
   postgres:
@@ -67,17 +69,6 @@ services:
       mc anonymous set download local/media
       "
 
-  ollama:
-    # Optional. Without it the provider chain drops to the deterministic rule
-    # tier, which is the behaviour we WANT to be able to demonstrate: pull the
-    # plug and every stage returns at fallback level 2 rather than erroring.
-    image: ollama/ollama:latest
-    container_name: milan-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - milan-ollama:/root/.ollama
-
   mailpit:
     image: axllent/mailpit:latest
     container_name: milan-mailpit
@@ -90,4 +81,3 @@ services:
 volumes:
   milan-pg:
   milan-minio:
-  milan-ollama:

@@ -121,26 +121,27 @@ Then open **`/demo`** — the judge console runs the whole six-minute script wit
 
 ## Run it offline, with the wifi off
 
-Every external dependency has a local implementation. This is CLAUDE.md invariant 8 made
-operational, and it is two commands:
+Postgres, the AI provider chain and notifications all have an offline story. This is CLAUDE.md
+invariant 8 made operational:
 
 ```bash
-docker compose up -d                       # Postgres 17 + pgvector, MinIO, Ollama, Mailpit
-cp .env.local .env.online && cp .env.offline .env.local
+docker compose up -d                       # Postgres 17 + pgvector, MinIO, Mailpit
+cp .env.local .env.online && cp .env.offline.example .env.local
 pnpm db:migrate && pnpm seed --reset
 pnpm build && pnpm demo:offline            # http://localhost:3000
 ```
 
-`.env.offline` sets `AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
+`.env.offline.example` (committed; copy of your online values goes to `.env.online`) sets
+`AI_PROVIDER_CHAIN=rules`, so every AI stage returns at **fallback level 2** from
 `lib/ai/providers/rules.ts` and the trace panel says so in amber rather than erroring. This has been
-run end to end: 4/4 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
+run end to end: 3/3 containers healthy, all migrations applied, seeded in 2.9 s, `verify:demo` 13/13,
 and **53 of 53 model calls at level 2** with no call to Gemini, Groq, Supabase or Resend.
 
-One thing to expect offline: the rule tier answers at 0.45 confidence, and a level-2 answer never
-overwrites a classification — it is recorded as a proposal for a human. So an offline run leaves the
-hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the gate. Accept it there and
-the rest of the script proceeds. That is the invariant working, not a failure. Mail lands in
-Mailpit at `http://localhost:8025`; SMS and WhatsApp are already mock inboxes on `/demo`.
+Offline storage and email both have a local story: **storage** uses MinIO via `S3_ENDPOINT` (set in `.env.offline.example`), so a citizen photo is actually stored and served with the wifi off, and **email** delivers into Mailpit's inbox offline via `MAILPIT_URL` (set in `.env.offline.example`); with no Resend key and no `MAILPIT_URL` it records `email: not configured`. One thing to expect offline: the rule tier answers at 0.45 confidence,
+and a level-2 answer never overwrites a classification — it is recorded as a proposal for a human. So
+an offline run leaves the hero challenge at SUBMITTED in the `/admin/triage` queue rather than at the
+gate. Accept it there and the rest of the script proceeds. That is the invariant working, not a
+failure. SMS and WhatsApp are already mock inboxes on `/demo`.
 
 Restore the online profile with `cp .env.online .env.local`.
 
@@ -216,7 +217,8 @@ We declare our stubs on a slide. Judges forgive honest stubs and punish fake dep
 - **Full Emergency Mode** — `/gov/emergency` is the toggle only: a banner, a map filter and a display
   re-sort. It changes nothing stored, and the page says so.
 - **Live multilingual ASR** — the stage and the live path are real; the demo uses a seeded
-  ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is still empty.
+  ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is now recorded
+  (its SHA-256 is wired into `lib/ai/seededTranscripts.ts`). Live ASR is Groq whisper-large-v3.
 - **No PMTiles basemap** — `NEXT_PUBLIC_PMTILES_URL` is unset, so the map draws markers on a blank
   canvas and says so.
 - **Nearest-centroid geocoding, not point-in-polygon** — wrong near district boundaries; the
