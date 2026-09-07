@@ -66,7 +66,7 @@ export function LifecycleStepper({ status }: { status: ChallengeStatus }) {
                     ? "bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-3)] shadow-[0_0_14px_2px_rgba(124,92,255,0.75)]"
                     : reached
                       ? "bg-gradient-to-r from-[var(--grad-1)]/70 to-[var(--grad-2)]/70"
-                      : "bg-white/10"
+                      : "bg-foreground/10"
                 }`}
                 aria-hidden
               />

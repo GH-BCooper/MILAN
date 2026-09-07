@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { RoleBadge } from "@/components/role-badge";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { currentUser } from "@/lib/auth/guards";
 
@@ -33,18 +34,19 @@ export async function SiteHeader() {
         </Link>
 
         <nav aria-label="Public" className="flex flex-wrap items-center gap-x-1 text-sm">
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/8 hover:text-foreground" href="/challenges">
+          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/challenges">
             Challenges
           </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/8 hover:text-foreground" href="/track">
+          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/track">
             Track
           </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/8 hover:text-foreground" href="/stats">
+          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/stats">
             Statistics
           </Link>
         </nav>
 
         <div className="ms-auto flex items-center gap-3">
+          <ThemeToggle />
           {user ? (
             <>
               <RoleBadge role={user.role} districtCode={user.districtCode} />
