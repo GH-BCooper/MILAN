@@ -154,6 +154,7 @@ async function heiMemberOf(orgId: string) {
       role: userProfiles.role,
       preferredLang: userProfiles.preferredLang,
       verifiedTier: userProfiles.verifiedTier,
+      orgVerificationStatus: userProfiles.orgVerificationStatus,
       email: user.email,
       name: user.name,
     })
