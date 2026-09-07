@@ -966,6 +966,26 @@ async function main() {
     );
   }
 
+  /* Task 4.3: `pnpm seed --reset --ai` comes up fully pre-synced — every
+   * challenge has real pipeline receipts the moment the seed finishes, which
+   * is what the judges' Part 10 checklist asks to see. Runs as a child process
+   * exactly as scripts/verify-phase3.mts runs its siblings: same module,
+   * same flags, no duplicated import graph. */
+  if (process.argv.includes("--ai")) {
+    console.log("\n--ai: pre-syncing the seed through the real pipeline (seed/presync.mts)…\n");
+    const { spawn } = await import("node:child_process");
+    const code = await new Promise<number>((resolve) => {
+      const child = spawn("node_modules/.bin/tsx", ["--conditions=react-server", "seed/presync.mts"], {
+        stdio: "inherit",
+        env: process.env,
+      });
+      child.on("exit", (c) => resolve(c ?? 1));
+    });
+    if (code !== 0) {
+      throw new Error(`seed/presync.mts exited ${code} — the dataset is seeded but not pre-synced`);
+    }
+  }
+
   console.log("\nDemo accounts (password: " + DEMO_PASSWORD + ")");
   console.log("-".repeat(78));
   for (const a of DEMO_ACCOUNTS) {
