@@ -25,7 +25,7 @@ on stage. Work top to bottom.
 
 | | |
 |---|---|
-| Repo | `~/milan` in WSL Ubuntu, pushed to `GH-BCooper/MILAN`, branch `main` |
+| Repo | `~/milan` in WSL Ubuntu, pushed to `ItsPinion/MILAN`, branch `main` |
 | Working tree | clean |
 | Build | `pnpm build` clean, zero type errors, zero lint warnings |
 | Tests | `pnpm vitest run` — 8 passed, 1 skipped (the skipped one is deliberate, see §3) |
@@ -52,7 +52,7 @@ the build file put it on day one is that *"it works on my machine"* discovered a
 most common way a hackathon project dies. Every hour this stays undone is an hour of code that has
 never run anywhere but this laptop.
 
-1. Go to <https://vercel.com/new> and import `GH-BCooper/MILAN`.
+1. Go to <https://vercel.com/new> and import `ItsPinion/MILAN`.
 2. Framework preset: **Next.js**. Root directory: leave as `./`. Do not override the build command.
 3. Add these environment variables (copy the values out of `~/milan/.env.local`):
 
@@ -92,7 +92,7 @@ a pull request from a fork does not fail on missing secrets. Which means: if you
 CI goes green while testing almost nothing.
 
 Go to **Settings → Secrets and variables → Actions → New repository secret** on
-`GH-BCooper/MILAN` and add:
+`ItsPinion/MILAN` and add:
 
 ```
 DATABASE_URL
