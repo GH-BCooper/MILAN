@@ -11,6 +11,12 @@ Before you start:
 3. Have these tabs pre-opened, in this order:
    `/demo` · `/submit` · `/c/JH-2026-GUM-0001` · `/gov/gate` · `/bounties` · `/ledger` · `/stats` ·
    `/industry/csr`
+   **Optional, for a fuller story board** — if `/stats`, `/bounties` or `/gov/sla` will be shown
+   as *numbers*, run `pnpm seed:states` once beforehand (terminal, once, idempotent). It walks a
+   fixed cast through the real state machine — three challenges routed to BIT Sindri, one in
+   research, one published with a CSR expression of interest, one citizen-confirmed, one
+   SLA-breached to the bounty board — so those pages have shape. `/demo` → **Reset** undoes it
+   cleanly; every other console shortcut keeps working either way.
 4. Sign in as `dc.gumla@jh.gov.demo.milan.in` in a **second browser profile** — the DC tab. ADMIN is
    deliberately not a wildcard for GOVERNMENT, so the same session cannot do both.
 

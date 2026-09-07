@@ -8,6 +8,7 @@
     "test": "vitest run",
     "seed": "tsx --conditions=react-server seed/index.mts",
     "seed:ai": "tsx --conditions=react-server seed/presync.mts",
+    "seed:states": "tsx --conditions=react-server -r ./seed/tsx-shims.cjs seed/states.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
@@ -45,7 +46,7 @@
   "name": "milan",
   "version": "0.1.0",
   "private": true,
-  "description": "Milan — citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
+  "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
     "@supabase/supabase-js": "^2.45.0",

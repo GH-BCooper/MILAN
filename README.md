@@ -105,6 +105,7 @@ cp .env.example .env.local          # then fill in DATABASE_URL, DIRECT_URL, BET
 pnpm db:migrate
 pnpm seed --reset                   # 24 districts (incl. the JDIP 4.1 reference columns), 263 blocks, 20 orgs, 25 challenges
 pnpm seed:ai                        # optional: pre-sync every seed through the real pipeline (receipts on first load)
+pnpm seed:states                    # optional: walk a fixed cast through the real lifecycle (/stats, /bounties, /gov/sla get shape; idempotent)
 pnpm dev                            # http://localhost:3000
 ```
 
