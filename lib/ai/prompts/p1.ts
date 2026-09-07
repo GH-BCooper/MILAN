@@ -11,7 +11,7 @@
  */
 import type { P1Input } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 
 export const SYSTEM = `You turn a citizen's description of a local problem into a research-ready
 problem statement for a final-year university project team in Jharkhand.
@@ -76,6 +76,29 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       success_criteria:
         "The reason the sources fail after March is established, a year-round source is identified or restored, and the women of the village confirm they no longer walk to fetch water in the dry months.",
       confidence: 0.74,
+    }),
+  },
+  // DRAFT — citizen's own (wrong) solution, and a very short report, per the HUMAN note above.
+  {
+    input:
+      "The school roof leaks every monsoon. I think the solution is to build a new concrete roof on top of the " +
+      "old one and that will surely fix it. Please assign this to someone.",
+    output: JSON.stringify({
+      framed_statement:
+        "The school roof leaks during every monsoon, disrupting classes and leaving children in water. Whether a repair or a rebuild is appropriate, and the cause of the leak, have not been established; the citizen's proposed overlay is one unverified option among others.",
+      success_criteria:
+        "The cause of the leak is identified and a repair or rebuild chosen on that basis, and the teacher confirms a monsoon passes with no classes disrupted by leaking.",
+      confidence: 0.82,
+    }),
+  },
+  {
+    input: "no water in our tola since May. help.",
+    output: JSON.stringify({
+      framed_statement:
+        "A tola has had no drinking water since May. It is not established whether the source has failed, the supply line is broken, or demand has outgrown it.",
+      success_criteria:
+        "The cause of the outage is established, water is restored, and the residents confirm supply has returned through the dry season.",
+      confidence: 0.7,
     }),
   },
 ];

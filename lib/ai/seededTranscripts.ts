@@ -39,7 +39,7 @@ export const SEEDED_TRANSCRIPTS: Record<string, SeededTranscript> = {
   // The value is already the authored ground truth from
   // seed-data/voice-note.transcript.txt, checked against that file by
   // `pnpm p0:verify`.
-  "0000000000000000000000000000000000000000000000000000000000000000": {
+  "2779bd25c203c28aea118d025af0ea3d0f0cdd85883fd03ddb2501e263d708d8": {
     original:
       "मेरा नाम सुनीता उरांव है, मैं गुमला ज़िला के बसिया से बोल रही हूँ। हमारे टोला के बगल में कोयल नदी का मिट्टी का बांध है, उसमें पुलिया के पास दरार आ गई है। पिछले बरसात में एक हाथ की थी, अब पूरा हाथ अंदर चला जाता है और गांव की तरफ बढ़ रही है। जुलाई में पानी चढ़ा तो चालीस घर और स्कूल डूब जाएंगे। मुखिया को दो बार बताया, कोई देखने नहीं आया।",
     lang: "hi",
@@ -57,6 +57,8 @@ export const SEEDED_TRANSCRIPTS: Record<string, SeededTranscript> = {
 export const EMPTY_SHA256 =
   "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
-export function seededTranscriptFor(contentHash: string): SeededTranscript | null {
+export function seededTranscriptFor(
+  contentHash: string,
+): SeededTranscript | null {
   return SEEDED_TRANSCRIPTS[contentHash] ?? null;
 }

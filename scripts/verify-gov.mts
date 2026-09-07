@@ -71,7 +71,7 @@ if (!target) {
 console.log(`target: ${target.tracking_id} (${target.status})\n`);
 
 let fired = 0;
-let rungs: string[] = [];
+const rungs: string[] = [];
 for (let step = 0; step < 4; step++) {
   const [next] = await sql<Array<{ kind: string; days_needed: number }>>`
     SELECT d.kind::text AS kind,

@@ -1,21 +1,30 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { DemoClockBanner } from "@/components/demo-clock-banner";
 import "./globals.css";
 
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
-  subsets: ["latin"],
+/* Self-hosted (app/fonts/, SIL OFL 1.1 — licences sit beside the files) so
+   `pnpm build` never touches the network: next/font/google fetched these exact
+   faces from fonts.googleapis.com at build time, which fails on any machine
+   without a route to Google — precisely the third-party dependency invariant 8
+   forbids. The variables below are the ones globals.css actually reads;
+   `--font-milan-sans` was referenced there for months without a definition,
+   which silently degraded every page to the browser default font. */
+const notoSans = localFont({
+  src: "./fonts/noto-sans-latin-wght-normal.woff2",
+  variable: "--font-milan-sans",
+  weight: "100 900",
   display: "swap",
 });
 
 /* Half of Milan renders in Devanagari. Loading the face explicitly means the
    Hindi original does not fall back to a system font of a different weight —
    the citizen text must sit beside the English copy at equal weight. */
-const notoDevanagari = Noto_Sans_Devanagari({
-  variable: "--font-noto-devanagari",
-  subsets: ["devanagari"],
+const notoDevanagari = localFont({
+  src: "./fonts/noto-sans-devanagari-devanagari-wght-normal.woff2",
+  variable: "--font-milan-devanagari",
+  weight: "100 900",
   display: "swap",
 });
 

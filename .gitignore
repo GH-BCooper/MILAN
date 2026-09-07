@@ -45,3 +45,4 @@ backups/
 !public/jharkhand.pmtiles
 .env*.local
 .env*
+!.env*.example
