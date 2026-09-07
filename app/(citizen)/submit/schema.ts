@@ -34,6 +34,8 @@ export const UploadedMediaSchema = z.object({
   bytes: z.number().int().positive(),
   exifStripped: z.literal(true),
   consentGiven: z.boolean(),
+  /** The citizen's own blur, applied client-side before upload. */
+  facesBlurred: z.boolean().default(false),
 });
 
 export const SubmitSchema = z.object({

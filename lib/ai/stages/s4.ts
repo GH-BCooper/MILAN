@@ -18,7 +18,7 @@ import { eq, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { blocks, challenges, corroborations, districts, userProfiles } from "@/lib/db/schema";
+import { blocks, challenges, districts } from "@/lib/db/schema";
 import { computePriority, type ScoreResult, type ScoringInput } from "@/packages/scoring";
 
 /**

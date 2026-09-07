@@ -19,6 +19,8 @@ export interface UploadedMedia {
   bytes: number;
   exifStripped: true;
   consentGiven: boolean;
+  /** True when the citizen blurred regions on their device before upload. */
+  facesBlurred: boolean;
   previewUrl: string | null;
   fileName: string;
 }

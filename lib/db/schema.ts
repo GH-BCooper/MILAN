@@ -389,7 +389,8 @@ export const challengeMedia = pgTable(
     mime: text("mime").notNull(),
     bytes: integer("bytes").notNull(),
     exifStripped: boolean("exif_stripped").notNull().default(false),
-    /** Declared stub for this cut: face and plate blurring is not implemented. */
+    /** True when the citizen blurred regions client-side before upload
+     *  (photo-blur.tsx). Automatic detection remains a declared stub. */
     facesBlurred: boolean("faces_blurred").notNull().default(false),
     consentGiven: boolean("consent_given").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -25,7 +25,7 @@ const FramingRequestSchema = z.object({
 });
 
 export type UploadResult =
-  | { ok: true; storageKey: string; contentHash: string; mime: string; bytes: number; previewUrl: string | null }
+  | { ok: true; storageKey: string; contentHash: string; mime: string; bytes: number; previewUrl: string | null; facesBlurred: boolean }
   | { ok: false; error: string };
 
 /**
@@ -39,6 +39,10 @@ export type UploadResult =
 export async function uploadEvidenceAction(formData: FormData): Promise<UploadResult> {
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "No file was received." };
+  // The citizen's blur tool sets this. The flag describes what their browser
+  // did to the bytes (the blur is baked in before upload), not a server-side
+  // promise, and challenge_media records it as exactly that.
+  const facesBlurred = formData.get("facesBlurred") === "true";
 
   try {
     const processed = await processImage(Buffer.from(await file.arrayBuffer()), file.type);
@@ -58,6 +62,7 @@ export async function uploadEvidenceAction(formData: FormData): Promise<UploadRe
       mime: processed.mime,
       bytes: processed.bytes.byteLength,
       previewUrl: stored.publicUrl,
+      facesBlurred,
     };
   } catch (e) {
     if (e instanceof MediaRejectedError) return { ok: false, error: e.message };
@@ -252,9 +257,10 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
             mime: m.mime,
             bytes: m.bytes,
             exifStripped: m.exifStripped,
-            // Declared stub: blurring is not implemented, and we record that
-            // honestly rather than claiming it.
-            facesBlurred: false,
+            // The citizen's own blur, applied on their device before upload
+            // (photo-blur.tsx). The flag travels with the media descriptor from
+            // the wizard; the bytes themselves are already blurred.
+            facesBlurred: m.facesBlurred,
             consentGiven: m.consentGiven,
             createdAt: now,
           })),

@@ -57,12 +57,6 @@ function s3Bucket(): string {
   return process.env.S3_BUCKET ?? MEDIA_BUCKET;
 }
 
-function backend(): "supabase" | "s3" | null {
-  if (supabaseClient()) return "supabase";
-  if (s3Client()) return "s3";
-  return null;
-}
-
 /* --------------------------------------------------------------- public url */
 
 export function publicUrlFor(storageKey: string): string | null {

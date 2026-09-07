@@ -443,7 +443,7 @@ async function silent45(ctx: ActionCtx): Promise<ActionResult> {
 
 /** Thirty days after IMPLEMENTED and the citizen still has not answered. */
 async function impactUnconfirmed(ctx: ActionCtx): Promise<ActionResult> {
-  const { tx, challenge, now } = ctx;
+  const { tx, challenge } = ctx;
   const emails: PendingSend[] = [];
   const person = await reporter(tx, challenge.reporterId);
 
@@ -512,7 +512,7 @@ async function annualReview(ctx: ActionCtx): Promise<ActionResult> {
 
 /** The pipeline stalled, or the citizen never answered a follow-up question. */
 async function stageTimeout(ctx: ActionCtx): Promise<ActionResult> {
-  const { tx, challenge, now, deadline } = ctx;
+  const { tx, challenge, deadline } = ctx;
   const expect = String(deadline.payload?.expect ?? "");
   const emails: PendingSend[] = [];
 
@@ -541,7 +541,7 @@ async function stageTimeout(ctx: ActionCtx): Promise<ActionResult> {
 
 /** Nobody came to the human gate. Invariant 5 must not become a bottleneck nobody sees. */
 async function gateTimeout(ctx: ActionCtx): Promise<ActionResult> {
-  const { tx, challenge, now } = ctx;
+  const { tx, challenge } = ctx;
   const emails: PendingSend[] = [];
   for (const officer of [...(await districtOfficers(tx, challenge.districtCode)), ...(await admins(tx))]) {
     const s = await notifyInTx(tx, {
@@ -568,7 +568,7 @@ async function closureDue(ctx: ActionCtx): Promise<ActionResult> {
 }
 
 async function disputeReview(ctx: ActionCtx): Promise<ActionResult> {
-  const { tx, challenge, now } = ctx;
+  const { tx, challenge } = ctx;
   const emails: PendingSend[] = [];
   for (const officer of await districtOfficers(tx, challenge.districtCode)) {
     const s = await notifyInTx(tx, {
