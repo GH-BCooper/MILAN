@@ -44,6 +44,7 @@
     "backup": "node scripts/backup.mjs backups/phase3-demo.sql"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0",
     "@supabase/supabase-js": "^2.45.0",
     "better-auth": "^1.2.0",
     "class-variance-authority": "^0.7.1",
