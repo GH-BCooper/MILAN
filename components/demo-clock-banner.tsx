@@ -20,7 +20,7 @@ export async function DemoClockBanner() {
       {offset !== 0 ? (
         <div
           role="status"
-          className="bg-amber-400 text-amber-950 text-xs sm:text-sm font-semibold px-3 py-2 text-center"
+          className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 text-black text-xs sm:text-sm font-semibold px-3 py-2 text-center shadow-[0_8px_30px_-12px_rgba(251,191,36,0.9)]"
         >
           Demo clock: {offset > 0 ? "+" : ""}
           {offset} day{Math.abs(offset) === 1 ? "" : "s"} — the platform is behaving as if today were{" "}
@@ -30,7 +30,7 @@ export async function DemoClockBanner() {
       {emergency.on ? (
         <div
           role="status"
-          className="bg-red-600 text-white text-xs sm:text-sm font-semibold px-3 py-2 text-center"
+          className="bg-gradient-to-r from-rose-600 via-red-500 to-fuchsia-600 text-white text-xs sm:text-sm font-semibold px-3 py-2 text-center shadow-[0_8px_30px_-12px_rgba(255,77,109,0.9)]"
         >
           Emergency filter active
           {emergency.hazard ? `: ${emergency.hazard.replace(/_/g, " ")}` : ""} — this changes what is shown

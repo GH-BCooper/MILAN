@@ -87,7 +87,7 @@ export function Milestones({
       </div>
 
       {adding ? (
-        <div className="mt-3 space-y-3 rounded-lg border border-border p-4">
+        <div className="mt-3 space-y-3 milan-glass rounded-xl p-4">
           <div className="space-y-1">
             <Label htmlFor="milestone-title">What is the milestone</Label>
             <Input
@@ -135,7 +135,7 @@ export function Milestones({
           platform knows you are still working.
         </p>
       ) : (
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+        <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
           {rows.map((row) => (
             <li key={row.id} className="flex items-start gap-3 p-4">
               <input

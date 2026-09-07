@@ -62,14 +62,14 @@ export function GateForm({ trackingId, severity }: { trackingId: string; severit
           name="decision"
           value="REJECT"
           disabled={pending}
-          className="inline-flex h-11 items-center rounded-md border border-red-300 px-4 text-sm font-semibold text-red-700 disabled:opacity-50"
+          className="inline-flex h-11 items-center rounded-md border border-red-400/40 px-4 text-sm font-semibold text-red-200 disabled:opacity-50"
         >
           Not a research challenge — park it
         </button>
       </div>
 
       {state ? (
-        <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+        <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
           {state.message}
         </p>
       ) : null}

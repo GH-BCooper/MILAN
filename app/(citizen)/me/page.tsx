@@ -85,7 +85,7 @@ export default async function MePage() {
             .
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {reports.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
                 <Link
@@ -115,7 +115,7 @@ export default async function MePage() {
             You have not corroborated anyone else&rsquo;s report yet.
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {corroborated.map((c) => (
               <li key={c.trackingId} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-4">
                 <Link href={`/c/${c.trackingId}`} className="font-medium text-primary underline underline-offset-4">
@@ -160,7 +160,7 @@ export default async function MePage() {
         {credits.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">No credit recorded yet.</p>
         ) : (
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {credits.map((c) => (
               <li key={`${c.challengeId}-${c.relation}`} className="flex flex-wrap items-center gap-x-3 p-4">
                 <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">

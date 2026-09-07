@@ -180,13 +180,13 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </div>
 
       {silentDays !== null && silentDays >= 20 ? (
-        <p className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="mt-4 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
           No recorded activity for {silentDays} days. At 30 this project is flagged at risk, and at
           45 the challenge is offered to another team. Adding or completing a milestone resets it.
         </p>
       ) : null}
 
-      <section className="mt-6 rounded-lg border border-border p-4">
+      <section className="mt-6 milan-glass rounded-xl p-4">
         <h2 className="text-xs uppercase tracking-wide text-muted-foreground">The problem</h2>
         <p className="mt-2 text-base">{row.framedStatement ?? row.challengeTitle}</p>
         {row.successCriteria ? (
@@ -226,7 +226,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           Permanent and append-only. Nobody on this list can be removed from it, including the
           person who reported the problem.
         </p>
-        <ol className="mt-3 divide-y divide-border rounded-lg border border-border">
+        <ol className="mt-3 divide-y divide-border milan-glass rounded-xl">
           {credits.map((edge) => (
             <li key={edge.id} className="flex flex-wrap items-center gap-3 p-3">
               <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-semibold uppercase tracking-wide">
@@ -258,7 +258,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         </p>
 
         {publishedArtifacts.length > 0 ? (
-          <ul className="mb-4 divide-y divide-border rounded-lg border border-border">
+          <ul className="mb-4 divide-y divide-border milan-glass rounded-xl">
             {publishedArtifacts.map((a) => (
               <li key={a.id} className="p-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -266,7 +266,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                     {a.title}
                   </Link>
                   <span
-                    className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"}`}
+                    className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}
                   >
                     {a.licence === "CC_BY" ? "CC-BY" : "restricted"}
                   </span>
@@ -297,7 +297,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           Built from the audit log and the ledger, so it cannot disagree with the clock that
           escalates a silent project.
         </p>
-        <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+        <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
           {[
             ...activity.map((a) => ({
               at: a.createdAt,

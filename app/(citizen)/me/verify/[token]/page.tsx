@@ -91,14 +91,14 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
 
         {/* Invariant 6. The citizen's own words, first, at full size. */}
         <section className="mt-6 space-y-3">
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               What you told us ({c.body_lang})
             </p>
             <p className="mt-2 text-base">{c.body_original}</p>
           </div>
           {c.body_en && c.body_lang !== "en" ? (
-            <div className="rounded-lg border border-border p-4">
+            <div className="milan-glass rounded-xl p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 English working copy
               </p>
@@ -107,7 +107,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
           ) : null}
         </section>
 
-        <section className="mt-6 rounded-lg border border-border bg-muted p-4">
+        <section className="mt-6 milan-glass rounded-xl bg-muted p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             What is being claimed, and by whom
           </p>
@@ -125,7 +125,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
 
         <div className="mt-6">
           {alreadyAnswered ? (
-            <div className="rounded-lg border border-border p-5">
+            <div className="milan-glass rounded-xl p-5">
               <p className="text-base font-semibold">You have already answered this.</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 {c.impact_disputed

@@ -134,7 +134,7 @@ export default async function IndustryDiscover({
       ) : (
         <ul className="mt-6 space-y-3">
           {rows.map((r) => (
-            <li key={r.tracking_id} className="rounded-lg border border-border p-4">
+            <li key={r.tracking_id} className="milan-glass rounded-xl p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Link href={`/industry/challenges/${r.tracking_id}`} className="text-base font-semibold underline-offset-4 hover:underline">
@@ -166,7 +166,7 @@ export default async function IndustryDiscover({
                   <UnconfirmedTag />
                 ) : null}
                 {r.impact_confirmed ? (
-                  <span className={`rounded px-2 py-1 font-medium ${r.impact_partial ? "bg-amber-100 text-amber-900" : "bg-emerald-100 text-emerald-900"}`}>
+                  <span className={`rounded px-2 py-1 font-medium ${r.impact_partial ? "bg-amber-500/15 text-amber-200" : "bg-emerald-500/15 text-emerald-200"}`}>
                     {r.impact_partial ? "citizen says partly fixed" : "confirmed fixed by the citizen"}
                   </span>
                 ) : null}
@@ -176,7 +176,7 @@ export default async function IndustryDiscover({
         </ul>
       )}
 
-      <p className="mt-8 rounded-lg border border-border bg-muted p-4 text-sm">
+      <p className="mt-8 milan-glass rounded-xl bg-muted p-4 text-sm">
         <span className="font-semibold">A legal entity is needed to receive money, not to participate.</span>{" "}
         An individual can claim a challenge here as an independent innovator, with personal credit only.
         Their employer is never named on the credit chain unless they ask for it to be.

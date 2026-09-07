@@ -23,7 +23,7 @@ export function CitationBlock({ citation, bibtex }: { citation: string; bibtex: 
   }
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="milan-glass rounded-xl p-4">
       <h3 className="text-sm font-semibold">Cite this</h3>
       <p className="mt-2 rounded bg-muted p-3 text-sm">{citation}</p>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -49,7 +49,7 @@ export function CitationBlock({ citation, bibtex }: { citation: string; bibtex: 
         ) : null}
       </div>
       {copied === "failed" ? (
-        <p className="mt-2 text-xs text-red-700">
+        <p className="mt-2 text-xs text-red-200">
           Your browser blocked the clipboard. Select the text above and copy it by hand.
         </p>
       ) : null}

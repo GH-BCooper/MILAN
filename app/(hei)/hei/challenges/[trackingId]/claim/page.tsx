@@ -51,7 +51,7 @@ export default async function ClaimPage({
   if (!offer) {
     return (
       <RoleShell title={trackingId} subtitle="Not available to claim.">
-        <div className="rounded-lg border border-border p-6">
+        <div className="milan-glass rounded-xl p-6">
           <p className="text-sm font-medium">
             This challenge is not currently offered to your institution.
           </p>
@@ -96,7 +96,7 @@ export default async function ClaimPage({
           </span>
         ) : null}
         {offer.hazard && offer.hazard !== "NONE" ? (
-          <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+          <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
             {offer.hazard.replaceAll("_", " ")}
           </span>
         ) : null}
@@ -111,7 +111,7 @@ export default async function ClaimPage({
         ) : null}
       </div>
 
-      <section className="mt-6 rounded-lg border border-border p-4">
+      <section className="mt-6 milan-glass rounded-xl p-4">
         <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Why you</h2>
         <p className="mt-1 text-sm">{offer.reasonText}</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -125,7 +125,7 @@ export default async function ClaimPage({
       {/* Invariant 6. The citizen's own words at the same size as our copy,
           on an internal screen as much as a public one. */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <article className="rounded-lg border border-border p-4">
+        <article className="milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
             As it was reported {offer.bodyLang !== "en" ? `(${offer.bodyLang})` : ""}
           </h2>
@@ -133,7 +133,7 @@ export default async function ClaimPage({
             {offer.bodyOriginal}
           </p>
         </article>
-        <article className="rounded-lg border border-border p-4">
+        <article className="milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
             {offer.framedStatement ? "The research problem" : "English working copy"}
           </h2>

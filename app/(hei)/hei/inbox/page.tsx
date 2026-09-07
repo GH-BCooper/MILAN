@@ -26,7 +26,7 @@ export default async function HeiInbox() {
   if (!user.orgId) {
     return (
       <RoleShell title="Inbox">
-        <p className="rounded-lg border border-border p-4 text-sm">
+        <p className="milan-glass rounded-xl p-4 text-sm">
           Your account is not attached to an institution yet, so nothing can be routed to you.
         </p>
       </RoleShell>
@@ -60,7 +60,7 @@ export default async function HeiInbox() {
           {items.map((item) => {
             const breakdown = parseBreakdown(item.priorityBreakdown);
             return (
-              <li key={item.routeId} className="rounded-lg border border-border">
+              <li key={item.routeId} className="milan-glass rounded-xl">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
                   <div className="min-w-0">
                     <p className="font-mono text-xs text-muted-foreground">{item.trackingId}</p>
@@ -78,7 +78,7 @@ export default async function HeiInbox() {
                         </span>
                       ) : null}
                       {item.hazard && item.hazard !== "NONE" ? (
-                        <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                        <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
                           {item.hazard.replaceAll("_", " ")}
                         </span>
                       ) : null}

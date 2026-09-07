@@ -219,7 +219,7 @@ export default async function BountiesPage({
                 ? [...r.top_terms].sort((a, b) => b.contribution - a.contribution).slice(0, 3)
                 : [];
               return (
-                <li key={r.tracking_id} className="rounded-lg border border-border p-4">
+                <li key={r.tracking_id} className="milan-glass rounded-xl p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <Link href={`/c/${r.tracking_id}`} className="text-base font-semibold underline-offset-4 hover:underline">
@@ -242,17 +242,17 @@ export default async function BountiesPage({
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded bg-red-100 px-2 py-1 font-semibold text-red-900">
+                    <span className="rounded bg-red-500/15 px-2 py-1 font-semibold text-red-200">
                       {r.days_unclaimed ?? 0} day{r.days_unclaimed === 1 ? "" : "s"} unclaimed
                     </span>
                     <span className="rounded bg-muted px-2 py-1 font-medium">{STATUS_LABEL[r.status]}</span>
                     {r.escalation_stage ? (
-                      <span className="rounded bg-amber-100 px-2 py-1 font-medium text-amber-900">
+                      <span className="rounded bg-amber-500/15 px-2 py-1 font-medium text-amber-200">
                         {STAGE_LABEL[r.escalation_stage] ?? r.escalation_stage}
                       </span>
                     ) : null}
                     {r.grand_challenge ? (
-                      <span className="rounded bg-indigo-100 px-2 py-1 font-semibold text-indigo-900">
+                      <span className="rounded bg-indigo-500/15 px-2 py-1 font-semibold text-indigo-200">
                         Jharkhand Grand Challenge
                       </span>
                     ) : null}

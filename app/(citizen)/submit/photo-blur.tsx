@@ -141,7 +141,7 @@ export function PhotoBlur({
   };
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="milan-glass rounded-xl p-4">
       <p className="text-sm font-semibold">Blur faces and number plates first</p>
       <p className="mt-1 text-sm text-muted-foreground">
         Tap every face and every number plate in this photo. The blur is applied on your phone

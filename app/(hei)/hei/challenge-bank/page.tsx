@@ -43,7 +43,7 @@ export default async function ChallengeBank({
       title="Real final-year projects"
       subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, scored and ready for a team.`}
     >
-      <div className="rounded-lg border border-border bg-accent p-4">
+      <div className="milan-glass rounded-xl bg-accent p-4">
         <p className="text-sm font-medium text-accent-foreground">
           Every one of these was reported by somebody who lives with it.
         </p>
@@ -83,7 +83,7 @@ export default async function ChallengeBank({
       ) : (
         <ul className="mt-6 grid gap-4 lg:grid-cols-2">
           {items.map((item) => (
-            <li key={item.trackingId} className="flex flex-col rounded-lg border border-border p-4">
+            <li key={item.trackingId} className="flex flex-col milan-glass rounded-xl p-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{item.trackingId}</span>
                 {item.priorityScore !== null ? (
@@ -116,7 +116,7 @@ export default async function ChallengeBank({
                   </span>
                 ) : null}
                 {item.hazard && item.hazard !== "NONE" ? (
-                  <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+                  <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-200">
                     {item.hazard.replaceAll("_", " ").toLowerCase()}
                   </span>
                 ) : null}

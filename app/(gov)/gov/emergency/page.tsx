@@ -33,7 +33,7 @@ export default async function EmergencyPage() {
       title="Emergency mode"
       subtitle="One switch. It changes what is shown, how it is sorted, and how fast the pinned hazard's clocks run; it never changes a stored priority score."
     >
-      <div className={`rounded-lg border p-4 ${on ? "border-red-300 bg-red-50" : "border-border"}`}>
+      <div className={`rounded-lg border p-4 ${on ? "border-red-400/40 bg-red-500/15" : "border-border"}`}>
         <p className="text-sm font-semibold">{on ? `On — pinned to ${hazard?.replace(/_/g, " ").toLowerCase()}` : "Off"}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {on
@@ -43,7 +43,7 @@ export default async function EmergencyPage() {
         <EmergencyForm on={on} hazard={hazard} hazards={[...hazardEnum.enumValues]} />
       </div>
 
-      <div className="mt-6 rounded-lg border border-border bg-muted p-4 text-sm">
+      <div className="mt-6 milan-glass rounded-xl bg-muted p-4 text-sm">
         <p className="font-semibold">What this does, and what it does not.</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
           <li>

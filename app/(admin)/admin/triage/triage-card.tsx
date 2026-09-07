@@ -88,7 +88,7 @@ export function TriageCard(props: TriageCardProps) {
   }
 
   return (
-    <article className="rounded-lg border border-border p-4">
+    <article className="milan-glass rounded-xl p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="font-mono text-sm font-semibold">{props.trackingId}</p>
         <p className="text-xs text-muted-foreground">
@@ -114,15 +114,15 @@ export function TriageCard(props: TriageCardProps) {
         </div>
       </div>
 
-      <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3">
-        <p className="text-sm font-medium text-amber-900">
+      <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3">
+        <p className="text-sm font-medium text-amber-200">
           {props.stage} confidence {props.confidence?.toFixed(2) ?? "—"}, below the {props.floor}{" "}
           floor. Nothing has been decided automatically.
         </p>
-        <pre className="mt-2 overflow-x-auto text-xs text-amber-950">
+        <pre className="mt-2 overflow-x-auto text-xs text-amber-200">
           {JSON.stringify(props.proposal, null, 2)}
         </pre>
-        <p className="mt-2 font-mono text-[11px] text-amber-900">
+        <p className="mt-2 font-mono text-[11px] text-amber-200">
           {props.provider} · {props.model ?? "—"} · fallback level {props.fallbackLevel}
         </p>
       </div>

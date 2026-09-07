@@ -27,12 +27,23 @@ const ACTIONS = [
 
 export default function HomePage() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
-      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        Government of Jharkhand · Disaster risk reduction
-      </p>
+    <main className="relative mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
+      {/* the halo behind the wordmark — decorative, never carries meaning */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[36rem] max-w-[110vw] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(124,92,255,0.35),transparent_65%)] blur-2xl"
+      />
 
-      <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">Milan</h1>
+      <span className="milan-glass inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        <span
+          aria-hidden
+          className="size-1.5 rounded-full bg-[var(--grad-3)] shadow-[0_0_10px_2px_rgba(34,211,238,0.9)]"
+        />
+        Government of Jharkhand · Disaster risk reduction
+      </span>
+
+      <h1 className="mt-5 text-5xl font-bold tracking-tight sm:text-7xl">Milan</h1>
+      <div aria-hidden className="milan-hairline mt-4 h-px w-40 rounded-full" />
 
       <p className="mt-4 text-lg leading-relaxed text-foreground">
         Milan turns a verified local problem into a{" "}
@@ -52,34 +63,43 @@ export default function HomePage() {
           <Link
             key={href}
             href={href}
-            className="flex flex-col rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="milan-glass group relative flex flex-col overflow-hidden rounded-xl p-5 transition-all hover:-translate-y-1 hover:border-[var(--grad-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
-            <Icon aria-hidden className="size-5 text-primary" />
+            <span
+              aria-hidden
+              className="absolute inset-x-0 top-0 h-px milan-hairline opacity-70"
+            />
+            <span
+              aria-hidden
+              className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--grad-1)] to-[var(--grad-2)] text-white shadow-[0_10px_28px_-12px_rgba(124,92,255,0.9)] transition-transform group-hover:scale-110"
+            >
+              <Icon className="size-5" />
+            </span>
             <span className="mt-3 text-base font-semibold">{title}</span>
             <span lang="hi" className="text-sm text-muted-foreground">
               {titleHi}
             </span>
             <span className="mt-2 text-sm leading-snug text-muted-foreground">{body}</span>
-            <span className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary">
-              Open <ArrowRight aria-hidden className="size-4" />
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold milan-gradient-text">
+              Open <ArrowRight aria-hidden className="size-4 text-[var(--grad-3)] transition-transform group-hover:translate-x-1" />
             </span>
           </Link>
         ))}
       </nav>
 
-      <footer className="mt-12 border-t border-border pt-6 text-sm text-muted-foreground">
+      <footer className="mt-14 border-t border-border/70 pt-6 text-sm text-muted-foreground">
         <p>
           Smart India Hackathon 2026 · Problem statement SIH26043 · Theme: Disaster Management.
           Impact counts only citizen-confirmed outcomes.
         </p>
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-          <Link className="underline underline-offset-4 hover:text-foreground" href="/stats">
+          <Link className="underline decoration-[var(--grad-1)] underline-offset-4 transition-colors hover:text-[var(--grad-3)]" href="/stats">
             Public statistics
           </Link>
-          <Link className="underline underline-offset-4 hover:text-foreground" href="/ledger">
+          <Link className="underline decoration-[var(--grad-1)] underline-offset-4 transition-colors hover:text-[var(--grad-3)]" href="/ledger">
             Credit ledger
           </Link>
-          <Link className="underline underline-offset-4 hover:text-foreground" href="/bounties">
+          <Link className="underline decoration-[var(--grad-1)] underline-offset-4 transition-colors hover:text-[var(--grad-3)]" href="/bounties">
             Bounties
           </Link>
         </p>

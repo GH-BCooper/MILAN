@@ -19,19 +19,19 @@ const LABEL: Record<Role, string> = {
 };
 
 const TONE: Record<Role, string> = {
-  CITIZEN: "bg-emerald-100 text-emerald-900 border-emerald-300",
-  HEI_MEMBER: "bg-indigo-100 text-indigo-900 border-indigo-300",
-  INDUSTRY: "bg-amber-100 text-amber-900 border-amber-300",
-  GOVERNMENT: "bg-sky-100 text-sky-900 border-sky-300",
-  ADMIN: "bg-neutral-200 text-neutral-900 border-neutral-400",
-  ASSISTED_SUBMITTER: "bg-emerald-50 text-emerald-900 border-emerald-300",
-  INDEPENDENT_INNOVATOR: "bg-violet-100 text-violet-900 border-violet-300",
-  EXPERT_PANEL: "bg-rose-100 text-rose-900 border-rose-300",
+  CITIZEN: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
+  HEI_MEMBER: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
+  INDUSTRY: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+  GOVERNMENT: "bg-sky-500/15 text-sky-200 border-sky-400/40",
+  ADMIN: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  ASSISTED_SUBMITTER: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
+  INDEPENDENT_INNOVATOR: "bg-violet-500/15 text-violet-200 border-violet-400/40",
+  EXPERT_PANEL: "bg-rose-500/15 text-rose-200 border-rose-400/40",
 };
 
 export function RoleBadge({ role, districtCode }: { role: Role; districtCode?: string | null }) {
   return (
-    <Badge variant="outline" className={`font-medium ${TONE[role]}`}>
+    <Badge variant="outline" className={`font-medium backdrop-blur-md ${TONE[role]}`}>
       {LABEL[role]}
       {districtCode ? ` · ${districtCode}` : ""}
     </Badge>

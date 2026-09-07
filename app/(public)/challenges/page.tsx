@@ -203,7 +203,7 @@ export default async function ChallengesPage({
         </p>
 
         {pinnedHazard ? (
-          <p className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900">
+          <p className="mt-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-200">
             Emergency mode: the list is filtered to {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted
             by a display surge of up to ×1.25. That changes what is shown, never a stored score. Choose a
             different hazard above to override the pin.
@@ -219,7 +219,7 @@ export default async function ChallengesPage({
             .
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
+          <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
             {displayRows.map(({ row: r, surge }) => (
               <li key={r.id} className="p-4">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -231,13 +231,13 @@ export default async function ChallengesPage({
                   </Link>
                   <StatusBadge status={r.status} />
                   {r.hazard && r.hazard !== "NONE" ? (
-                    <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                    <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
                       {r.hazard.replaceAll("_", " ")}
                     </span>
                   ) : null}
                   {surge.matched ? (
                     <span
-                      className="rounded border border-red-300 bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900"
+                      className="rounded border border-red-400/40 bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-200"
                       title={`stored score ${surge.storedScore?.toFixed(1) ?? "unscored"} × ${surge.multiplier.toFixed(2)} emergency surge = ${surge.sortKey.toFixed(1)} (display only)`}
                     >
                       emergency surge ×{surge.multiplier.toFixed(2)}

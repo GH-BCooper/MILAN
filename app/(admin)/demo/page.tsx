@@ -45,7 +45,7 @@ function Health({
   ok: boolean | null;
   detail?: string;
 }) {
-  const tone = ok === null ? "border-border bg-muted" : ok ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50";
+  const tone = ok === null ? "border-border bg-muted" : ok ? "border-emerald-400/40 bg-emerald-500/15" : "border-red-400/40 bg-red-500/15";
   return (
     <div className={`rounded-lg border p-3 ${tone}`}>
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
@@ -97,7 +97,7 @@ export default async function DemoConsole() {
 
   function Inbox({ title, rows, empty }: { title: string; rows: InboxRow[]; empty: string }) {
     return (
-      <div className="rounded-lg border border-border">
+      <div className="milan-glass rounded-xl">
         <p className="border-b border-border bg-muted px-3 py-2 text-sm font-semibold">
           {title} <span className="font-normal text-muted-foreground">· {rows.length}</span>
         </p>
@@ -199,7 +199,7 @@ export default async function DemoConsole() {
           </div>
         </div>
 
-        <section className="mt-8 rounded-lg border border-border bg-muted p-4 text-sm">
+        <section className="mt-8 milan-glass rounded-xl bg-muted p-4 text-sm">
           <p className="font-semibold">Where to go next</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[

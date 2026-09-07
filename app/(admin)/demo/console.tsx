@@ -17,7 +17,7 @@ function Log({ result }: { result: DemoResult | null }) {
   return (
     <div
       role="status"
-      className={`mt-3 rounded-lg border p-4 ${result.ok ? "border-emerald-300 bg-emerald-50" : "border-red-300 bg-red-50"}`}
+      className={`mt-3 rounded-lg border p-4 ${result.ok ? "border-emerald-400/40 bg-emerald-500/15" : "border-red-400/40 bg-red-500/15"}`}
     >
       <p className="text-sm font-bold">
         {result.title}
@@ -28,7 +28,7 @@ function Log({ result }: { result: DemoResult | null }) {
       {result.fired && result.fired.length > 0 ? (
         <ol className="mt-3 space-y-1">
           {result.fired.map((f) => (
-            <li key={f.deadlineId} className="rounded border border-black/10 bg-white/70 px-3 py-2 text-xs">
+            <li key={f.deadlineId} className="rounded-lg border border-[var(--grad-1)]/30 bg-white/5 px-3 py-2 text-xs backdrop-blur-md">
               <span className="font-mono font-bold">{f.kind}</span>{" "}
               <span className="font-semibold">{f.trackingId}</span>{" "}
               <span className="text-muted-foreground">
@@ -140,9 +140,9 @@ export function ResetPanel() {
   const [state, action, pending] = useActionState<DemoResult | null, FormData>(async () => resetDemoState(), null);
 
   return (
-    <section className="rounded-lg border-2 border-amber-300 bg-amber-50 p-5">
-      <h2 className="text-xl font-bold text-amber-900">Reset the demo state</h2>
-      <p className="mt-1 text-sm text-amber-900">
+    <section className="rounded-lg border-2 border-amber-400/40 bg-amber-500/15 p-5">
+      <h2 className="text-xl font-bold text-amber-200">Reset the demo state</h2>
+      <p className="mt-1 text-sm text-amber-200">
         Puts the clock back to zero, clears every escalation flag and re-opens an SLA deadline on every
         non-terminal challenge. The ledger is deliberately untouched: it is append-only, and a reset
         that erased it would be exactly the thing we say cannot happen.

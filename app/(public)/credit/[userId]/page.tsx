@@ -83,7 +83,7 @@ export default async function CreditRecordPage({ params }: { params: Promise<{ u
         {/* Loophole row 7, made public: trust is earned only at CITIZEN_VERIFIED
             events, lost on unsafe reports, and decays toward 0.50 — so it is
             shown where the person can see their own record, with the policy. */}
-        <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4">
+        <div className="mt-4 milan-glass rounded-xl bg-muted/40 p-4">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <p className="text-sm font-semibold">
               Reporter trust {who[0].trust_score ? Number(who[0].trust_score).toFixed(2) : "0.50"}
@@ -121,7 +121,7 @@ export default async function CreditRecordPage({ params }: { params: Promise<{ u
                 </h2>
                 <ul className="mt-2 space-y-2">
                   {items.map((e) => (
-                    <li key={`${e.tracking_id}-${e.created_at}`} className="rounded-lg border border-border p-3">
+                    <li key={`${e.tracking_id}-${e.created_at}`} className="milan-glass rounded-xl p-3">
                       <Link href={`/c/${e.tracking_id}`} className="font-medium underline-offset-4 hover:underline">
                         {e.title}
                       </Link>

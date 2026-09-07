@@ -93,7 +93,7 @@ export default async function LedgerPage({
         </div>
 
         {/* What it proves, and what it does not. In plain words. */}
-        <section className="mt-4 rounded-lg border border-border bg-muted p-4 text-sm">
+        <section className="mt-4 milan-glass rounded-xl bg-muted p-4 text-sm">
           <h2 className="font-semibold">What this chain proves, and what it does not</h2>
           <p className="mt-2 text-muted-foreground">
             Each entry carries the hash of the one before it, so changing anything about an old
@@ -145,7 +145,7 @@ export default async function LedgerPage({
             {s?.kinds ?? 0} kinds.
           </p>
         ) : (
-          <ul className="mt-4 rounded-lg border border-border">
+          <ul className="mt-4 milan-glass rounded-xl">
             <li className="flex flex-wrap gap-x-3 border-b border-border bg-muted px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               <span className="w-14">Seq</span>
               <span>Kind</span>

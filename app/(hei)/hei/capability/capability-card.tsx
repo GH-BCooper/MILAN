@@ -71,7 +71,7 @@ export function CapabilityCard(props: CapabilityCardProps) {
   }
 
   return (
-    <article className="rounded-lg border border-border p-4">
+    <article className="milan-glass rounded-xl p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-semibold">{props.department}</h3>
         <span className="font-mono text-[11px] text-muted-foreground">
@@ -175,7 +175,7 @@ export function CapabilityCard(props: CapabilityCardProps) {
           {pending ? "Saving…" : "Save"}
         </Button>
         {dirty ? (
-          <p className="text-xs text-amber-700">
+          <p className="text-xs text-amber-200">
             Unsaved. Changing capacity or tags changes what Milan routes here from the next run.
           </p>
         ) : null}
