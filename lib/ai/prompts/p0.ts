@@ -33,10 +33,12 @@ Return the English text, the language you detected (an ISO 639-1 code where one 
 bn, or und), and a calibrated confidence 0 to 1.`;
 
 /**
- * HUMAN: add curated Jharkhand examples here.
- * Santali (seed row 13) is the one that most needs a curated example, because
- * it is the sample the model is least likely to have seen. A Nagpuri or
- * Khortha sample would be the next most valuable.
+ * Curated Jharkhand examples, per PHASE_2_LEARN 9.1.
+ * Coverage now: embankment Hindi, MGNREGA heat-stress Hindi, Santali (the
+ * sample the model is least likely to have seen), and a Nagpuri-flavoured
+ * Romanised report marked DRAFT.
+ * STILL HUMAN: a native speaker verifies the DRAFT. Delete it unverified — a
+ * wrong minority-language example teaches the model the wrong thing.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {

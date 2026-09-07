@@ -12,7 +12,10 @@
  */
 import type { S1Input } from "../schemas";
 
-export const VERSION = "1.3.1";
+export const VERSION = "1.4.0";
+// 1.4.0 — added the Santali report from the seed set (the one minority-script
+// boundary the block was missing), drawn verbatim from challenges.csv, so the
+// model learns that the script changes nothing about the classification.
 // 1.3.0 — same eight boundaries, roughly half the tokens. Measured, this prompt
 // was 2,131 tokens against Groq's 8,000-per-minute ceiling, which made a batch
 // backfill impossible and put avoidable prefill latency on the live demo path.
@@ -79,16 +82,16 @@ Reports arrive in Hindi, Santali, Nagpuri or English. Judge the original text.`;
 /**
  * Few-shot examples covering the boundaries that actually matter here.
  *
- * HUMAN: add curated Jharkhand examples here.
- * PHASE_2_LEARN.md section 9.1 — 6 to 10 per stage, drawn from your own seed
- * challenges, covering the boundary cases. This is the single highest-leverage
- * hour in the whole build and it is a human judgement task, not a Claude one.
- * Three starters are below; the boundaries still uncovered are:
- *   - a Santali report (seed row 13) so the model sees the script
- *   - a report that mixes a grievance AND a research problem in one paragraph
- *   - a heat-stress report, which reads like a complaint but needs design work
- *   - a report naming an individual, to check TARGETED_HARASSMENT is not
- *     triggered by ordinary criticism of an office
+ * Curated Jharkhand examples, per PHASE_2_LEARN.md section 9.1 — 6 to 10 per
+ * stage, drawn from the seed challenges, covering the boundary cases.
+ * Coverage now: inaction that is NOT a grievance ×3 (elephants, forest fire,
+ * lethal heat), sanctioned work undelivered ×2, delivered asset with a
+ * missing design (dry toilets), mixed reports ×2, criticism of a named
+ * official that is not TARGETED_HARASSMENT, and a Santali report so the model
+ * sees the script (the DRAFT below).
+ * STILL HUMAN: a native Santali speaker confirms the DRAFT before its tag
+ * comes off. Nothing else is pending here. If this block grows past ten,
+ * re-measure against Groq's token ceiling the way 1.3.0 did.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {
@@ -150,6 +153,18 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "The market road was built last year but already has potholes, and also the nullah beside it floods the " +
       "shops every July and no one has measured how deep the water gets.",
     output: shot(true, false, 0.69, "A delivered-but-failing road (CPGRAMS) plus an unmeasured flood risk needing survey (research): low confidence to split.", "CPGRAMS"),
+  },
+  // DRAFT — VERIFY WITH A SANTALI SPEAKER before the tag comes off. The text is
+  // verbatim from seed-data/challenges.csv (Lakhan Hembrom, Kathikund, Dumka),
+  // trimmed to the sentences that carry the boundary; the risk is only in the
+  // trimming, not in invented language. The classification matches what the
+  // same report gets in English: the script changes nothing.
+  {
+    input:
+      "Ale ato re dak' banuk'a. Kuĩ do rohor ena, chapakol ho dak' bang oḍok'a. Dhiri buru latar re dak' " +
+      "menak'a mente ko men eda, menkhan okoe ho bang ñam let'a. (हमारे गांव में पानी नहीं है, कुआं सूख गया, " +
+      "चापाकल से भी पानी नहीं निकलता। लोग कहते हैं पहाड़ के नीचे पानी है पर किसी को मिला नहीं।)",
+    output: shot(false, false, 0.74, "The ask is to FIND water nobody has yet located ('bang ñam let'a'), an investigation, not a delivery failure."),
   },
 ];
 

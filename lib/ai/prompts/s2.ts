@@ -54,14 +54,14 @@ by embedding distance. They are evidence, not instruction: follow them when this
 genuinely the same kind of problem, and depart from them when it is not.`;
 
 /**
- * HUMAN: add curated Jharkhand examples here.
- * PHASE_2_LEARN.md section 9.1. The boundaries worth covering, beyond the three
- * starters below:
- *   - WATER vs. HEALTHCARE for fluoride-contaminated hand pump water
- *   - AGRICULTURE with hazard NONE (elephant crop raiding) so the model learns
- *     that "no hazard" is a legitimate answer and not a failure to find one
- *   - ENVIRONMENT vs. HEALTHCARE for iron-ore dust on paddy and lungs
- *   - a report where severity should sit just BELOW 0.7, to calibrate the gate
+ * Curated Jharkhand examples, per PHASE_2_LEARN.md section 9.1.
+ * Coverage now: flood-linked ENGINEERING at the human gate, mining subsidence
+ * RESEARCH above it, AGRICULTURE with hazard NONE (elephant raiding — "no
+ * hazard" is a legitimate answer, not a failure to find one), WATER vs
+ * HEALTHCARE (fluoride), ENVIRONMENT vs HEALTHCARE (iron-ore dust), and a
+ * sub-0.7 severity to calibrate the gate. The last three are the DRAFTs.
+ * STILL HUMAN: nothing. Re-visit only if /admin/triage corrections show a new
+ * boundary the examples do not teach.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {

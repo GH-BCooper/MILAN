@@ -31,12 +31,15 @@ Return same_problem, a calibrated confidence 0 to 1, and one sentence of rationa
 at most 240 characters, naming the shared or differing landmark that decided it.`;
 
 /**
- * HUMAN: add curated Jharkhand examples here.
- * The three planted near-duplicates in `seed-data/challenges.csv` (the Basia
- * embankment, rows 1-3) and the two genuinely different water challenges
- * (Garhwa drought wells, Chandil dam flooding) are the calibration set. Worth
- * adding: a Hindi/English pair of the same problem, and two different hand
- * pumps in the same village, which is the hardest negative in the set.
+ * Curated Jharkhand examples, per PHASE_2_LEARN 9.1, drawn from the
+ * calibration set: the planted Basia embankment near-duplicates and the two
+ * genuinely different water challenges in `seed-data/challenges.csv`.
+ * Coverage now: same structure across rewording (Basia), two different
+ * problems entirely (drought wells vs. dam flooding), two different hand
+ * pumps in one village (the hardest negative), and a Hindi/English pair of
+ * the SAME problem (the DRAFT).
+ * STILL HUMAN: nothing. Careful before adding more — every extra pair is a
+ * template the code consults only inside the ambiguous cosine band.
  */
 export const FEWSHOT: Array<{ input: string; output: string }> = [
   {
