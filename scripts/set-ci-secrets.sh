@@ -12,7 +12,7 @@
 #
 set -euo pipefail
 
-REPO="${REPO:-GH-BCooper/MILAN}"
+REPO="${REPO:-ItsPinion/MILAN}"
 ENV_FILE="${ENV_FILE:-.env.local}"
 
 SECRETS=(

@@ -14,14 +14,12 @@
  * whether the demo works.
  *
  * Keyed by the SHA-256 of the audio bytes — the same content hash Storage keys
- * the object by — so the lookup cannot drift onto the wrong recording.
- *
- * HUMAN: after recording `seed-data/voice-note.mp3`, run
+ * the object by — so the lookup cannot drift onto the wrong recording. The key
+ * below IS the hash of the committed `seed-data/voice-note.mp3`; if the
+ * recording is ever re-cut, re-hash it and change the key, or P0 silently
+ * falls through to the live path:
  *
  *     node -e "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('seed-data/voice-note.mp3')).digest('hex'))"
- *
- * and paste the hash in as the key below. Until then the file is 0 bytes, no
- * media row exists, and P0 falls through to the live path.
  */
 
 export interface SeededTranscript {
@@ -35,10 +33,8 @@ export interface SeededTranscript {
 }
 
 export const SEEDED_TRANSCRIPTS: Record<string, SeededTranscript> = {
-  // HUMAN: replace this placeholder key with the recording's real SHA-256.
-  // The value is already the authored ground truth from
-  // seed-data/voice-note.transcript.txt, checked against that file by
-  // `pnpm p0:verify`.
+  // SHA-256 of the committed seed-data/voice-note.mp3 (257,204 bytes, ~18 s).
+  // The value is the authored ground truth from seed-data/voice-note.transcript.txt.
   "2779bd25c203c28aea118d025af0ea3d0f0cdd85883fd03ddb2501e263d708d8": {
     original:
       "मेरा नाम सुनीता उरांव है, मैं गुमला ज़िला के बसिया से बोल रही हूँ। हमारे टोला के बगल में कोयल नदी का मिट्टी का बांध है, उसमें पुलिया के पास दरार आ गई है। पिछले बरसात में एक हाथ की थी, अब पूरा हाथ अंदर चला जाता है और गांव की तरफ बढ़ रही है। जुलाई में पानी चढ़ा तो चालीस घर और स्कूल डूब जाएंगे। मुखिया को दो बार बताया, कोई देखने नहीं आया।",

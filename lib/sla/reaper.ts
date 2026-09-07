@@ -19,10 +19,11 @@ import "server-only";
 import { eq, sql } from "drizzle-orm";
 
 import { clockNow, elapsedMs } from "@/lib/clock";
-import { syncClockOffset } from "@/lib/clock/server";
+import { emergencyState, syncClockOffset } from "@/lib/clock/server";
 import { db } from "@/lib/db";
 import { challenges, slaDeadlines, type ChallengeStatus, type SlaKind } from "@/lib/db/schema";
 import { ensureOpenDeadline, runAction, type ActionPrep, type ChallengeRow, type DeadlineRow } from "./actions";
+import { emergencyScale } from "./deadlines";
 import { prepareFor } from "./prepare";
 
 export interface FiredDeadline {
@@ -63,6 +64,11 @@ export async function runReaper(options: { limit?: number } = {}): Promise<Reape
   // A duration against the real world, not Milan time — see elapsedMs()'s doc comment.
   const startedAtReal = elapsedMs();
   const offset = await syncClockOffset(true);
+  // Emergency Mode is read once per run, not once per row: every action in this
+  // batch must agree about whether the clocks are compressed, and one read is
+  // one read. The /gov/emergency toggle's own sweep reconciles any row opened
+  // against a just-stale value.
+  const emergency = await emergencyState();
   const ranAt = clockNow();
   const fired: FiredDeadline[] = [];
   const errors: ReaperResult["errors"] = [];
@@ -111,6 +117,7 @@ export async function runReaper(options: { limit?: number } = {}): Promise<Reape
 
       const challenge: ChallengeRow = { ...c, domain: c.domain ?? null, hazard: c.hazard ?? null };
       const fromStatus = challenge.status;
+      const clockScale = emergencyScale(emergency.on, emergency.hazard, challenge.hazard);
 
       // Anything slow, external or model-shaped happens HERE, before the
       // transaction opens. Invariant 3 and plain operational sense: a provider
@@ -126,11 +133,11 @@ export async function runReaper(options: { limit?: number } = {}): Promise<Reape
         )) as unknown as Array<{ id: string }>;
         if (claimed.length === 0) return null;
 
-        const out = await runAction({ tx, now: ranAt, deadline, challenge, prep });
+        const out = await runAction({ tx, now: ranAt, deadline, challenge, prep, clockScale });
 
         await tx.update(slaDeadlines).set({ firedAt: ranAt }).where(eq(slaDeadlines.id, deadline.id));
 
-        const backstopped = await ensureOpenDeadline(tx, challenge.id, out.newStatus, ranAt);
+        const backstopped = await ensureOpenDeadline(tx, challenge.id, out.newStatus, ranAt, clockScale);
         return { out, backstopped };
       });
 

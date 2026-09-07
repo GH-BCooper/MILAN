@@ -307,14 +307,16 @@ export function ClaimForm({
           checked={confirmCapacity}
           onChange={(e) => setConfirmCapacity(e.target.checked)}
         />
-        <Label htmlFor="confirm-capacity" className="text-sm font-normal leading-snug">
-          I confirm {selected?.label ?? "this department"} has the capacity to take this on this
-          semester, and that a team will start work on it.
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            A silent project is escalated automatically after 30 days. The clock starts when you
-            claim.
-          </span>
-        </Label>
+        <div className="min-w-0 flex-1">
+          <Label htmlFor="confirm-capacity" className="text-sm font-normal leading-snug">
+            I confirm {selected?.label ?? "this department"} has the capacity to take this on this
+            semester, and that a team will start work on it.
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              A silent project is escalated automatically after 30 days. The clock starts when you
+              claim.
+            </span>
+          </Label>
+        </div>
       </section>
 
       {error ? (

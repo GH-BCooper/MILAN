@@ -1,16 +1,29 @@
 "use client";
 
 /**
- * The live pipeline trace.
+ * The pipeline trace.
  *
- * Six stage cards. Each ticks over as its SSE event arrives, and each carries a
- * footer with provider, model, confidence, fallback level and latency — the
- * receipt for what actually ran. A degraded stage renders amber and reads
- * "fallback: rules", never red and never as an error: being visibly honest
- * about degradation is stronger than pretending it never happens.
+ * Six stage cards that tick over as the pipeline's own receipts land. The
+ * wiring is deliberately boring: the page asks POST /api/pipeline/run to
+ * begin the work, then polls GET /api/pipeline/trace every two seconds and
+ * displays whatever the trace projection — `ai_runs` rows, `routes` rows and
+ * the challenge's own columns — can prove has happened. No socket, no
+ * optimistic ticking: a card lights up when its row exists, not before.
  *
- * S4's card expands into the full priority breakdown. S5's lists the three
- * matched institutions with their written reasons.
+ * A pre-processed challenge (the demo walks seeds, not fresh submits, most of
+ * the time) renders already complete from the first paint, each card carrying
+ * the real receipt — provider, model, fallback level, latency. A stage that
+ * fell back to the rules tier renders amber and reads "fallback: rules",
+ * never red, never an error.
+ *
+ * The staggered reveal stays: even when the poller returns with several
+ * stages done at once, the cards turn over in order, a beat apart, so the eye
+ * follows the pipeline's logic rather than a wall of green.
+ *
+ * If the run is still going when the poll budget runs out, the page stops
+ * spinning and says so — "processing continues in the background; your
+ * tracking ID works already." Nothing here is a promise the database didn't
+ * write down first.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, Check, Loader2, MinusCircle, Play, RotateCcw } from "lucide-react";
@@ -21,6 +34,8 @@ import { Button } from "@/components/ui/button";
 
 type StageKey = "P0" | "S1" | "S2" | "S3" | "S4" | "S5";
 type StageStatus = "waiting" | "running" | "done" | "degraded" | "skipped";
+
+const STAGE_ORDER: readonly StageKey[] = ["P0", "S1", "S2", "S3", "S4", "S5"];
 
 const STAGES: Array<{ key: StageKey; title: string; blurb: string }> = [
   { key: "P0", title: "Language", blurb: "Translate into an English working copy. Your own words are kept." },
@@ -47,7 +62,13 @@ interface StageState {
   decision?: string | null;
   note?: string | null;
   meta?: StageMeta | null;
-  at?: string;
+  at?: string | null;
+}
+
+interface TraceProjection {
+  stages: Record<StageKey, Omit<StageState, "status"> & { status: StageStatus }>;
+  complete: boolean;
+  status: string;
 }
 
 interface Match {
@@ -61,84 +82,166 @@ interface Match {
   reasonFromTemplate: boolean;
 }
 
+/** Every 2 s, for ninety seconds; then the honest background message. */
+const POLL_MS = 2000;
+const MAX_TICKS = 45;
+
 export function PipelineTrace({
   trackingId,
   districtCode,
   autoStart = false,
   replay = false,
   heading = "What Milan did with your report",
+  initial,
 }: {
   trackingId: string;
   districtCode: string | null;
   autoStart?: boolean;
   replay?: boolean;
   heading?: string;
+  /** Server-rendered first read — a pre-processed challenge never spins. */
+  initial?: TraceProjection | undefined;
 }) {
-  const [stages, setStages] = useState<Record<StageKey, StageState>>(() => blank());
-  const [running, setRunning] = useState(false);
-  const [finished, setFinished] = useState<{ status: string; totalMs: number } | null>(null);
+  const assured: TraceProjection = initial ?? {
+    stages: {
+      P0: { status: "waiting" },
+      S1: { status: "waiting" },
+      S2: { status: "waiting" },
+      S3: { status: "waiting" },
+      S4: { status: "waiting" },
+      S5: { status: "waiting" },
+    },
+    complete: false,
+    status: "unknown",
+  };
+  /* What the projection says, and what the eye has been shown so far. The two
+   * differ deliberately during the staggered reveal. */
+  const [latest, setLatest] = useState<TraceProjection>(assured);
+  const [shown, setShown] = useState<Record<StageKey, StageState>>(() =>
+    autoStart ? blankShownFrom(assured.stages) : materialise(assured.stages),
+  );
+  const [phase, setPhase] = useState<"idle" | "running" | "capped" | "error">(
+    assured.complete ? "idle" : "idle",
+  );
   const [error, setError] = useState<string | null>(null);
-  const sourceRef = useRef<EventSource | null>(null);
 
-  const start = useCallback(() => {
-    sourceRef.current?.close();
-    setStages(blank());
-    setFinished(null);
-    setError(null);
-    setRunning(true);
+  const ticksRef = useRef(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const url = `/api/pipeline/stream?trackingId=${encodeURIComponent(trackingId)}${replay ? "&replay=1" : ""}`;
-    const source = new EventSource(url);
-    sourceRef.current = source;
+  /* Promote stages from `latest` into `shown`, in pipeline order, a beat
+   * apart — the staggered reveal. A stage is promoted when the projection
+   * says it settled (or the projection moved past it while cards were still
+   * behind). */
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setShown((current) => {
+        for (const key of STAGE_ORDER) {
+          const target = latest.stages[key];
+          const mine = current[key];
+          const targetSettled = target.status !== "waiting";
+          const behind =
+            targetSettled &&
+            (mine.status === "waiting" ||
+              mine.status === "running" ||
+              // A newer run replaced the receipt (replay).
+              (target.at !== undefined && mine.at !== target.at));
+          if (behind) {
+            return { ...current, [key]: { ...target } };
+          }
+          /* The first still-waiting stage after settled ones reads as
+           * "running" while a run is in flight — the pipeline works in
+           * order, and that is the card that is on the clock. */
+          if (phase === "running" && mine.status === "waiting") {
+            return { ...current, [key]: { ...mine, status: "running" } };
+          }
+          return current;
+        }
+        return current;
+      });
+    }, 450);
+    return () => clearInterval(timer);
+  }, [latest, phase]);
 
-    source.onmessage = (message) => {
-      let event: unknown;
+  const poll = useCallback(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    ticksRef.current = 0;
+    pollRef.current = setInterval(async () => {
+      ticksRef.current += 1;
       try {
-        event = JSON.parse(message.data);
+        const res = await fetch(
+          `/api/pipeline/trace?trackingId=${encodeURIComponent(trackingId)}`,
+          { cache: "no-store" },
+        );
+        if (res.ok) {
+          const projection = (await res.json()) as TraceProjection;
+          setLatest(projection);
+          if (projection.complete) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            setPhase("idle");
+          }
+        } else if (res.status === 403) {
+          /* Mid-run past the fresh window, seen by a stranger: keep the last
+           * honest frame and stop. The public page has the full story. */
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setPhase("idle");
+        }
       } catch {
+        /* A dropped poll is weather, not failure — the next tick retries. */
+      }
+      if (ticksRef.current >= MAX_TICKS && pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+        setLatest((current) => {
+          if (!current.complete) setPhase("capped");
+          else setPhase("idle");
+          return current;
+        });
+      }
+    }, POLL_MS);
+  }, [trackingId]);
+
+  const start = useCallback(
+    async (isReplay: boolean) => {
+      setError(null);
+      setPhase("running");
+      try {
+        const res = await fetch(
+          `/api/pipeline/run?trackingId=${encodeURIComponent(trackingId)}${isReplay ? "&replay=1" : ""}`,
+          { method: "POST" },
+        );
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          setPhase("idle");
+          setError(body.error ?? "The run could not be started.");
+          return;
+        }
+      } catch {
+        setPhase("idle");
+        setError("The request did not reach the server. Nothing was lost — press again to retry.");
         return;
       }
-      if (typeof event !== "object" || event === null) return;
-      const e = event as Record<string, unknown>;
-
-      if (e.type === "stage") {
-        const key = e.stage as StageKey;
-        setStages((prev) => ({
-          ...prev,
-          [key]: {
-            status: e.status as StageStatus,
-            result: e.result,
-            rationale: (e.rationale as string | null) ?? null,
-            decision: (e.decision as string | null) ?? null,
-            note: (e.note as string | null) ?? null,
-            meta: (e.meta as StageMeta | null) ?? null,
-            at: e.at as string,
-          },
-        }));
-      } else if (e.type === "done") {
-        setFinished({ status: String(e.status), totalMs: Number(e.totalMs) });
-        setRunning(false);
-        source.close();
-      } else if (e.type === "error") {
-        setError(String(e.message));
-        setRunning(false);
-        source.close();
-      }
-    };
-
-    // EventSource retries on its own by default, which would silently re-run the
-    // pipeline. We close instead and let the person press the button again.
-    source.onerror = () => {
-      source.close();
-      setRunning(false);
-      setError((prev) => prev ?? "The connection dropped. Nothing was lost — press replay to continue.");
-    };
-  }, [trackingId, replay]);
+      poll();
+    },
+    [trackingId, poll],
+  );
 
   useEffect(() => {
-    if (autoStart) start();
-    return () => sourceRef.current?.close();
-  }, [autoStart, start]);
+    if (autoStart && !assured.complete) {
+      void start(false);
+    } else if (autoStart) {
+      /* Pre-processed: render complete immediately (already the shown state
+       * via materialise), no fake spinner, no run. */
+      setPhase("idle");
+    }
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const settled = latest.complete;
 
   return (
     <section aria-labelledby="trace-heading" className="mt-8">
@@ -152,21 +255,29 @@ export function PipelineTrace({
             took.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={start} disabled={running}>
-          {running ? (
-            <>
-              <Loader2 className="size-4 animate-spin" aria-hidden /> Running
-            </>
-          ) : finished || error ? (
-            <>
-              <RotateCcw className="size-4" aria-hidden /> Replay pipeline
-            </>
-          ) : (
-            <>
-              <Play className="size-4" aria-hidden /> Run pipeline
-            </>
-          )}
-        </Button>
+        {replay || phase === "running" || phase === "capped" ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void start(true)}
+            disabled={phase === "running"}
+          >
+            {phase === "running" ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Running
+              </>
+            ) : (
+              <>
+                <RotateCcw className="size-4" aria-hidden /> Replay pipeline
+              </>
+            )}
+          </Button>
+        ) : !settled && phase === "idle" && !autoStart ? (
+          <Button type="button" variant="outline" size="sm" onClick={() => void start(false)}>
+            <Play className="size-4" aria-hidden /> Run pipeline
+          </Button>
+        ) : null}
       </div>
 
       {error ? (
@@ -175,28 +286,32 @@ export function PipelineTrace({
         </p>
       ) : null}
 
+      {phase === "capped" ? (
+        <p role="status" className="mt-3 rounded-md border border-border bg-muted p-3 text-sm">
+          Processing continues in the background — your tracking ID works already. Come back to this
+          page in a little while: every stage shown here appears as its receipt lands.
+        </p>
+      ) : null}
+
       <ol className="mt-4 space-y-3" aria-live="polite">
-        {STAGES.map((stage) => {
-          const state = stages[stage.key];
-          return (
-            <li key={stage.key}>
-              <StageCard
-                stageKey={stage.key}
-                title={stage.title}
-                blurb={stage.blurb}
-                state={state}
-                trackingId={trackingId}
-                districtCode={districtCode}
-              />
-            </li>
-          );
-        })}
+        {STAGES.map((stage) => (
+          <li key={stage.key}>
+            <StageCard
+              stageKey={stage.key}
+              title={stage.title}
+              blurb={stage.blurb}
+              state={shown[stage.key]}
+              trackingId={trackingId}
+              districtCode={districtCode}
+            />
+          </li>
+        ))}
       </ol>
 
-      {finished ? (
+      {settled ? (
         <p className="milan-glass mt-4 rounded-xl p-3 text-sm">
-          Finished in <strong className="tabular-nums">{(finished.totalMs / 1000).toFixed(1)}s</strong>.
-          The report is now <strong>{finished.status.replaceAll("_", " ").toLowerCase()}</strong>.
+          This pipeline has finished. The report is{" "}
+          <strong>{latest.status.replaceAll("_", " ").toLowerCase()}</strong>.
         </p>
       ) : null}
     </section>
@@ -431,13 +546,27 @@ function S3Panel({ result }: { result: unknown }) {
   );
 }
 
-function blank(): Record<StageKey, StageState> {
-  return {
-    P0: { status: "waiting" },
-    S1: { status: "waiting" },
-    S2: { status: "waiting" },
-    S3: { status: "waiting" },
-    S4: { status: "waiting" },
-    S5: { status: "waiting" },
-  };
+/* First paint for a challenge whose run is already proved by the receipts:
+ * every settled stage renders settled from the very first frame, no spinner. */
+function materialise(
+  stages: TraceProjection["stages"],
+): Record<StageKey, StageState> {
+  const out = {} as Record<StageKey, StageState>;
+  for (const key of STAGE_ORDER) out[key] = { ...stages[key] };
+  return out;
+}
+
+/* A run that is about to start shows its receipts only as they land — but a
+ * stage that was already settled before this run (say P0 on a replay of a
+ * partially-complete challenge) stays settled rather than dimming to please
+ * the animation. */
+function blankShownFrom(
+  stages: TraceProjection["stages"],
+): Record<StageKey, StageState> {
+  const out = {} as Record<StageKey, StageState>;
+  for (const key of STAGE_ORDER) {
+    const settled = stages[key].status !== "waiting";
+    out[key] = settled ? { ...stages[key] } : { status: "waiting" };
+  }
+  return out;
 }

@@ -16,9 +16,12 @@ import sharp from "sharp";
  *  2. **The object key is the SHA-256 of the stored bytes.** The same photo
  *     uploaded twice is one object, and a ledger entry can cite it by hash.
  *
- * Face and number-plate blurring is NOT implemented in this cut. The UI says so
- * to the citizen, `challenge_media.faces_blurred` records the truth, and it is
- * on the declared-stubs slide.
+ * Face and number-plate blurring is CLIENT-SIDE and citizen-driven
+ * (app/(citizen)/submit/photo-blur.tsx): the citizen taps faces and plates, the
+ * mosaic is baked into the bytes on their device, and only then is the photo
+ * uploaded — the unblurred original never leaves the phone. Automatic
+ * detection is still a declared stub; `challenge_media.faces_blurred` records
+ * what the citizen actually blurred.
  */
 
 export const MAX_FILES = 3;

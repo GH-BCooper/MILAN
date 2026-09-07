@@ -351,6 +351,66 @@ async function main() {
 
   const districtCodes = new Set(districtAccumulators.keys());
 
+  /* Task 4.9 — district reference data (JDIP Part 4.1). One row per district
+   * in seed-data/districts-enrichment.csv, merged over the geography above by
+   * district_code. Loaded from the CSV like everything else: data never lives
+   * in this file's body. A code not in the geography file is a loud error, and
+   * so is a hazard key outside the enum — the map's keys are the vulnerability
+   * chips a DC sees, and a typo there is a wrong answer on a government wall. */
+  const { hazardEnum } = await import("@/lib/db/schema");
+  const enrichmentRows = readCsv<Record<string, string>>("districts-enrichment.csv");
+  let enriched = 0;
+  for (const [i, r] of enrichmentRows.entries()) {
+    const line = i + 2;
+    const code = r.district_code?.trim().toUpperCase();
+    if (!code || !districtCodes.has(code)) {
+      warn(`districts-enrichment.csv line ${line}: unknown district_code "${r.district_code}" — row skipped`);
+      continue;
+    }
+
+    let vulnerability: Record<string, number> | null = null;
+    try {
+      const parsed: unknown = JSON.parse(r.disaster_vulnerability ?? "");
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        vulnerability = {};
+        for (const [key, val] of Object.entries(parsed as Record<string, unknown>)) {
+          if (!hazardEnum.enumValues.includes(key as (typeof hazardEnum.enumValues)[number])) {
+            warn(`districts-enrichment.csv line ${line}: "${key}" is not a hazard enum value — key dropped`);
+            continue;
+          }
+          const n = Number(val);
+          if (!Number.isFinite(n) || n < 0 || n > 1) {
+            warn(`districts-enrichment.csv line ${line}: "${key}" vulnerability ${val} is not in 0–1 — key dropped`);
+            continue;
+          }
+          vulnerability[key] = n;
+        }
+      } else {
+        warn(`districts-enrichment.csv line ${line}: disaster_vulnerability is not an object — left null`);
+      }
+    } catch {
+      warn(`districts-enrichment.csv line ${line}: disaster_vulnerability is not valid JSON — left null`);
+    }
+
+    const values = {
+      division: optional(r.division),
+      population: r.population ? Math.trunc(Number(r.population)) : null,
+      internetPenetration: num(r.internet_penetration),
+      tribalPopulationPct: num(r.tribal_population_pct),
+      disasterVulnerability: vulnerability,
+    };
+    if (values.population !== null && !Number.isFinite(values.population)) {
+      warn(`districts-enrichment.csv line ${line}: population "${r.population}" is not a number — left null`);
+      values.population = null;
+    }
+    await db
+      .update(districts)
+      .set(values)
+      .where(eq(districts.code, code));
+    enriched += 1;
+  }
+  console.log(`District reference data: ${enriched}/${districtCodes.size} districts enriched (JDIP 4.1 columns).`);
+
   // The file carries no Devanagari block names, so block name_hi is null for
   // every row. Said once here rather than 249 times.
   if (blockRows.length) warn(`districts.csv: no block_name_hi column — ${blockRows.length} blocks have no Devanagari name`);
@@ -964,6 +1024,26 @@ async function main() {
       `\nCapability embeddings: ${embedded} computed` +
         `${embedded === 0 ? " (all already cached)" : ""}.`,
     );
+  }
+
+  /* Task 4.3: `pnpm seed --reset --ai` comes up fully pre-synced — every
+   * challenge has real pipeline receipts the moment the seed finishes, which
+   * is what the judges' Part 10 checklist asks to see. Runs as a child process
+   * exactly as scripts/verify-phase3.mts runs its siblings: same module,
+   * same flags, no duplicated import graph. */
+  if (process.argv.includes("--ai")) {
+    console.log("\n--ai: pre-syncing the seed through the real pipeline (seed/presync.mts)…\n");
+    const { spawn } = await import("node:child_process");
+    const code = await new Promise<number>((resolve) => {
+      const child = spawn("node_modules/.bin/tsx", ["--conditions=react-server", "seed/presync.mts"], {
+        stdio: "inherit",
+        env: process.env,
+      });
+      child.on("exit", (c) => resolve(c ?? 1));
+    });
+    if (code !== 0) {
+      throw new Error(`seed/presync.mts exited ${code} — the dataset is seeded but not pre-synced`);
+    }
   }
 
   console.log("\nDemo accounts (password: " + DEMO_PASSWORD + ")");

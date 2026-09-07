@@ -180,6 +180,13 @@ describe("normalisers", () => {
     expect(normalise.corroborations(10_000)).toBe(1);
   });
 
+  it("weights corroborations by reporter trust, centered on the v1.0.0 fixed point", () => {
+    expect(normalise.corroborationTrustWeight(null)).toBe(1);
+    expect(normalise.corroborationTrustWeight(0.5)).toBe(1);
+    expect(normalise.corroborationTrustWeight(1)).toBe(2);
+    expect(normalise.corroborationTrustWeight(0)).toBe(0);
+  });
+
   it("orders recurrence one-off < seasonal < yearly < constant", () => {
     expect(normalise.recurrence("one-off")).toBeLessThan(normalise.recurrence("seasonal"));
     expect(normalise.recurrence("seasonal")).toBeLessThan(normalise.recurrence("yearly"));
@@ -190,6 +197,34 @@ describe("normalisers", () => {
     expect(normalise.severity(4)).toBe(1);
     expect(normalise.severity(-1)).toBe(0);
     expect(normalise.blockVulnerability(9)).toBe(1);
+  });
+});
+
+describe("v1.1.0 — trust-weighted corroborations", () => {
+  it("changes nothing when trust is unknown", () => {
+    const before = computePriority({ ...MINIMAL, corroborationCount: 9 });
+    const after = computePriority({ ...MINIMAL, corroborationCount: 9, corroborationTrust: null });
+    expect(after.total).toBe(before.total);
+  });
+
+  it("counts proven reporters double and penalised accounts for less, with the arithmetic shown", () => {
+    const proven = computePriority({ ...MINIMAL, corroborationCount: 4, corroborationTrust: 1 });
+    const baseline = computePriority({ ...MINIMAL, corroborationCount: 4, corroborationTrust: 0.5 });
+    const penalised = computePriority({ ...MINIMAL, corroborationCount: 4, corroborationTrust: 0.2 });
+    expect(proven.total).toBeGreaterThan(baseline.total);
+    expect(penalised.total).toBeLessThan(baseline.total);
+    const term = proven.terms.find((t) => t.key === "corroborations")!;
+    expect(term.rawValue).toContain("×2.00 = 8.0 weighted");
+  });
+
+  it("still bounds the whole term at 12 points however far trust is pushed", () => {
+    const base = computePriority({ ...MINIMAL, corroborationCount: 5 });
+    const maxed = computePriority({ ...MINIMAL, corroborationCount: 5_000, corroborationTrust: 1 });
+    expect(maxed.total - base.total).toBeLessThanOrEqual(WEIGHTS.corroborations * 100);
+  });
+
+  it("stamps the version it was computed under", () => {
+    expect(computePriority(MINIMAL).version).toBe(SCORING_VERSION);
   });
 });
 

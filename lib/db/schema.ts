@@ -31,6 +31,7 @@ import {
   uniqueIndex,
   uuid,
   vector,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { organization, user } from "./auth-schema";
@@ -176,6 +177,23 @@ export const districts = pgTable("districts", {
   lng: numeric("lng", { precision: 9, scale: 6 }),
   /** 0.00–1.00. A weighted term in the priority score (Phase 2). */
   vulnerabilityIndex: numeric("vulnerability_index", { precision: 3, scale: 2 }),
+  /* Task 4.9 — district reference data (JDIP Part 4.1). Populated from
+   * seed-data/districts-enrichment.csv by the seeder; nullable so existing
+   * rows migrate cleanly and a partial dataset says "not recorded" rather
+   * than inventing a default. */
+  /** One of the five administrative divisions of Jharkhand. */
+  division: text("division"),
+  /** Headcount from the reference census for the dataset. */
+  population: integer("population"),
+  /** 0–1 fraction of people with internet access; a planning input for the
+   *  voice/SMS-first story, which is why it lives next to the SLA board. */
+  internetPenetration: numeric("internet_penetration", { precision: 4, scale: 3 }),
+  /** Percent (0–100) Scheduled Tribe population — the Adivasi belt is the
+   *  platform's core constituency and the Hindi/Santali localisation case. */
+  tribalPopulationPct: numeric("tribal_population_pct", { precision: 4, scale: 1 }),
+  /** Per-hazard 0–1 vulnerability map: `{ "FLOOD": 0.8, "DROUGHT": 0.4 }`.
+   *  jsonb because the hazard enum is the universe, not a fixed column set. */
+  disasterVulnerability: jsonb("disaster_vulnerability"),
 });
 
 export const blocks = pgTable(
@@ -419,7 +437,8 @@ export const challengeMedia = pgTable(
     mime: text("mime").notNull(),
     bytes: integer("bytes").notNull(),
     exifStripped: boolean("exif_stripped").notNull().default(false),
-    /** Declared stub for this cut: face and plate blurring is not implemented. */
+    /** True when the citizen blurred regions client-side before upload
+     *  (photo-blur.tsx). Automatic detection remains a declared stub. */
     facesBlurred: boolean("faces_blurred").notNull().default(false),
     consentGiven: boolean("consent_given").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -448,6 +467,43 @@ export const corroborations = pgTable(
     // The anti-brigading constraint. One account, one corroboration per challenge.
     uniqueIndex("corroborations_challenge_user_uniq").on(t.challengeId, t.userId),
     index("corroborations_challenge_idx").on(t.challengeId),
+  ],
+);
+
+/**
+ * Discussion on a public challenge. The JDIP document asked for upvotes and
+ * comments; the team chose comments alone, on the record: a number can be
+ * brigaded into looking like consensus (LOOPHOLES row 7), a sentence cannot,
+ * and every sentence here belongs to a named, signed-in account behind the
+ * trust score and the per-hour comment rate limit. The no-account signal is
+ * "This happens to me too" — a corroboration.
+ *
+ * Deliberately NOT written to the ledger: the ledger is the provenance chain,
+ * the record of who did what to the challenge. A comment changes none of that,
+ * and a table that can grow unboundedly does not belong in an append-only
+ * chain. Comments are content, provenance is events; the two stores answer
+ * different questions.
+ */
+export const challengeComments = pgTable(
+  "challenge_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** One nesting level, enforced in application code (lib/comments.ts). */
+    parentCommentId: uuid("parent_comment_id").references(
+      (): AnyPgColumn => challengeComments.id,
+    ),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("challenge_comments_challenge_idx").on(t.challengeId),
+    index("challenge_comments_user_idx").on(t.userId),
   ],
 );
 
@@ -815,11 +871,21 @@ export const auditLog = pgTable(
 export const demoState = pgTable("demo_state", {
   id: integer("id").primaryKey().default(1),
   clockOffsetDays: integer("clock_offset_days").notNull().default(0),
-  emergencyMode: boolean("emergency_mode").notNull().default(false),
-  /** Which hazard the emergency filter is pinned to. Display and sort only — never the stored score. */
-  emergencyHazard: text("emergency_hazard"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+    emergencyMode: boolean("emergency_mode").notNull().default(false),
+    /** Which hazard the emergency is pinned to. Filters display, drives the
+     *  surge re-rank and compresses the pinned hazard's SLA clocks to
+     *  EMERGENCY_TIME_SCALE (reversibly — see /gov/emergency). Never a stored
+     *  priority score. */
+    emergencyHazard: text("emergency_hazard"),
+    /**
+     * When lib/credit/trust-writers last decayed everyone's trust toward the
+     * baseline. Stored here (not computed from "now") so a cron run that fires
+     * twice, or not at all for a week, decays exactly the days that elapsed —
+     * the same reasoning as the clock offset living here.
+     */
+    trustDecayedAt: timestamp("trust_decayed_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  });
 
 export const industryInterests = pgTable(
   "industry_interests",

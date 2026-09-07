@@ -113,13 +113,18 @@ export async function clockOffsetDays(): Promise<number> {
   return syncClockOffset();
 }
 
-/** Emergency mode is a display-and-filter flag, never a stored-score change. */
+/**
+ * Emergency mode: a banner, a filter, a display re-sort — and, since the
+ * Disaster Management teeth landed, a clock compression on every challenge
+ * linked to the pinned hazard. Still never a stored-score change; see
+ * `lib/sla/deadlines.ts` and `/gov/emergency`.
+ */
 export async function emergencyState(): Promise<{ on: boolean; hazard: string | null }> {
   try {
-    const rows = (await db.execute<{ emergency_mode: boolean }>(
-      raw`SELECT emergency_mode FROM demo_state WHERE id = 1`,
-    )) as unknown as Array<{ emergency_mode: boolean }>;
-    return { on: Boolean(rows[0]?.emergency_mode), hazard: null };
+    const rows = (await db.execute<{ emergency_mode: boolean; emergency_hazard: string | null }>(
+      raw`SELECT emergency_mode, emergency_hazard FROM demo_state WHERE id = 1`,
+    )) as unknown as Array<{ emergency_mode: boolean; emergency_hazard: string | null }>;
+    return { on: Boolean(rows[0]?.emergency_mode), hazard: rows[0]?.emergency_hazard ?? null };
   } catch {
     return { on: false, hazard: null };
   }

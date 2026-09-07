@@ -1,20 +1,19 @@
 /**
  * Resolving a GPS point to a district and block.
  *
- * This is **nearest-centroid**, not point-in-polygon. We hold one lat/lng per
- * district and per block and pick the closest one. That is wrong near a boundary
- * — a point three kilometres inside Gumla but closer to a Lohardaga block
- * centroid resolves to Lohardaga.
+ * District resolution is **point-in-polygon** over the boundary asset in
+ * `jharkhand-districts.json` (see lib/geo/polygon.ts for provenance). When no
+ * polygon contains the point — outside the state, or in the sliver a rounded
+ * boundary can open — we fall back to nearest-centroid, which is also what
+ * block resolution uses within the resolved district: we hold real boundary
+ * geometry for 24 districts and centroids only for 263 blocks.
  *
- * We accept that for two reasons. Real boundary geometry for 24 districts and
- * their blocks is a large asset we do not have, and more importantly the citizen
- * can always correct the district and block by dropdown. Geolocation in rural
- * Jharkhand is not reliable and the demo must not depend on it. The dropdown is
- * the source of truth; this function only supplies the default.
- *
- * Replacing this with a real point-in-polygon lookup is a drop-in change: the
- * signature does not mention centroids.
+ * The citizen can always correct the district and block by dropdown. Geolocation
+ * in rural Jharkhand is not reliable and the demo must not depend on it. The
+ * dropdown is the source of truth; this function only supplies the default.
  */
+
+import { districtAt } from "./polygon";
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -51,8 +50,14 @@ export function nearest<T extends Centroid>(
 
 /**
  * Resolve a point to a district and, where we hold blocks for that district, a
- * block. A block is only offered when it belongs to the resolved district —
- * otherwise a point near a border could pick a block from the wrong district.
+ * block. Polygon containment decides the district; a block is only offered
+ * when it belongs to the resolved district — otherwise a point near a border
+ * could pick a block from the wrong district.
+ *
+ * `districtDistanceKm` is null on a polygon hit (there is no meaningful
+ * "distance to the district") and carries the centroid fallback distance
+ * otherwise, which the wizard uses to warn that a pin looks far from anywhere
+ * the seeded database knows.
  */
 export function resolvePoint(
   lat: number,
@@ -60,15 +65,27 @@ export function resolvePoint(
   districts: Centroid[],
   blocks: Centroid[],
 ): { districtCode: string | null; blockCode: string | null; districtDistanceKm: number | null } {
-  const district = nearest(lat, lng, districts);
-  if (!district) return { districtCode: null, blockCode: null, districtDistanceKm: null };
+  const hit = districtAt(lat, lng);
 
-  const inDistrict = blocks.filter((b) => b.districtCode === district.match.code);
+  let districtCode: string | null;
+  let districtDistanceKm: number | null = null;
+
+  if (hit) {
+    districtCode = hit.code;
+  } else {
+    const fallback = nearest(lat, lng, districts);
+    districtCode = fallback?.match.code ?? null;
+    districtDistanceKm = fallback?.distanceKm ?? null;
+  }
+
+  if (!districtCode) return { districtCode: null, blockCode: null, districtDistanceKm: null };
+
+  const inDistrict = blocks.filter((b) => b.districtCode === districtCode);
   const block = nearest(lat, lng, inDistrict);
 
   return {
-    districtCode: district.match.code,
+    districtCode,
     blockCode: block?.match.code ?? null,
-    districtDistanceKm: district.distanceKm,
+    districtDistanceKm,
   };
 }

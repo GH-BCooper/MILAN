@@ -12,7 +12,8 @@ import { nextTrackingId } from "@/lib/db/trackingId";
 import { MediaRejectedError, processImage } from "@/lib/media/upload";
 import { putObject } from "@/lib/media/storage";
 import { runP1 } from "@/lib/ai/stages/p1_framing";
-import { blocks, districts } from "@/lib/db/schema";
+import { blocks, districts, slaDeadlines } from "@/lib/db/schema";
+import { deadlinesFor } from "@/lib/sla/deadlines";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { MIN_BODY_CHARS, SubmitSchema, bucketMidpoint, deriveTitle } from "./schema";
@@ -25,7 +26,7 @@ const FramingRequestSchema = z.object({
 });
 
 export type UploadResult =
-  | { ok: true; storageKey: string; contentHash: string; mime: string; bytes: number; previewUrl: string | null }
+  | { ok: true; storageKey: string; contentHash: string; mime: string; bytes: number; previewUrl: string | null; facesBlurred: boolean }
   | { ok: false; error: string };
 
 /**
@@ -39,6 +40,10 @@ export type UploadResult =
 export async function uploadEvidenceAction(formData: FormData): Promise<UploadResult> {
   const file = formData.get("file");
   if (!(file instanceof File)) return { ok: false, error: "No file was received." };
+  // The citizen's blur tool sets this. The flag describes what their browser
+  // did to the bytes (the blur is baked in before upload), not a server-side
+  // promise, and challenge_media records it as exactly that.
+  const facesBlurred = formData.get("facesBlurred") === "true";
 
   try {
     const processed = await processImage(Buffer.from(await file.arrayBuffer()), file.type);
@@ -58,6 +63,7 @@ export async function uploadEvidenceAction(formData: FormData): Promise<UploadRe
       mime: processed.mime,
       bytes: processed.bytes.byteLength,
       previewUrl: stored.publicUrl,
+      facesBlurred,
     };
   } catch (e) {
     if (e instanceof MediaRejectedError) return { ok: false, error: e.message };
@@ -243,6 +249,27 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
         })
         .returning({ id: challenges.id });
 
+      /**
+       * Invariant 1 starts at intake, not at the first transition. Deadlines
+       * are materialised by `transition()`, but a report that never reaches
+       * one — S1 held for a human, which on the rules tier is every Hindi
+       * report — would sit in SUBMITTED with no clock at all: exactly the
+       * "silently dies" state the SLA engine exists to prevent. The state
+       * machine cancels and replaces this row the moment the report moves.
+       */
+      const intakeDeadlines = deadlinesFor("SUBMITTED", { now });
+      if (intakeDeadlines.length > 0) {
+        await tx.insert(slaDeadlines).values(
+          intakeDeadlines.map((s) => ({
+            challengeId: challenge.id,
+            kind: s.kind,
+            dueAt: s.dueAt,
+            payload: s.payload ?? {},
+            createdAt: now,
+          })),
+        );
+      }
+
       if (input.media.length > 0) {
         await tx.insert(challengeMedia).values(
           input.media.map((m) => ({
@@ -252,9 +279,10 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
             mime: m.mime,
             bytes: m.bytes,
             exifStripped: m.exifStripped,
-            // Declared stub: blurring is not implemented, and we record that
-            // honestly rather than claiming it.
-            facesBlurred: false,
+            // The citizen's own blur, applied on their device before upload
+            // (photo-blur.tsx). The flag travels with the media descriptor from
+            // the wizard; the bytes themselves are already blurred.
+            facesBlurred: m.facesBlurred,
             consentGiven: m.consentGiven,
             createdAt: now,
           })),

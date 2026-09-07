@@ -915,6 +915,65 @@ GET /api/ledger/verify   {"ok":true, ...} in production
 3. Record `seed-data/voice-note.mp3` and paste its SHA-256 into `lib/ai/seededTranscripts.ts` — the
    last item carried from Phase 1.
 
+## Phase 4 — post-judging hardening: Emergency teeth, trust writer, real boundaries, client-side blur — completed 2026-09-07 07:10
+
+> Session driven by the team's prioritized fix list (Tier 2 verification → Tier 3 build → Tier 4 hygiene), not by a BUILD file. Tier 1 (voice note, PMTiles, Hindi review, dress rehearsal) remains human work.
+
+### Status
+Emergency Mode has teeth (hazard-pinned, reversible SLA compression + a bounded, labelled display surge), the trust score has a writer (loophole row 7 closed, corroborations are trust-weighted in scoring v1.1.0), district resolution is point-in-polygon over real Jharkhand boundaries, and citizens blur faces and plates on their own device before any photo is uploaded. Tier 2 was verified already-done in this codebase (MinIO adapter, Mailpit path, Ollama removed, few-shot blocks filled) and needed no work.
+
+### Tasks completed
+- [x] Tier 2 verification — items 5-8 already present (storage.ts S3 backend, notify Mailpit path, compose without Ollama, worked examples in all six prompt files incl. Santali + S2 boundary drafts)
+- [x] Item 9 — Emergency teeth — 13 new tests pass; `verify:emergency` written for the DB run
+- [x] Item 10 — Trust writer — migration 0011, four wired events, nightly decay; 16 new tests pass
+- [x] Item 11 — Point-in-polygon — 24/24 districts, 7 new tests incl. the exact boundary point nearest-centroid got wrong
+- [x] Item 12 — Client-side blur — wizard stages every photo through the mosaic step before upload
+- [x] Item 13 — hygiene — `SUPABASE_DIRECT_CONNECTION` deleted from .env.example; GH-BCooper→ItsPinion in living files (PROGRESS history untouched)
+- [x] blocks.csv — verified already properly retired (README + seeder both document "no longer read"); left in place per CLAUDE.md rule 7
+
+### Files created or changed
+- `lib/sla/deadlines.ts` (+clockScale, EMERGENCY_TIME_SCALE, emergencyScale; ANNUAL_REVIEW exempt), `lib/sla/actions.ts` (ctxDays follow-on clocks), `lib/sla/reaper.ts` (per-run emergency read), `lib/db/stateMachine.ts` (born-compressed deadlines, demo_state read on its own tx to stay DB-free at import)
+- `app/(gov)/gov/emergency/{actions,page}.tsx` (compress/restore sweep + honest copy), `app/(gov)/gov/page.tsx`, `app/(public)/challenges/page.tsx` (surge re-rank), `app/(gov)/gov/sla/page.tsx` (×0.5 badge)
+- `lib/emergency/surge.ts` (pure, bounded ×1.25)
+- `lib/credit/trust.ts` + `lib/credit/trust-writers.ts`; wired in verify action, pipeline S1 rejection, s3 mergeInto, nightly cron
+- `packages/scoring` v1.1.0 (`corroborationTrust`, `corroborationTrustWeight`); `lib/ai/stages/s4.ts` (mean-trust query); corroborate action weight now reads reporter trust; `/credit/[userId]` trust panel
+- `lib/geo/{jharkhand-districts.json,polygon.ts}` + `nearest.ts` polygon-first resolvePoint
+- `app/(citizen)/submit/{photo-blur.tsx,submit-wizard.tsx,wizard-state.ts,schema.ts,actions.ts}`; `lib/media/upload.ts` docs
+- migrations `0011_trust_writer.sql` + journal entry; `lib/db/schema.ts` (demoState.trustDecayedAt, comments)
+- `tests/{emergency,trust,geo}.test.ts`, scoring tests extended; `scripts/{verify-emergency,verify-trust}.mts` + package.json entries; README, LOOPHOLES row 7, BACKLOG, .env.example, scripts/set-ci-secrets.sh
+
+### Database
+- Tables added: none. Columns added: `demo_state.trust_decayed_at` (migration 0011). No seed changes.
+- **Migration 0011 must be applied** (`pnpm db:migrate`) before the nightly cron runs on a real database.
+
+### Environment variables consumed this phase
+- None new. (SUPABASE_DIRECT_CONNECTION removed — it was read by nothing.)
+
+### Decisions taken
+- Compression keeps original due dates in `payload.preEmergencyDueAt` and restores on switch-off — an emergency must not rewrite history. — Reversible by construction. — Costs a payload key.
+- ANNUAL_REVIEW never compresses — halving a 365-day re-review per flood alert compounds nonsensically.
+- The surge is display-only and capped at ×1.25 (×hazard strength) — a weak linked problem must never float above a strong unlinked one.
+- Trust deltas: +0.10 verified report / +0.05 verified corroboration / +0.03 merge / −0.20 unsafe, decay 0.97^days (~23-day half-life) — one unsafe report costs more than five merges earn. Unknown trust weighs exactly 1.0, so v1.0.0 behaviour is the fixed point of scoring v1.1.0.
+- Boundary asset from udit-001/india-maps-data (no explicit licence) — provenance + replace-for-production note recorded inside the JSON itself. Flag to the team: swap for Survey of India/Bhuvan boundaries before any production claim.
+- Blur is citizen-driven, not model detection — invariant 8 applied to privacy; the unblurred original never leaves the phone, which is a stronger claim than server-side blurring.
+
+### Stubbed / deferred (must appear on the "declared stubs" slide)
+- Emergency response queue + automatic surge-routing to institutions with standing capacity — still stubs; compression + surge are built.
+- Automatic face/plate detection — citizen-driven blur is built instead.
+- Block-level boundary geometry — districts are polygon-resolved; blocks remain nearest-centroid within district.
+
+### Known issues
+- The three DB-backed test files (invariant, ledger, stateMachine) and `verify:emergency`/`verify:trust` could not run in this sandbox (no Postgres). They must run once on a real database before the demo. — severity medium — `pnpm db:migrate && pnpm vitest run && pnpm verify:emergency && pnpm verify:trust` on the demo laptop.
+- Stored priority breakdowns still carry v1.0.0 until the next `rescoreAll` — by design (a stored score records the version it was computed under). Run the nightly cron (or `/api/cron/nightly`) once to re-stamp under v1.1.0.
+
+### Verification evidence
+- `pnpm typecheck` clean; `pnpm lint` clean (after removing two unused vars and one dead function the new code exposed); `pnpm build` clean against a placeholder env.
+- `pnpm vitest run` (no database): **91 passed** — 55 baseline + 13 emergency + 16 trust + 7 geo; scoring suite extended in place. Full-suite total with a database: 113.
+
+### Start here next phase
+1. On the demo laptop with Docker/Supabase: `pnpm db:migrate` (0011), `pnpm vitest run` (expect 113), `pnpm verify:emergency`, `pnpm verify:trust`, then `pnpm verify:demo` (13 beats — nothing on the demo path changed by default, but confirm).
+2. Run the Tier 1 human list: record `voice-note.mp3`, fetch the Jharkhand PMTiles extract, native Hindi review, full offline dress rehearsal.
+3. Re-stamp scores under v1.1.0 by hitting `/api/cron/nightly` once, then eyeball one `/c/<id>` breakdown for the "reporter trust ×" line.
 ## Post-Phase-3 — real India map, account-gated access, OTP verification — completed 2026-09-07 15:40
 
 ### Status

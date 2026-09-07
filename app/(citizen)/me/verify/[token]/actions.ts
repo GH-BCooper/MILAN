@@ -21,6 +21,7 @@ import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
 import { challenges, impactConfirmations } from "@/lib/db/schema";
 import { transition } from "@/lib/db/stateMachine";
+import { awardCitizenVerified } from "@/lib/credit/trust-writers";
 import { appendEntry } from "@/lib/ledger/append";
 import { notify } from "@/lib/notify";
 import { readVerifyToken } from "@/lib/verify/token";
@@ -55,6 +56,7 @@ export async function confirmImpact(_prev: ConfirmState | null, form: FormData):
       title: challenges.title,
       status: challenges.status,
       districtCode: challenges.districtCode,
+      reporterId: challenges.reporterId,
     })
     .from(challenges)
     .where(eq(challenges.id, read.challengeId))
@@ -173,6 +175,16 @@ export async function confirmImpact(_prev: ConfirmState | null, form: FormData):
       actorId: user?.id ?? null,
       reason: partial ? "The citizen says the problem is partly fixed." : "The citizen says the problem is fixed.",
     });
+
+    // The only ground-truth event in Milan is also the only event that earns
+    // reporter trust (loophole row 7): the reporter whose problem was real, and
+    // everyone whose corroboration backed it. Fails soft — a trust write can
+    // never cost a citizen their confirmation.
+    try {
+      await awardCitizenVerified(tx, { challengeId: c.id, trackingId: c.trackingId, reporterId: c.reporterId }, at);
+    } catch (e) {
+      console.error("[trust] award on CITIZEN_VERIFIED failed", e);
+    }
   });
 
   revalidatePath(`/c/${c.trackingId}`);

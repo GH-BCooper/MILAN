@@ -7,7 +7,7 @@
  */
 import { config } from "dotenv";
 import { beforeAll, describe, expect, it } from "vitest";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 config({ path: ".env.local" });
 
@@ -50,6 +50,18 @@ async function inRollback<T>(fn: (tx: Parameters<Parameters<typeof db.transactio
   if (failure) throw failure;
   return value as T;
 }
+
+/**
+ * How long the legal-edge sweep may run before it is declared broken rather
+ * than merely far away. The sweep is latency-bound, not compute-bound: each
+ * edge pays the machine's serial round trips (row lock, status update, ledger
+ * append under the global advisory lock, outbox, deadline rows) and there are
+ * ~90 edges. That is well under a minute on a fast link to the database and
+ * past the 180s default on a slow uplink, so the sweep carries the same
+ * ceiling CI gives every test (vitest.config.ts) instead of whatever the
+ * local default happens to be.
+ */
+const EDGE_SWEEP_TIMEOUT_MS = 600_000;
 
 let counter = 0;
 
@@ -96,25 +108,61 @@ describe("state machine", () => {
     }
   });
 
-  it("accepts every legal edge", async () => {
-    const edges = legalEdges();
-    expect(edges.length).toBeGreaterThan(0);
+  it(
+    "accepts every legal edge",
+    async () => {
+      const edges = legalEdges();
+      expect(edges.length).toBeGreaterThan(0);
 
-    await inRollback(async (tx) => {
-      for (const [from, to] of edges) {
-        const id = await seedAt(tx, from);
-        const result = await transition(tx, { challengeId: id, to, actorId: null, reason: "test" });
-        expect(result.from).toBe(from);
-        expect(result.to).toBe(to);
+      await inRollback(async (tx) => {
+        // One INSERT for every fixture: ~90 rows for ~90 edges. Seeding row by
+        // row would cost a round trip per edge for zero extra assertion, and
+        // on a high-latency link those trips are most of the test.
+        const seeded = await tx
+          .insert(challenges)
+          .values(
+            edges.map(([from], i) => ({
+              trackingId: `JH-TEST-${process.pid}-edge-${i}`,
+              status: from,
+              title: `state machine fixture edge ${i}`,
+              bodyOriginal: "fixture body, long enough to look like a real report from a citizen",
+              bodyLang: "en",
+            })),
+          )
+          .returning({ id: challenges.id, trackingId: challenges.trackingId });
+        const idByTrackingId = new Map(seeded.map((r) => [r.trackingId, r.id]));
 
-        const [after] = await tx
-          .select({ status: challenges.status })
+        const fixtures = edges.map(([from, to], i) => {
+          const id = idByTrackingId.get(`JH-TEST-${process.pid}-edge-${i}`);
+          if (!id) throw new Error(`bulk seed returned no row for edge ${from} -> ${to}`);
+          return { from, to, id };
+        });
+
+        // The part under test. Still strictly serial, on this one transaction:
+        // the ledger's transaction-scoped advisory lock is exactly what makes
+        // the append safe, and it serialises appends across connections too.
+        for (const { from, to, id } of fixtures) {
+          const result = await transition(tx, { challengeId: id, to, actorId: null, reason: "test" });
+          expect(result.from).toBe(from);
+          expect(result.to).toBe(to);
+        }
+
+        // Every fixture is transitioned exactly once, so one batched read at
+        // the end asserts precisely what the per-edge SELECT did — for one
+        // round trip instead of ~90.
+        const persisted = await tx
+          .select({ id: challenges.id, status: challenges.status })
           .from(challenges)
-          .where(eq(challenges.id, id));
-        expect(after.status, `${from} -> ${to} did not persist`).toBe(to);
-      }
-    });
-  });
+          .where(inArray(challenges.id, fixtures.map((f) => f.id)));
+        const persistedById = new Map(persisted.map((r) => [r.id, r.status]));
+        expect(persistedById.size).toBe(fixtures.length);
+        for (const { from, to, id } of fixtures) {
+          expect(persistedById.get(id), `${from} -> ${to} did not persist`).toBe(to);
+        }
+      });
+    },
+    EDGE_SWEEP_TIMEOUT_MS,
+  );
 
   it("refuses a representative illegal edge", async () => {
     await inRollback(async (tx) => {

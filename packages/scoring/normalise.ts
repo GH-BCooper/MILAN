@@ -63,6 +63,23 @@ export function corroborations(n: number | null): number {
 }
 
 /**
+ * How much a set of corroborations counts for, given the mean trust of the
+ * people who made them: `meanTrust / 0.5`, clamped to [0, 2].
+ *
+ * Centered on the 0.50 baseline so an unknown crowd is worth exactly what it
+ * was in v1.0.0 — no retrospective inflation. A crowd of proven reporters
+ * counts for up to 2×; a crowd that includes penalised accounts counts for
+ * less. Brigading fifty fresh accounts therefore buys no more than fifty
+ * strangers ever did, and the sqrt cap above still bounds the term at 12% of
+ * the score. Identity caps and distance decay (loophole row 7) sit beside this
+ * at the data layer.
+ */
+export function corroborationTrustWeight(meanTrust: number | null | undefined): number {
+  if (meanTrust === null || meanTrust === undefined || !Number.isFinite(meanTrust)) return 1;
+  return Math.max(0, Math.min(2, clamp01(meanTrust) / 0.5));
+}
+
+/**
  * Hazard linkage: `hazard_strength` from S2, or exactly 0 when the hazard is
  * NONE. A problem with no NDMA hazard linkage scores nothing here — that is
  * what makes this a disaster risk reduction pipeline rather than a public works
