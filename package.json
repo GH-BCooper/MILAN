@@ -1,8 +1,4 @@
 {
-  "name": "milan",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -27,6 +23,8 @@
     "verify:triage": "tsx --conditions=react-server scripts/verify-triage.mts",
     "verify:clock": "tsx --conditions=react-server scripts/verify-clock.mts",
     "verify:sla": "tsx --conditions=react-server scripts/verify-sla.mts",
+    "verify:emergency": "tsx --conditions=react-server scripts/verify-emergency.mts",
+    "verify:trust": "tsx --conditions=react-server scripts/verify-trust.mts",
     "sla:backfill": "tsx --conditions=react-server scripts/sla-backfill.mts",
     "ledger:seal": "tsx --conditions=react-server scripts/ledger-seal.mts",
     "verify:gov": "tsx --conditions=react-server scripts/verify-gov.mts",
@@ -43,6 +41,10 @@
     "verify:phase3": "tsx --conditions=react-server scripts/verify-phase3.mts",
     "backup": "node scripts/backup.mjs backups/phase3-demo.sql"
   },
+  "name": "milan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Milan — citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
     "@supabase/supabase-js": "^2.45.0",

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { resolvePoint, type Centroid } from "@/lib/geo/nearest";
 import { proposeFramingAction, submitChallengeAction, uploadEvidenceAction } from "./actions";
+import { PhotoBlur } from "./photo-blur";
 import { MIN_BODY_CHARS, PEOPLE_BUCKETS, RECURRENCE } from "./schema";
 import {
   FIRST_STEP,
@@ -225,14 +226,36 @@ export function SubmitWizard({
 
   /* ---------------------------------------------------------------- upload */
 
-  async function onFiles(files: FileList | null) {
+  /**
+   * Photos are STAGED, not uploaded: each one goes through the blur step first
+   * (photo-blur.tsx), and only the edited bytes — blur baked in, on this device
+   * — are ever sent to the server. The unblurred original never leaves the
+   * phone, which is the whole privacy argument.
+   */
+  const [pending, setPending] = useState<File | null>(null);
+  const [queue, setQueue] = useState<File[]>([]);
+
+  function onFiles(files: FileList | null) {
     if (!files?.length) return;
     setUploadError(null);
-    setUploading(true);
+    const room = 3 - state.media.length - (pending ? 1 : 0) - queue.length;
+    const next = Array.from(files).slice(0, Math.max(0, room));
+    if (next.length === 0) {
+      setUploadError("You can attach up to three photos.");
+      if (fileInput.current) fileInput.current.value = "";
+      return;
+    }
+    setPending((current) => current ?? next.shift()!);
+    setQueue((q) => [...q, ...next]);
+    if (fileInput.current) fileInput.current.value = "";
+  }
 
-    for (const file of Array.from(files).slice(0, 3 - state.media.length)) {
+  async function uploadStaged(attach: { file: File; facesBlurred: boolean }) {
+    setUploading(true);
+    try {
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", attach.file);
+      form.append("facesBlurred", attach.facesBlurred ? "true" : "false");
       const result = await uploadEvidenceAction(form);
       if (result.ok) {
         dispatch({
@@ -244,17 +267,25 @@ export function SubmitWizard({
             bytes: result.bytes,
             exifStripped: true,
             consentGiven: state.consentGiven,
+            facesBlurred: attach.facesBlurred,
             previewUrl: result.previewUrl,
-            fileName: file.name,
+            fileName: attach.file.name,
           },
         });
       } else {
         setUploadError(result.error);
       }
+    } finally {
+      setUploading(false);
+      // Advance the queue: next photo to blur, or done.
+      setPending(queue[0] ?? null);
+      setQueue((q) => q.slice(1));
     }
+  }
 
-    setUploading(false);
-    if (fileInput.current) fileInput.current.value = "";
+  function cancelPending() {
+    setPending(queue[0] ?? null);
+    setQueue((q) => q.slice(1));
   }
 
   /* ---------------------------------------------------------------- submit */
@@ -411,11 +442,19 @@ export function SubmitWizard({
 
             <Alert>
               <AlertDescription className="text-sm">
-                <strong className="font-semibold">Faces will be blurred before publication.</strong>{" "}
-                Automatic blurring is not switched on yet, so please avoid photographing people
-                where you can. Location data is removed from every photo before it is stored.
+                <strong className="font-semibold">Blur faces and number plates yourself, before upload.</strong>{" "}
+                Each photo opens in a blur step: tap every face and plate, and the blur is applied on
+                your phone — the unblurred photo never leaves this device. This is not automatic
+                detection (not built, declared); what you tap is what gets blurred. Location data is
+                also removed from every photo before it is stored.
               </AlertDescription>
             </Alert>
+
+            {pending ? (
+              <div className="mt-3">
+                <PhotoBlur file={pending} onAttach={uploadStaged} onCancel={cancelPending} busy={uploading} />
+              </div>
+            ) : null}
 
             <div>
               <input
@@ -476,7 +515,14 @@ export function SubmitWizard({
                       <div className="size-14 rounded bg-muted" aria-hidden />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{m.fileName}</p>
+                      <p className="truncate text-sm font-medium">
+                        {m.fileName}
+                        {m.facesBlurred ? (
+                          <span className="ml-2 rounded border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-900">
+                            blurred
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {(m.bytes / 1024).toFixed(0)} KB · location data removed
                       </p>

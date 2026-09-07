@@ -389,7 +389,8 @@ export const challengeMedia = pgTable(
     mime: text("mime").notNull(),
     bytes: integer("bytes").notNull(),
     exifStripped: boolean("exif_stripped").notNull().default(false),
-    /** Declared stub for this cut: face and plate blurring is not implemented. */
+    /** True when the citizen blurred regions client-side before upload
+     *  (photo-blur.tsx). Automatic detection remains a declared stub. */
     facesBlurred: boolean("faces_blurred").notNull().default(false),
     consentGiven: boolean("consent_given").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -785,11 +786,21 @@ export const auditLog = pgTable(
 export const demoState = pgTable("demo_state", {
   id: integer("id").primaryKey().default(1),
   clockOffsetDays: integer("clock_offset_days").notNull().default(0),
-  emergencyMode: boolean("emergency_mode").notNull().default(false),
-  /** Which hazard the emergency filter is pinned to. Display and sort only — never the stored score. */
-  emergencyHazard: text("emergency_hazard"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+    emergencyMode: boolean("emergency_mode").notNull().default(false),
+    /** Which hazard the emergency is pinned to. Filters display, drives the
+     *  surge re-rank and compresses the pinned hazard's SLA clocks to
+     *  EMERGENCY_TIME_SCALE (reversibly — see /gov/emergency). Never a stored
+     *  priority score. */
+    emergencyHazard: text("emergency_hazard"),
+    /**
+     * When lib/credit/trust-writers last decayed everyone's trust toward the
+     * baseline. Stored here (not computed from "now") so a cron run that fires
+     * twice, or not at all for a week, decays exactly the days that elapsed —
+     * the same reasoning as the clock offset living here.
+     */
+    trustDecayedAt: timestamp("trust_decayed_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  });
 
 export const industryInterests = pgTable(
   "industry_interests",

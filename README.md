@@ -169,12 +169,13 @@ psql "$DIRECT_URL" -f backups/phase3-demo.sql
 
 ```bash
 pnpm build && pnpm typecheck && pnpm lint
-pnpm vitest run             # 77 tests, including the invariant-1 CI check
+pnpm vitest run             # 113 tests, including the invariant-1 CI check (91 run with no database)
 pnpm verify:phase3          # every Phase 3 verification, in order
 ```
 
-Individually: `verify:clock`, `verify:sla`, `verify:gov`, `verify:provenance`, `verify:impact`,
-`verify:industry`, `verify:demo`, `verify:perf`, `verify:seedguard`.
+Individually: `verify:clock`, `verify:sla`, `verify:emergency`, `verify:trust`, `verify:gov`,
+`verify:provenance`, `verify:impact`, `verify:industry`, `verify:demo`, `verify:perf`,
+`verify:seedguard`.
 
 ---
 
@@ -212,17 +213,23 @@ We declare our stubs on a slide. Judges forgive honest stubs and punish fake dep
 - **E-signature, payment rails and MoU negotiation threads** — the MoU is generated from a template
   and hashed into the ledger; nobody signs anything.
 - **Patent/DOI integration and an IP dispute adjudication UI** — the prior-art panel is what exists.
-- **Face and number-plate blurring** — not implemented; the wizard says so and
-  `challenge_media.faces_blurred` records `false`.
-- **Full Emergency Mode** — `/gov/emergency` is the toggle only: a banner, a map filter and a display
-  re-sort. It changes nothing stored, and the page says so.
+- **Automatic face and number-plate detection** — not built, declared. What exists is stronger for
+  privacy in one way: the citizen blurs faces and plates themselves on their device (canvas mosaic,
+  tap to place), and only the blurred bytes are ever uploaded — the unblurred original never leaves
+  the phone. `challenge_media.faces_blurred` records what the citizen actually blurred.
+- **Partial Emergency Mode** — `/gov/emergency` now has real teeth: the pinned hazard's open SLA
+  clocks compress to half time reversibly (original due dates kept in the row and restored on
+  switch-off; annual re-reviews exempt) and lists re-sort with a visible, bounded ×1.25 display
+  surge. Still declared stubs: a separate live response queue and automatic surge-routing to
+  institutions with standing capacity. No stored priority score ever changes.
 - **Live multilingual ASR** — the stage and the live path are real; the demo uses a seeded
   ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is now recorded
   (its SHA-256 is wired into `lib/ai/seededTranscripts.ts`). Live ASR is Groq whisper-large-v3.
 - **No PMTiles basemap** — `NEXT_PUBLIC_PMTILES_URL` is unset, so the map draws markers on a blank
   canvas and says so.
-- **Nearest-centroid geocoding, not point-in-polygon** — wrong near district boundaries; the
-  citizen's dropdown always wins.
+- **Block-level boundary geometry** — district resolution is point-in-polygon over real Jharkhand
+  boundaries (`lib/geo/jharkhand-districts.json`, provenance in the asset); blocks still resolve by
+  nearest centroid *within* the resolved district, and the citizen's dropdown always wins.
 
 See `docs/LOOPHOLES.md` for the sixteen failure modes and where each response lives in the product,
 and `docs/DEMO_RUNBOOK.md` for the six-minute script beat by beat.

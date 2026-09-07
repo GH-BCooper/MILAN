@@ -8,7 +8,8 @@ import { z } from "zod";
 import { currentUser } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { challenges, corroborations } from "@/lib/db/schema";
+import { challenges, corroborations, userProfiles } from "@/lib/db/schema";
+import { corroborationWeight } from "@/lib/credit/trust";
 
 const Input = z.object({
   trackingId: z.string().trim().min(1).max(40),
@@ -61,15 +62,27 @@ export async function corroborateAction(raw: unknown): Promise<CorroborateResult
         if (existing.length) throw new Error("ALREADY");
       }
 
+      // A signed-in corroborator's weight is their own trust score doubled
+      // (0.50 baseline → 1.000, exactly the old constant; proven reporters up
+      // to 2.000; penalised accounts less). Anonymous stays 0.500. The trust
+      // score has a writer now (lib/credit/trust-writers.ts), so this column
+      // finally carries what it always claimed to.
+      let weight = 0.5;
+      if (user) {
+        const [profile] = await tx
+          .select({ trustScore: userProfiles.trustScore })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, user.id))
+          .limit(1);
+        weight = corroborationWeight(profile ? Number(profile.trustScore) : 0.5);
+      }
+
       await tx.insert(corroborations).values({
         challengeId: challenge.id,
         userId: user?.id ?? null,
         lat: challenge.lat,
         lng: challenge.lng,
-        // Phase 2 computes a real distance-decayed weight. A signed-in report
-        // from a known district is worth more than an anonymous one; saying so
-        // now keeps the column honest.
-        weight: user ? "1.000" : "0.500",
+        weight: weight.toFixed(3),
         deviceFingerprint: fingerprint,
         createdAt: clockNow(),
       });

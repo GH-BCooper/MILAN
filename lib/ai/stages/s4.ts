@@ -14,7 +14,7 @@
  */
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
@@ -51,6 +51,16 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
 
   const vulnerability = row.blockVulnerability ?? row.districtVulnerability;
 
+  // v1.1.0: the mean trust of the signed-in corroborators. Anonymous
+  // corroborations carry no trust signal and are simply not in the average,
+  // rather than dragging it toward the baseline with values they do not have.
+  const [trustRow] = (await db.execute<{ mean: string | null }>(
+    sql`SELECT avg(p.trust_score)::text AS mean
+        FROM corroborations c
+        JOIN user_profiles p ON p.user_id = c.user_id
+        WHERE c.challenge_id = ${challengeId}`,
+  )) as unknown as Array<{ mean: string | null }>;
+
   return {
     severity: row.severity === null ? null : Number(row.severity),
     hazard: row.hazard,
@@ -58,6 +68,7 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
     peopleAffected: row.peopleAffected,
     blockVulnerability: vulnerability === null ? null : Number(vulnerability),
     corroborationCount: row.corroborationCount,
+    corroborationTrust: trustRow?.mean ? Number(trustRow.mean) : null,
     recurrence: row.recurrence,
     officialEndorsed: row.officialEndorsed,
   };

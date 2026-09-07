@@ -13,7 +13,7 @@
  * every screen quietly wrong and nothing would fail.
  */
 
-export const SCORING_VERSION = "1.0.0";
+export const SCORING_VERSION = "1.1.0";
 
 export const WEIGHTS = {
   /** From S2. What happens if nothing is done. */
@@ -51,7 +51,7 @@ export const TERM_LABELS: Record<TermKey, { label: string; source: string }> = {
   hazard: { label: "Hazard linkage", source: "AI classification (S2), NDMA hazard class" },
   peopleAffected: { label: "People affected", source: "The reporter's estimate at intake" },
   blockVulnerability: { label: "Block vulnerability", source: "Seeded district disaster management plan" },
-  corroborations: { label: "Corroborations", source: "Other people reporting the same problem (S3)" },
+  corroborations: { label: "Corroborations", source: "Other people reporting the same problem (S3), weighted by reporter trust (v1.1.0)" },
   recurrence: { label: "How often it happens", source: "The reporter's answer at intake" },
   officialEndorsement: { label: "Official endorsement", source: "Block officer verification" },
 };
