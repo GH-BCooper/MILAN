@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { CopyButton } from "@/components/copy-button";
 import { PipelineTrace } from "@/components/pipeline-trace";
 import { SiteHeader } from "@/components/site-header";
+import { projectTrace } from "@/lib/ai/trace-projection";
 import { db } from "@/lib/db";
 import { challenges } from "@/lib/db/schema";
 
@@ -45,6 +46,7 @@ export default async function SubmitSuccessPage({
 
   const [challenge] = await db
     .select({
+      id: challenges.id,
       trackingId: challenges.trackingId,
       districtCode: challenges.districtCode,
       status: challenges.status,
@@ -54,6 +56,13 @@ export default async function SubmitSuccessPage({
     .limit(1);
 
   if (!challenge) notFound();
+
+  /* Read the receipts before the page paints: a report that has already been
+   * through the pipeline (the demo walks a seed, not a fresh submit, most of
+   * the time) renders its trace complete on the very first frame — no fake
+   * spinner over work that finished hours ago. */
+  const projection = await projectTrace(challenge.id);
+  if (!projection) notFound();
 
   const publicPath = `/c/${challenge.trackingId}`;
 
@@ -98,14 +107,19 @@ export default async function SubmitSuccessPage({
 
         {/* The trace runs here, on the citizen's own success page. They watch
             their report being triaged, classified, deduplicated, scored and
-            routed in about six seconds — and so does a judge. It starts by
-            itself only for a report that has not been through the pipeline yet;
-            re-opening this page later shows the button instead of re-running. */}
+            routed — ticking over as the receipts land — and so does a judge.
+            It starts by itself only for a report that has not been through the
+            pipeline yet; a report that finished earlier renders complete from
+            the first paint, receipts attached. */}
         <PipelineTrace
           trackingId={challenge.trackingId}
           districtCode={challenge.districtCode}
-          autoStart={challenge.status === "SUBMITTED"}
+          autoStart={
+            (challenge.status === "SUBMITTED" || challenge.status === "NEEDS_MORE_INFO") &&
+            !projection.complete
+          }
           heading="What is happening to your report, right now"
+          initial={projection}
         />
 
         <section className="mt-10" aria-labelledby="next-heading">

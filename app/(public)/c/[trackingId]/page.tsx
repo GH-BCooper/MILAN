@@ -20,6 +20,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { currentUser } from "@/lib/auth/guards";
 import { framingProvenance } from "@/lib/ai/stages/p1_framing";
 import { handoffContract } from "@/lib/ai/triage";
+import { projectTrace } from "@/lib/ai/trace-projection";
 import { db } from "@/lib/db";
 import {
   blocks,
@@ -568,14 +569,17 @@ export default async function ChallengePage({
           </section>
         ) : null}
 
-        {/* The trace is replayable from here. Every tick corresponds to a row in
-            ai_runs; /admin/ai-runs is the receipt if anyone doubts it. */}
+        {/* The trace is replayable from here. Every card corresponds to rows
+            in ai_runs and routes; /admin/ai-runs is the receipt ledger if
+            anyone doubts it. Rendered complete from the receipts for a
+            report that has already been through the pipeline. */}
         <div id="pipeline">
           <PipelineTrace
             trackingId={c.trackingId}
             districtCode={c.districtCode}
             replay
             heading="How Milan handled this report"
+            initial={(await projectTrace(c.id)) ?? undefined}
           />
         </div>
 
