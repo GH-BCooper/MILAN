@@ -39,5 +39,9 @@ next-env.d.ts
 # milan
 backups/
 *.pmtiles
+# ...except the committed Jharkhand basemap. Invariant 8: the map must not
+# depend on a tile server, so the archive ships with the app and is served
+# same-origin from public/.
+!public/jharkhand.pmtiles
 .env*.local
 .env*
