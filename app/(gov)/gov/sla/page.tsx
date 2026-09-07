@@ -124,7 +124,7 @@ export default async function SlaPage() {
                     <tr key={o.kind} className="border-b border-border/60">
                       <td className="py-2 pr-3 font-medium">{o.kind.replace(/_/g, " ").toLowerCase()}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{o.n}</td>
-                      <td className={`py-2 pr-3 text-right tabular-nums ${o.overdue > 0 ? "font-semibold text-red-700" : ""}`}>{o.overdue}</td>
+                      <td className={`py-2 pr-3 text-right tabular-nums ${o.overdue > 0 ? "font-semibold text-red-200" : ""}`}>{o.overdue}</td>
                       <td className="py-2 text-xs text-muted-foreground">{o.next_due?.slice(0, 16) ?? "—"}</td>
                     </tr>
                   ))}

@@ -47,10 +47,10 @@ export function LedgerEntryRow({ entry }: { entry: EntryView }) {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 px-2 py-3 text-left hover:bg-muted"
+        className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg px-2 py-3 text-left transition-colors hover:bg-[rgb(124_92_255_/_0.12)]"
       >
         <span className="w-14 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">#{entry.seq}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-semibold">{entry.kind}</span>
+        <span className="rounded-full border border-[var(--grad-1)]/40 bg-white/5 px-2 py-0.5 text-[11px] font-semibold tracking-wide milan-gradient-text">{entry.kind}</span>
         <span className="min-w-0 flex-1 text-sm">
           {entry.trackingId ?? <span className="text-muted-foreground">no challenge</span>}
           {entry.author ? <span className="text-muted-foreground"> · {entry.author}</span> : null}
@@ -60,7 +60,7 @@ export function LedgerEntryRow({ entry }: { entry: EntryView }) {
       </button>
 
       {open ? (
-        <div className="space-y-3 bg-muted/50 px-2 pb-4 pt-1">
+        <div className="space-y-3 rounded-xl border border-[var(--grad-1)]/25 bg-white/[0.04] px-3 pb-4 pt-3 backdrop-blur-md">
           <dl className="grid gap-1 text-xs sm:grid-cols-3">
             <div className="sm:col-span-3">
               <dt className="font-semibold">content_hash</dt>
@@ -98,7 +98,7 @@ export function LedgerEntryRow({ entry }: { entry: EntryView }) {
               }}
             />
             {fileHash ? (
-              <p className={`mt-2 break-all font-mono text-xs ${fileHash === entry.contentHash ? "text-emerald-700" : "text-red-700"}`}>
+              <p className={`mt-2 break-all font-mono text-xs ${fileHash === entry.contentHash ? "text-emerald-200" : "text-red-200"}`}>
                 {fileName}: {fileHash}
                 <span className="block font-sans font-semibold">
                   {fileHash === entry.contentHash ? "Match — this is the file this entry commits to." : "No match against this entry's content hash."}

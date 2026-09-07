@@ -35,7 +35,7 @@ export function ErrorPanel({
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6">
-      <div className="rounded-lg border border-border p-6">
+      <div className="milan-glass rounded-xl p-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {refused ? "Refused" : "Something went wrong"}
         </p>

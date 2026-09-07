@@ -47,12 +47,12 @@ const RELATION_BLURB: Record<string, string> = {
 };
 
 const RELATION_COLOUR: Record<string, string> = {
-  ORIGINATOR: "border-emerald-300 bg-emerald-50",
-  CORROBORATOR: "border-teal-200 bg-teal-50",
-  TEAM_MEMBER: "border-blue-200 bg-blue-50",
-  MENTOR: "border-indigo-200 bg-indigo-50",
-  FUNDER: "border-amber-200 bg-amber-50",
-  IMPLEMENTER: "border-purple-200 bg-purple-50",
+  ORIGINATOR: "border-emerald-400/40 bg-emerald-500/15",
+  CORROBORATOR: "border-teal-400/40 bg-teal-500/15",
+  TEAM_MEMBER: "border-blue-400/40 bg-blue-500/15",
+  MENTOR: "border-indigo-400/40 bg-indigo-500/15",
+  FUNDER: "border-amber-400/40 bg-amber-500/15",
+  IMPLEMENTER: "border-purple-400/40 bg-purple-500/15",
 };
 
 export function sortCreditNodes(nodes: CreditNode[]): CreditNode[] {
@@ -80,10 +80,10 @@ export function CreditChain({ nodes, trackingId }: { nodes: CreditNode[]; tracki
     <ol className="space-y-0">
       {ordered.map((node, i) => (
         <li key={node.id} className="relative">
-          {i > 0 ? <div aria-hidden className="ml-6 h-4 w-px bg-border" /> : null}
-          <div className={`rounded-lg border p-3 ${RELATION_COLOUR[node.relation] ?? "border-border bg-muted"}`}>
+          {i > 0 ? <div aria-hidden className="ml-6 h-4 w-px bg-gradient-to-b from-[var(--grad-1)] to-[var(--grad-3)]" /> : null}
+          <div className={`rounded-xl border p-3 backdrop-blur-md ${RELATION_COLOUR[node.relation] ?? "border-border bg-white/[0.04]"}`}>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="rounded border border-black/10 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+              <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                 {RELATION_LABEL[node.relation] ?? node.relation.replace(/_/g, " ")}
               </span>
               {node.userId ? (
@@ -105,7 +105,7 @@ export function CreditChain({ nodes, trackingId }: { nodes: CreditNode[]; tracki
               {node.note ?? RELATION_BLURB[node.relation] ?? "Contributed to this challenge."}
             </p>
             {node.forkedFrom ? (
-              <p className="mt-1 rounded bg-white/70 px-2 py-1 text-[11px] font-medium">
+              <p className="mt-1 rounded bg-white/5 px-2 py-1 text-[11px] font-medium">
                 Carried over from the team that started this work. Their contribution is preserved and
                 attributed even though another team finished it.
               </p>

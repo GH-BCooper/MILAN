@@ -23,7 +23,7 @@ export default async function CapabilityPage() {
   if (!user.orgId) {
     return (
       <RoleShell title="Capability">
-        <p className="rounded-lg border border-border p-4 text-sm">
+        <p className="milan-glass rounded-xl p-4 text-sm">
           Your account is not attached to an institution.
         </p>
       </RoleShell>
@@ -37,7 +37,7 @@ export default async function CapabilityPage() {
       title="What your institution can take on"
       subtitle={`${summary.orgName} · ${caps.length} department${caps.length === 1 ? "" : "s"} declared · ${summary.capacityRemaining} slots open of ${summary.capacityDeclared}`}
     >
-      <div className="rounded-lg border border-border bg-muted p-4 text-sm">
+      <div className="milan-glass rounded-xl bg-muted p-4 text-sm">
         <p className="font-medium">Editing this changes what gets routed to you.</p>
         <p className="mt-1 text-muted-foreground">
           Milan scores every match on five signals: semantic fit against your declared work (

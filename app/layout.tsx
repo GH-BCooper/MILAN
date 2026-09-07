@@ -31,16 +31,16 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#1e3a8a",
+  themeColor: "#05060f",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${notoSans.variable} ${notoDevanagari.variable} h-full`}>
-      <body className="min-h-full flex flex-col antialiased">
+      <body className="min-h-full flex flex-col antialiased selection:text-white">
         <DemoClockBanner />
         {children}
-        <Toaster />
+        <Toaster theme="dark" />
       </body>
     </html>
   );

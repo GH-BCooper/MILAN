@@ -61,8 +61,12 @@ export function LifecycleStepper({ status }: { status: ChallengeStatus }) {
           return (
             <li key={s} className="flex-1 basis-8">
               <div
-                className={`h-1.5 rounded-full ${
-                  current ? "bg-primary" : reached ? "bg-primary/50" : "bg-border"
+                className={`h-1.5 rounded-full transition-all ${
+                  current
+                    ? "bg-gradient-to-r from-[var(--grad-1)] to-[var(--grad-3)] shadow-[0_0_14px_2px_rgba(124,92,255,0.75)]"
+                    : reached
+                      ? "bg-gradient-to-r from-[var(--grad-1)]/70 to-[var(--grad-2)]/70"
+                      : "bg-white/10"
                 }`}
                 aria-hidden
               />
@@ -76,7 +80,7 @@ export function LifecycleStepper({ status }: { status: ChallengeStatus }) {
       </ol>
 
       <p className="mt-3 text-sm">
-        <span className="font-semibold">{STATUS_LABEL[status]}</span>
+        <span className="font-semibold milan-gradient-text">{STATUS_LABEL[status]}</span>
         {onSpine >= 0 ? (
           <span className="text-muted-foreground">
             {" "}

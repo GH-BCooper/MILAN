@@ -165,25 +165,25 @@ export default async function GovHome() {
       <div className="space-y-8">
         {/* The two things a Collector opens this page for. */}
         <section className="grid gap-3 sm:grid-cols-3">
-          <Link href="/gov/gate" className="rounded-lg border border-amber-300 bg-amber-50 p-4 transition hover:border-amber-500">
-            <p className="text-3xl font-bold tabular-nums text-amber-900">{gateCount}</p>
-            <p className="mt-1 text-sm font-semibold text-amber-900">Waiting for your decision</p>
-            <p className="mt-1 text-xs text-amber-800">
+          <Link href="/gov/gate" className="rounded-lg border border-amber-400/40 bg-amber-500/15 p-4 transition hover:border-amber-400/40">
+            <p className="text-3xl font-bold tabular-nums text-amber-200">{gateCount}</p>
+            <p className="mt-1 text-sm font-semibold text-amber-200">Waiting for your decision</p>
+            <p className="mt-1 text-xs text-amber-200">
               Severity at or above 0.70. Nothing has been sent to any institution and nothing will be
               until you confirm it. Open the human gate →
             </p>
           </Link>
 
-          <Link href="/gov/sla" className="rounded-lg border border-red-300 bg-red-50 p-4 transition hover:border-red-500">
-            <p className="text-3xl font-bold tabular-nums text-red-900">{scalar("breached")}</p>
-            <p className="mt-1 text-sm font-semibold text-red-900">SLA breaches</p>
-            <p className="mt-1 text-xs text-red-800">
+          <Link href="/gov/sla" className="rounded-lg border border-red-400/40 bg-red-500/15 p-4 transition hover:border-red-400/40">
+            <p className="text-3xl font-bold tabular-nums text-red-200">{scalar("breached")}</p>
+            <p className="mt-1 text-sm font-semibold text-red-200">SLA breaches</p>
+            <p className="mt-1 text-xs text-red-200">
               Challenges nobody claimed inside twenty-one days. Full history and per-institution
               performance →
             </p>
           </Link>
 
-          <div className="rounded-lg border border-border p-4">
+          <div className="milan-glass rounded-xl p-4">
             <p className="text-3xl font-bold tabular-nums">{scalar("total")}</p>
             <p className="mt-1 text-sm font-semibold">Reports from this district</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -227,7 +227,7 @@ export default async function GovHome() {
                 <tbody>
                   {breaches.map((b) => (
                     <tr key={`${b.tracking_id}-${b.kind}`} className="border-b border-border/60">
-                      <td className="py-2 pr-3 text-lg font-bold tabular-nums text-red-700">{b.days_overdue}</td>
+                      <td className="py-2 pr-3 text-lg font-bold tabular-nums text-red-200">{b.days_overdue}</td>
                       <td className="py-2 pr-3">
                         <Link href={`/c/${b.tracking_id}`} className="font-medium underline-offset-4 hover:underline">
                           {b.title}
@@ -271,7 +271,7 @@ export default async function GovHome() {
             Darker is higher priority. Every marker links to the challenge, and every score on that
             page opens its own breakdown.
           </p>
-          <div className="h-[24rem] overflow-hidden rounded-lg border border-border">
+          <div className="h-[24rem] overflow-hidden milan-glass rounded-xl">
             <MilanMap
               ariaLabel={`Challenges in district ${district}, coloured by priority`}
               markers={points.map((p) => ({
@@ -316,7 +316,7 @@ export default async function GovHome() {
                       <td className="py-2 pr-3 text-right tabular-nums">{h.offered}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{h.claimed}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{h.delivered}</td>
-                      <td className="py-2 text-right tabular-nums font-semibold text-red-700">{h.breached}</td>
+                      <td className="py-2 text-right tabular-nums font-semibold text-red-200">{h.breached}</td>
                     </tr>
                   ))}
                 </tbody>

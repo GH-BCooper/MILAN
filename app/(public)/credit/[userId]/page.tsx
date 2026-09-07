@@ -87,7 +87,7 @@ export default async function CreditRecordPage({ params }: { params: Promise<{ u
                 </h2>
                 <ul className="mt-2 space-y-2">
                   {items.map((e) => (
-                    <li key={`${e.tracking_id}-${e.created_at}`} className="rounded-lg border border-border p-3">
+                    <li key={`${e.tracking_id}-${e.created_at}`} className="milan-glass rounded-xl p-3">
                       <Link href={`/c/${e.tracking_id}`} className="font-medium underline-offset-4 hover:underline">
                         {e.title}
                       </Link>

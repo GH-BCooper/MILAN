@@ -3,31 +3,47 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Milan is a government-facing citizen product. Restraint over decoration:
-   flat surfaces, high contrast, no gradients, no glassmorphism. The font stack
-   must render Devanagari correctly on Android, Windows and iOS — hence the
-   explicit Noto Sans Devanagari / Nirmala UI entries before the generic fallback. */
+/* Milan renders as a deep-space control surface: an aurora-gradient ground,
+   glass panels, and a violet→cyan accent ramp. Contrast is still held above
+   WCAG AA on every text token — colour is decoration, never the only signal.
+   The font stack must render Devanagari correctly on Android, Windows and iOS,
+   hence the explicit Noto Sans Devanagari / Nirmala UI entries. */
 :root {
-  --radius: 0.5rem;
-  --background: #ffffff;
-  --foreground: #111827;
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --popover: #ffffff;
-  --popover-foreground: #111827;
-  --primary: #1e3a8a;
+  --radius: 0.85rem;
+
+  --background: #05060f;
+  --foreground: #eef1ff;
+
+  --card: #0d1024;
+  --card-foreground: #eef1ff;
+  --popover: #0f1229;
+  --popover-foreground: #eef1ff;
+
+  --primary: #7c5cff;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #111827;
-  --muted: #f1f5f9;
-  --muted-foreground: #4b5563;
-  --accent: #e8edf7;
-  --accent-foreground: #1e3a8a;
-  --destructive: #b91c1c;
+  --secondary: #191d3d;
+  --secondary-foreground: #dfe4ff;
+
+  --muted: #141834;
+  --muted-foreground: #a3abd8;
+
+  --accent: #1d2350;
+  --accent-foreground: #c9d2ff;
+
+  --destructive: #ff4d6d;
   --destructive-foreground: #ffffff;
-  --border: #d1d5db;
-  --input: #d1d5db;
-  --ring: #1e3a8a;
+
+  --border: #262c58;
+  --input: #2a3164;
+  --ring: #8b7bff;
+
+  /* The accent ramp every gradient in the product is drawn from. */
+  --grad-1: #7c5cff;
+  --grad-2: #4f8cff;
+  --grad-3: #22d3ee;
+  --grad-4: #f472b6;
+
+  --glow: 0 0 0 1px rgb(124 92 255 / 0.18), 0 18px 50px -20px rgb(79 140 255 / 0.55);
 }
 
 @theme inline {
@@ -62,15 +78,277 @@
     border-color: var(--border);
     outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
   }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-milan-sans), "Noto Sans Devanagari", "Nirmala UI",
       system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    /* The aurora. Three fixed radial washes over the base ground — no image,
+       no animation cost on first paint, holds up at 320px. */
+    background-image:
+      radial-gradient(1100px 640px at 8% -8%, rgb(124 92 255 / 0.30), transparent 62%),
+      radial-gradient(950px 560px at 96% 4%, rgb(34 211 238 / 0.16), transparent 60%),
+      radial-gradient(1000px 700px at 50% 108%, rgb(244 114 182 / 0.13), transparent 62%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
+
   /* Accessibility: this is a citizen product used on cheap Android phones.
      44px is the WCAG 2.5.5 target size we hold every interactive element to. */
   button, a[role="button"], [data-slot="button"] {
     min-height: 44px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--grad-1) 45%, transparent);
+    color: #fff;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #080a18; }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: linear-gradient(180deg, var(--grad-1), var(--grad-2));
+  }
+
+  h1 {
+    background: linear-gradient(100deg, #ffffff 0%, #cfd7ff 42%, var(--grad-3) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.02em;
+  }
+
+  strong { color: #ffffff; }
+
+  a:focus-visible, button:focus-visible, [data-slot="button"]:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ── Component skins ─────────────────────────────────────────────────────────
+   Everything below is attribute-driven so a single sheet restyles every page
+   without touching a single call site. */
+@layer components {
+  [data-slot="card"] {
+    position: relative;
+    border-color: color-mix(in srgb, var(--grad-1) 22%, var(--border));
+    background:
+      linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02) 45%, rgb(255 255 255 / 0.045)),
+      color-mix(in srgb, var(--card) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: var(--glow);
+    overflow: hidden;
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  }
+  /* The hairline of light along the top edge of every panel. */
+  [data-slot="card"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--grad-1), var(--grad-3), transparent);
+    opacity: .75;
+    pointer-events: none;
+  }
+  [data-slot="card"]:hover {
+    border-color: color-mix(in srgb, var(--grad-2) 42%, var(--border));
+    box-shadow: 0 0 0 1px rgb(124 92 255 / 0.3), 0 26px 60px -22px rgb(79 140 255 / 0.7);
+  }
+
+  [data-slot="card-title"] {
+    letter-spacing: -0.01em;
+    color: #f4f6ff;
+  }
+
+  [data-slot="button"][data-variant="default"] {
+    background-image: linear-gradient(120deg, var(--grad-1), var(--grad-2) 55%, var(--grad-3));
+    background-size: 180% 100%;
+    background-position: 0% 50%;
+    border: 0;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 10px 30px -12px rgb(124 92 255 / 0.9);
+    transition: background-position .45s ease, box-shadow .25s ease, transform .15s ease;
+  }
+  [data-slot="button"][data-variant="default"]:hover {
+    background-position: 100% 50%;
+    box-shadow: 0 14px 38px -12px rgb(34 211 238 / 0.75);
+  }
+  [data-slot="button"][data-variant="default"]:active { transform: translateY(1px); }
+
+  [data-slot="button"][data-variant="outline"],
+  [data-slot="button"][data-variant="secondary"] {
+    background: rgb(255 255 255 / 0.04);
+    border: 1px solid color-mix(in srgb, var(--grad-1) 30%, var(--border));
+    color: var(--foreground);
+    backdrop-filter: blur(10px);
+  }
+  [data-slot="button"][data-variant="outline"]:hover,
+  [data-slot="button"][data-variant="secondary"]:hover {
+    background: rgb(124 92 255 / 0.16);
+    border-color: color-mix(in srgb, var(--grad-2) 55%, var(--border));
+    color: #fff;
+  }
+  [data-slot="button"][data-variant="destructive"] {
+    background-image: linear-gradient(120deg, #ff4d6d, #f472b6);
+    border: 0;
+    box-shadow: 0 10px 30px -12px rgb(255 77 109 / 0.8);
+  }
+  [data-slot="button"][data-variant="ghost"]:hover {
+    background: rgb(124 92 255 / 0.14);
+    color: #fff;
+  }
+
+  [data-slot="badge"][data-variant="default"] {
+    background-image: linear-gradient(120deg, var(--grad-1), var(--grad-3));
+    border: 0;
+    color: #fff;
+  }
+  [data-slot="badge"][data-variant="secondary"] {
+    background: rgb(255 255 255 / 0.07);
+    border: 1px solid color-mix(in srgb, var(--grad-1) 25%, var(--border));
+    color: var(--foreground);
+  }
+  [data-slot="badge"][data-variant="outline"] {
+    background: rgb(255 255 255 / 0.04);
+    backdrop-filter: blur(8px);
+  }
+
+  [data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"] {
+    background: rgb(255 255 255 / 0.045);
+    border-color: color-mix(in srgb, var(--grad-1) 24%, var(--border));
+    color: var(--foreground);
+    backdrop-filter: blur(8px);
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  [data-slot="input"]::placeholder, [data-slot="textarea"]::placeholder {
+    color: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
+  }
+  [data-slot="input"]:focus-visible,
+  [data-slot="textarea"]:focus-visible,
+  [data-slot="select-trigger"]:focus-visible {
+    background: rgb(255 255 255 / 0.07);
+    border-color: var(--grad-2);
+    box-shadow: 0 0 0 3px rgb(124 92 255 / 0.28), 0 0 24px -6px rgb(34 211 238 / 0.6);
+  }
+
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"],
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="tooltip-content"] {
+    background: color-mix(in srgb, var(--popover) 92%, transparent);
+    backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid color-mix(in srgb, var(--grad-1) 30%, var(--border));
+    box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.9), var(--glow);
+  }
+  [data-slot="dialog-overlay"], [data-slot="sheet-overlay"] {
+    background: rgb(3 4 12 / 0.72);
+    backdrop-filter: blur(6px);
+  }
+
+  [data-slot="tabs-list"] {
+    background: rgb(255 255 255 / 0.05);
+    border: 1px solid color-mix(in srgb, var(--grad-1) 22%, var(--border));
+    backdrop-filter: blur(10px);
+  }
+  [data-slot="tabs-trigger"][data-state="active"] {
+    background-image: linear-gradient(120deg, var(--grad-1), var(--grad-2));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 24px -12px rgb(124 92 255 / 0.9);
+  }
+
+  [data-slot="table"] thead th {
+    color: #c6cdf5;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: .68rem;
+  }
+  [data-slot="table"] tbody tr {
+    border-color: color-mix(in srgb, var(--border) 70%, transparent);
+    transition: background .18s ease;
+  }
+  [data-slot="table"] tbody tr:hover {
+    background: rgb(124 92 255 / 0.10);
+  }
+
+  [data-slot="separator"] {
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--grad-1) 60%, transparent), transparent) !important;
+    border: 0;
+  }
+
+  [data-slot="progress"] { background: rgb(255 255 255 / 0.08); }
+  [data-slot="progress-indicator"] {
+    background-image: linear-gradient(90deg, var(--grad-1), var(--grad-3));
+  }
+
+  [data-slot="alert"] {
+    background: rgb(255 255 255 / 0.05);
+    border: 1px solid color-mix(in srgb, var(--grad-1) 28%, var(--border));
+    backdrop-filter: blur(12px);
+  }
+
+  [data-slot="skeleton"] {
+    background: linear-gradient(90deg, rgb(255 255 255 / 0.05), rgb(124 92 255 / 0.18), rgb(255 255 255 / 0.05));
+    background-size: 200% 100%;
+    animation: milan-shimmer 1.4s linear infinite;
+  }
+}
+
+@layer utilities {
+  /* Gradient wordmark / headline text. */
+  .milan-gradient-text {
+    background-image: linear-gradient(100deg, var(--grad-1), var(--grad-2) 45%, var(--grad-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* A free-standing glass panel for markup that does not use <Card>. */
+  .milan-glass {
+    background: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.02));
+    border: 1px solid color-mix(in srgb, var(--grad-1) 22%, var(--border));
+    backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: var(--glow);
+  }
+
+  .milan-hairline {
+    background: linear-gradient(90deg, transparent, var(--grad-1), var(--grad-3), transparent);
+  }
+
+  .milan-glow { box-shadow: var(--glow); }
+
+  .milan-rise {
+    animation: milan-rise .5s cubic-bezier(.22,.9,.3,1) both;
+  }
+}
+
+@keyframes milan-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes milan-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
   }
 }

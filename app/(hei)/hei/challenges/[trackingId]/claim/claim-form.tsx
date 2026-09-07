@@ -265,7 +265,7 @@ export function ClaimForm({
       </section>
 
       {/* The demo beat and the principle in one control. */}
-      <section className="rounded-lg border border-border p-4">
+      <section className="milan-glass rounded-xl p-4">
         <div className="flex items-start gap-3">
           <input
             id="credit-citizen"
@@ -299,7 +299,7 @@ export function ClaimForm({
         </div>
       </section>
 
-      <section className="flex items-start gap-3 rounded-lg border border-border p-4">
+      <section className="flex items-start gap-3 milan-glass rounded-xl p-4">
         <input
           id="confirm-capacity"
           type="checkbox"

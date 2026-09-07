@@ -194,17 +194,17 @@ export default async function ChallengePage({
             <UnconfirmedTag />
           ) : null}
           {c.impactConfirmed && c.impactPartial ? (
-            <span className="rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-900">
+            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-200">
               the citizen says partly fixed
             </span>
           ) : null}
           {c.impactConfirmed && !c.impactPartial ? (
-            <span className="rounded border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 text-[11px] font-medium text-emerald-900">
+            <span className="rounded border border-emerald-400/40 bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-medium text-emerald-200">
               confirmed fixed by the citizen
             </span>
           ) : null}
           {c.impactDisputed ? (
-            <span className="rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[11px] font-medium text-red-900">
+            <span className="rounded border border-red-400/40 bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-200">
               disputed — the citizen says nothing changed
             </span>
           ) : null}
@@ -214,7 +214,7 @@ export default async function ChallengePage({
             </span>
           ) : null}
           {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
               Hazard: {c.hazard.replaceAll("_", " ")}
             </span>
           ) : null}
@@ -225,7 +225,7 @@ export default async function ChallengePage({
           ) : null}
         </div>
 
-        <section className="mt-6 rounded-lg border border-border p-4" aria-label="Progress">
+        <section className="mt-6 milan-glass rounded-xl p-4" aria-label="Progress">
           <LifecycleStepper status={c.status} />
         </section>
 
@@ -237,7 +237,7 @@ export default async function ChallengePage({
             The report
           </h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <article className="rounded-lg border border-border p-4">
+            <article className="milan-glass rounded-xl p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 As it was reported {c.bodyLang === "hi" ? "(हिन्दी)" : "(English)"}
               </h3>
@@ -246,7 +246,7 @@ export default async function ChallengePage({
               </p>
             </article>
 
-            <article className="rounded-lg border border-border p-4">
+            <article className="milan-glass rounded-xl p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 English working copy
               </h3>
@@ -313,7 +313,7 @@ export default async function ChallengePage({
               recording itself is here so anyone can check the transcript against it.
             </p>
             <div className="mt-3 grid gap-4 lg:grid-cols-3">
-              <div className="rounded-lg border border-border p-4">
+              <div className="milan-glass rounded-xl p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   The recording
                 </h3>
@@ -328,7 +328,7 @@ export default async function ChallengePage({
                   </div>
                 ))}
               </div>
-              <div className="rounded-lg border border-border p-4">
+              <div className="milan-glass rounded-xl p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   What was said {c.bodyLang === "hi" ? "(हिन्दी)" : `(${c.bodyLang})`}
                 </h3>
@@ -336,7 +336,7 @@ export default async function ChallengePage({
                   {c.bodyOriginal}
                 </p>
               </div>
-              <div className="rounded-lg border border-border p-4">
+              <div className="milan-glass rounded-xl p-4">
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   English working copy
                 </h3>
@@ -359,7 +359,7 @@ export default async function ChallengePage({
             </h2>
             <ul className="mt-3 grid gap-3 sm:grid-cols-3">
               {photos.map((m) => (
-                <li key={m.id} className="rounded-lg border border-border p-2">
+                <li key={m.id} className="milan-glass rounded-xl p-2">
                   {m.mime.startsWith("image/") ? (
                     // A citizen's photo of unknown dimensions from Supabase Storage.
                     // eslint-disable-next-line @next/next/no-img-element
@@ -388,7 +388,7 @@ export default async function ChallengePage({
         ) : null}
 
         <section id="details" className="mt-8 grid gap-4 sm:grid-cols-2" aria-label="Details">
-          <dl className="rounded-lg border border-border p-4">
+          <dl className="milan-glass rounded-xl p-4">
             <div className="flex justify-between gap-4 py-1">
               <dt className="text-sm text-muted-foreground">District</dt>
               <dd className="text-sm font-medium">
@@ -420,7 +420,7 @@ export default async function ChallengePage({
             </div>
           </dl>
 
-          <div id="corroborations" className="rounded-lg border border-border p-4">
+          <div id="corroborations" className="milan-glass rounded-xl p-4">
             <p className="text-sm text-muted-foreground">Reported by this many people</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">{c.corroborationCount}</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -472,7 +472,7 @@ export default async function ChallengePage({
               scoring function and sent a direct link, with a written reason and a clock.
             </p>
             {gateHeld ? (
-              <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+              <p className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
                 Severity is at or above 0.70, so nothing has been sent yet. A District Collector
                 confirms or overrides this shortlist first, and any override is recorded with a
                 written reason.
@@ -480,7 +480,7 @@ export default async function ChallengePage({
             ) : null}
             <ol className="mt-3 space-y-2">
               {offers.map((offer) => (
-                <li key={offer.id} className="rounded-lg border border-border p-4">
+                <li key={offer.id} className="milan-glass rounded-xl p-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-medium">
                       <span className="me-2 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
@@ -531,7 +531,7 @@ export default async function ChallengePage({
               Reference: {c.forwardedRef}
             </p>
             {contract ? (
-              <details className="mt-3 rounded-lg border border-border p-4">
+              <details className="mt-3 milan-glass rounded-xl p-4">
                 <summary className="cursor-pointer text-sm font-medium">
                   Exactly what we sent, and where
                 </summary>

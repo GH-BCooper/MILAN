@@ -33,7 +33,7 @@ export default async function EmergencyPage() {
       title="Emergency filter"
       subtitle="One switch. It changes what is shown and how it is sorted; it never changes a stored priority score."
     >
-      <div className={`rounded-lg border p-4 ${on ? "border-red-300 bg-red-50" : "border-border"}`}>
+      <div className={`rounded-lg border p-4 ${on ? "border-red-400/40 bg-red-500/15" : "border-border"}`}>
         <p className="text-sm font-semibold">{on ? `On — pinned to ${hazard?.replace(/_/g, " ").toLowerCase()}` : "Off"}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {on

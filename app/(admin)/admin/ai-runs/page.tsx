@@ -100,7 +100,7 @@ export default async function AiRunsPage({
       title="AI runs"
       subtitle={`Signed in as ${user.fullName}. Every model call Milan has made, ${total.toLocaleString("en-IN")} in total.`}
     >
-      <p className="rounded-lg border border-border bg-muted p-4 text-sm">
+      <p className="milan-glass rounded-xl bg-muted p-4 text-sm">
         Every stage that ticks over on a pipeline trace writes one row here, including the calls
         that failed and fell through to the next provider, and including cache hits. If the
         animation on the trace looked too smooth to be real, this is the table that settles it.
@@ -173,7 +173,7 @@ export default async function AiRunsPage({
         <h2 id="runs-heading" className="sr-only">
           Runs
         </h2>
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="overflow-x-auto milan-glass rounded-xl">
           <table className="w-full min-w-[62rem] text-sm">
             <thead>
               <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -210,9 +210,9 @@ export default async function AiRunsPage({
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
                         row.fallbackLevel === 2
-                          ? "bg-amber-100 text-amber-900"
+                          ? "bg-amber-500/15 text-amber-200"
                           : row.fallbackLevel === 1
-                            ? "bg-sky-100 text-sky-900"
+                            ? "bg-sky-500/15 text-sky-200"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >

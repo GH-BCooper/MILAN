@@ -38,40 +38,40 @@ export const STATUS_LABEL: Record<ChallengeStatus, string> = {
 };
 
 const TONE: Record<ChallengeStatus, string> = {
-  SUBMITTED: "bg-slate-100 text-slate-900 border-slate-300",
-  TRIAGED: "bg-slate-100 text-slate-900 border-slate-300",
-  CLASSIFIED: "bg-slate-100 text-slate-900 border-slate-300",
-  CLUSTERED: "bg-slate-100 text-slate-900 border-slate-300",
-  PRIORITISED: "bg-sky-100 text-sky-900 border-sky-300",
-  VERIFIED: "bg-sky-100 text-sky-900 border-sky-300",
-  ROUTED: "bg-indigo-100 text-indigo-900 border-indigo-300",
-  CLAIMED: "bg-indigo-100 text-indigo-900 border-indigo-300",
-  PROPOSAL_APPROVED: "bg-indigo-100 text-indigo-900 border-indigo-300",
-  IN_RESEARCH: "bg-indigo-100 text-indigo-900 border-indigo-300",
-  SOLUTION_PUBLISHED: "bg-emerald-100 text-emerald-900 border-emerald-300",
-  INDUSTRY_INTEREST: "bg-amber-100 text-amber-900 border-amber-300",
+  SUBMITTED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
+  TRIAGED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
+  CLASSIFIED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
+  CLUSTERED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
+  PRIORITISED: "bg-sky-500/15 text-sky-200 border-sky-400/40",
+  VERIFIED: "bg-sky-500/15 text-sky-200 border-sky-400/40",
+  ROUTED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
+  CLAIMED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
+  PROPOSAL_APPROVED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
+  IN_RESEARCH: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
+  SOLUTION_PUBLISHED: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
+  INDUSTRY_INTEREST: "bg-amber-500/15 text-amber-200 border-amber-400/40",
   // Deliberately not green. An implementer's claim is not a confirmation.
-  IMPLEMENTED: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  CITIZEN_VERIFIED: "bg-emerald-200 text-emerald-950 border-emerald-500",
-  CLOSED: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  REJECTED_UNSAFE: "bg-red-100 text-red-900 border-red-300",
-  FORWARDED_EXTERNAL: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  NEEDS_MORE_INFO: "bg-amber-100 text-amber-900 border-amber-300",
-  MERGED: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  UNCLAIMED_ESCALATED: "bg-orange-100 text-orange-900 border-orange-300",
-  BOUNTY_LISTED: "bg-amber-100 text-amber-900 border-amber-300",
-  AT_RISK: "bg-orange-100 text-orange-900 border-orange-300",
-  FORKED: "bg-violet-100 text-violet-900 border-violet-300",
-  PARKED: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  WITHDRAWN: "bg-neutral-200 text-neutral-800 border-neutral-400",
-  AGREEMENT_SIGNED: "bg-amber-100 text-amber-900 border-amber-300",
-  PILOT: "bg-amber-100 text-amber-900 border-amber-300",
-  DISPUTED: "bg-red-100 text-red-900 border-red-300",
+  IMPLEMENTED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  CITIZEN_VERIFIED: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
+  CLOSED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  REJECTED_UNSAFE: "bg-red-500/15 text-red-200 border-red-400/40",
+  FORWARDED_EXTERNAL: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  NEEDS_MORE_INFO: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+  MERGED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  UNCLAIMED_ESCALATED: "bg-orange-500/15 text-orange-200 border-orange-400/40",
+  BOUNTY_LISTED: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+  AT_RISK: "bg-orange-500/15 text-orange-200 border-orange-400/40",
+  FORKED: "bg-violet-500/15 text-violet-200 border-violet-400/40",
+  PARKED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  WITHDRAWN: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
+  AGREEMENT_SIGNED: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+  PILOT: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+  DISPUTED: "bg-red-500/15 text-red-200 border-red-400/40",
 };
 
 export function StatusBadge({ status }: { status: ChallengeStatus }) {
   return (
-    <Badge variant="outline" className={`font-medium ${TONE[status]}`}>
+    <Badge variant="outline" className={`font-medium backdrop-blur-md ${TONE[status]}`}>
       {STATUS_LABEL[status]}
     </Badge>
   );

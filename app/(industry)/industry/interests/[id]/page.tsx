@@ -64,14 +64,14 @@ export default async function InterestPage({ params }: { params: Promise<{ id: s
       subtitle={`On ${i.tracking_id}: ${i.challenge_title}. Currently ${i.state.toLowerCase()}.`}
     >
       <div className="space-y-6">
-        <section className="rounded-lg border border-border p-4">
+        <section className="milan-glass rounded-xl p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {i.requester ?? i.org_name} wrote, {i.created_at.slice(0, 10)}
           </p>
           <p className="mt-2 whitespace-pre-wrap text-sm">{i.message}</p>
         </section>
 
-        <section className="rounded-lg border border-border bg-muted p-4 text-sm">
+        <section className="milan-glass rounded-xl bg-muted p-4 text-sm">
           <p className="font-semibold">What accepting does, and what it does not.</p>
           <p className="mt-1 text-muted-foreground">
             Accepting writes a <span className="font-medium text-foreground">FUNDER</span> edge onto the
@@ -104,7 +104,7 @@ export default async function InterestPage({ params }: { params: Promise<{ id: s
 
         {canRespond && i.state === "EXPRESSED" ? <RespondForm interestId={i.id} /> : null}
         {i.state !== "EXPRESSED" ? (
-          <p className="rounded-lg border border-border p-4 text-sm">
+          <p className="milan-glass rounded-xl p-4 text-sm">
             This expression of interest was <span className="font-semibold">{i.state.toLowerCase()}</span>.
           </p>
         ) : null}

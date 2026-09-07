@@ -25,13 +25,13 @@ import type { ScoreResult, Term, TermKey } from "@/packages/scoring";
  * Colour is never the only signal here: the table below carries every number.
  */
 const TERM_COLOUR: Record<TermKey, string> = {
-  severity: "#1e3a8a",
-  hazard: "#b45309",
-  peopleAffected: "#0369a1",
-  blockVulnerability: "#4338ca",
-  corroborations: "#047857",
-  recurrence: "#7c3aed",
-  officialEndorsement: "#475569",
+  severity: "#7c5cff",
+  hazard: "#f59e0b",
+  peopleAffected: "#22d3ee",
+  blockVulnerability: "#4f8cff",
+  corroborations: "#10d9a0",
+  recurrence: "#c084fc",
+  officialEndorsement: "#94a3d8",
 };
 
 export interface PriorityBreakdownProps {
@@ -56,11 +56,11 @@ export function PriorityBreakdown({
   }));
 
   return (
-    <div className="rounded-lg border border-border">
+    <div className="milan-glass overflow-hidden rounded-xl">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-border p-4">
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">Priority score</p>
-          <p className="text-4xl font-bold tabular-nums">{score.total.toFixed(1)}</p>
+          <p className="text-5xl font-bold tabular-nums milan-gradient-text">{score.total.toFixed(1)}</p>
           <p className="text-xs text-muted-foreground">out of 100</p>
         </div>
         <p className="font-mono text-xs text-muted-foreground">
@@ -79,7 +79,7 @@ export function PriorityBreakdown({
                 <XAxis
                   type="number"
                   domain={[0, Math.max(25, ...data.map((d) => d.contribution))]}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "#a3abd8" }}
                   tickLine={false}
                   axisLine={false}
                 />
@@ -87,7 +87,7 @@ export function PriorityBreakdown({
                   type="category"
                   dataKey="name"
                   width={130}
-                  tick={{ fontSize: 11 }}
+                  tick={{ fontSize: 11, fill: "#a3abd8" }}
                   tickLine={false}
                   axisLine={false}
                 />

@@ -116,7 +116,7 @@ export default async function ArtifactPage({ params }: { params: Promise<{ id: s
         </section>
 
         {/* The prior-art panel — the answer to "a firm patents the student's work". */}
-        <section className="mt-6 rounded-lg border border-border bg-muted p-4">
+        <section className="mt-6 milan-glass rounded-xl bg-muted p-4">
           <h2 className="text-sm font-semibold">Prior art</h2>
           <dl className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
             <div>
@@ -217,7 +217,7 @@ export default async function ArtifactPage({ params }: { params: Promise<{ id: s
                 Nobody has downloaded this yet.
               </p>
             ) : (
-              <ul className="divide-y divide-border rounded-lg border border-border">
+              <ul className="divide-y divide-border milan-glass rounded-xl">
                 {log.map((l, i) => (
                   <li key={i} className="p-3 text-sm">
                     <span className="font-medium">{l.full_name ?? "Unnamed account"}</span>

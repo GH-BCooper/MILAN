@@ -47,7 +47,7 @@ export function EmergencyForm({ on, hazard, hazards }: { on: boolean; hazard: st
       </div>
 
       {state ? (
-        <p className="text-sm text-emerald-700" role="status">
+        <p className="text-sm text-emerald-200" role="status">
           {state.message}
         </p>
       ) : null}

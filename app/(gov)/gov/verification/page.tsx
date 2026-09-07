@@ -70,7 +70,7 @@ export default async function VerificationPage() {
       title="Field verification"
       subtitle={`${pending} report${pending === 1 ? "" : "s"} in ${district} not yet verified on the ground, grouped by block.`}
     >
-      <div className="rounded-lg border border-border bg-muted p-4 text-sm">
+      <div className="milan-glass rounded-xl bg-muted p-4 text-sm">
         <p className="font-semibold">What an endorsement is worth, exactly.</p>
         <p className="mt-1 text-muted-foreground">
           Official endorsement is a 0.06 term in the priority score — enough to move a report up a
@@ -95,7 +95,7 @@ export default async function VerificationPage() {
               </h2>
               <ul className="mt-2 space-y-3">
                 {items.map((r) => (
-                  <li key={r.tracking_id} className="rounded-lg border border-border p-4">
+                  <li key={r.tracking_id} className="milan-glass rounded-xl p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <Link href={`/c/${r.tracking_id}`} className="font-semibold underline-offset-4 hover:underline">
@@ -111,7 +111,7 @@ export default async function VerificationPage() {
                           {r.priority_score ? Number(r.priority_score).toFixed(3) : "—"}
                         </p>
                         {r.official_endorsed ? (
-                          <span className="rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-900">
+                          <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
                             verified in the field
                           </span>
                         ) : null}

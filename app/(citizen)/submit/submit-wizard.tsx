@@ -382,7 +382,7 @@ export function SubmitWizard({
               </p>
             </div>
 
-            <div className="rounded-lg border border-border bg-muted p-4">
+            <div className="milan-glass rounded-xl bg-muted p-4">
               <p className="text-sm font-medium">For example</p>
               <ul className="mt-2 space-y-2">
                 {EXAMPLES[state.bodyLang].map((example) => (
@@ -459,7 +459,7 @@ export function SubmitWizard({
                 {state.media.map((m) => (
                   <li
                     key={m.contentHash}
-                    className="flex items-center gap-3 rounded-lg border border-border p-3"
+                    className="flex items-center gap-3 milan-glass rounded-xl p-3"
                   >
                     {m.previewUrl ? (
                       // An arbitrary Supabase object of unknown dimensions, shown
@@ -496,7 +496,7 @@ export function SubmitWizard({
             ) : null}
 
             {state.media.length > 0 ? (
-              <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+              <div className="flex items-start gap-3 milan-glass rounded-xl p-3">
                 <input
                   id="consent"
                   type="checkbox"
@@ -602,7 +602,7 @@ export function SubmitWizard({
                 {PEOPLE_BUCKETS.map((b) => (
                   <label
                     key={b.value}
-                    className="flex min-h-11 items-center gap-3 rounded-lg border border-border p-3"
+                    className="flex min-h-11 items-center gap-3 milan-glass rounded-xl p-3"
                   >
                     <input
                       type="radio"
@@ -624,7 +624,7 @@ export function SubmitWizard({
                 {RECURRENCE.map((r) => (
                   <label
                     key={r}
-                    className="flex min-h-11 items-center gap-3 rounded-lg border border-border p-3"
+                    className="flex min-h-11 items-center gap-3 milan-glass rounded-xl p-3"
                   >
                     <input
                       type="radio"
@@ -752,7 +752,7 @@ export function SubmitWizard({
               />
             </div>
 
-            <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+            <div className="flex items-start gap-3 milan-glass rounded-xl p-3">
               <input
                 id="approve"
                 type="checkbox"
@@ -774,7 +774,7 @@ export function SubmitWizard({
         {/* ----------------------------------------------- step 6: the review */}
         {state.step === 6 ? (
           <div className="space-y-5">
-            <section className="rounded-lg border border-border p-4">
+            <section className="milan-glass rounded-xl p-4">
               <h2 className="text-sm font-semibold">Your words, exactly as you wrote them</h2>
               <p lang={state.bodyLang} className="mt-2 whitespace-pre-wrap text-base">
                 {state.bodyOriginal}
@@ -800,7 +800,7 @@ export function SubmitWizard({
                 ["Urgency", `${state.urgencySelfReport} of 5`],
                 ["Photos", state.media.length === 0 ? "None" : `${state.media.length} attached`],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-border p-3">
+                <div key={label} className="milan-glass rounded-xl p-3">
                   <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
                   <dd className="mt-0.5 text-sm font-medium">{value}</dd>
                 </div>

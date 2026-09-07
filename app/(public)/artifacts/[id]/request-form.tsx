@@ -30,7 +30,7 @@ export function RequestAccessForm({ artifactId }: { artifactId: string }) {
         {pending ? "Sending…" : "Request access"}
       </button>
       {state ? (
-        <p className={`text-sm ${state.ok ? "text-emerald-700" : "text-red-700"}`} role="status">
+        <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
           {state.message}
         </p>
       ) : null}
