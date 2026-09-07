@@ -9,7 +9,7 @@ import { execRaw } from "@/lib/db/raw";
 import { domainEnum, hazardEnum, type ChallengeStatus } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Challenges" };
+export const metadata = { title: "Solutions" };
 
 /**
  * What a firm can see.
@@ -39,7 +39,7 @@ interface Row extends Record<string, unknown> {
   abstract: string | null;
 }
 
-export default async function IndustryDiscover({
+export default async function IndustrySolutions({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -65,7 +65,7 @@ export default async function IndustryDiscover({
     LEFT JOIN districts d ON d.code = c.district_code
     LEFT JOIN projects p ON p.challenge_id = c.id
     LEFT JOIN organization o ON o.id = p.org_id
-    WHERE c.status IN ('IN_RESEARCH','BOUNTY_LISTED','UNCLAIMED_ESCALATED','ROUTED')
+    WHERE c.status IN ('SOLUTION_PUBLISHED','INDUSTRY_INTEREST','AGREEMENT_SIGNED','PILOT','IMPLEMENTED','CITIZEN_VERIFIED','CLOSED')
       ${district ? sql`AND c.district_code = ${district}` : sql``}
       ${domain ? sql`AND c.domain::text = ${domain}` : sql``}
       ${hazard ? sql`AND c.hazard::text = ${hazard}` : sql``}
@@ -78,8 +78,8 @@ export default async function IndustryDiscover({
 
   return (
     <RoleShell
-      title="Challenges"
-      subtitle={`Signed in as ${user.fullName}. ${rows.length} open challenge${rows.length === 1 ? "" : "s"} still looking for a partner, filterable by domain, solvability, district and NDMA hazard. Already-published work lives under Solutions.`}
+      title="Solutions"
+      subtitle={`Signed in as ${user.fullName}. ${rows.length} published solution${rows.length === 1 ? "" : "s"}, filterable by domain, solvability, district and NDMA hazard.`}
     >
       <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <label className="flex flex-col gap-1 text-xs font-medium">
@@ -120,7 +120,7 @@ export default async function IndustryDiscover({
         </label>
         <div className="flex items-end gap-2">
           <button className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">Filter</button>
-          <Link href="/industry/discover" className="h-11 rounded-md border border-input px-4 text-sm font-semibold leading-[2.75rem]">
+          <Link href="/industry/solutions" className="h-11 rounded-md border border-input px-4 text-sm font-semibold leading-[2.75rem]">
             Clear
           </Link>
         </div>

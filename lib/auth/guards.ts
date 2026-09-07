@@ -80,14 +80,17 @@ export async function requireUser(returnTo?: string): Promise<MilanUser> {
 /** Redirects a signed-out user to /login, a wrong-role user to /, and an
  *  HEI/Industry user whose proof of affiliation is not yet admin-approved to
  *  the pending-review screen — one change point instead of a tier check
- *  copy-pasted into every /hei and /industry page. */
+ *  copy-pasted into every /hei and /industry page.
+ *
+ *  The platform administrator can open every other portal — citizen, university
+ *  and industry screens included — so the demo can walk them from one account.
+ *  Government pages are the deliberate exception: gov decisions (the severity
+ *  gate, SLA overrides) are a distinct chain of custody and an admin account
+ *  clicking through as "government" would blur who actually made the call, so
+ *  `requireRole("GOVERNMENT", ...)` never grants ADMIN a free pass. */
 export async function requireRole(...roles: Role[]): Promise<MilanUser> {
   const user = await requireUser();
-  // Owner-directed (item 9a): the platform administrator can open every portal —
-  // citizen, university, industry and government screens included — so the demo
-  // can walk all of them from one account. Admin-initiated writes still record
-  // the actor id and, for destructive challenge actions, a mandatory reason.
-  if (user.role === "ADMIN") return user;
+  if (user.role === "ADMIN" && !roles.includes("GOVERNMENT")) return user;
   if (!roles.includes(user.role)) {
     redirect("/?denied=role");
   }

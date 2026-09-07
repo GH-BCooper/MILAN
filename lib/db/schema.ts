@@ -894,9 +894,39 @@ export const impactConfirmations = pgTable(
   (t) => [index("impact_confirmations_challenge_idx").on(t.challengeId)],
 );
 
+/**
+ * A bug report filed from the public "Report a bug" link. Separate from
+ * `challenges` on purpose — a platform defect is not a citizen's civic problem,
+ * and mixing the two would pollute the routing pipeline with software issues.
+ * Reviewed only at /admin/bugs.
+ */
+export const bugReportTypeEnum = pgEnum("bug_report_type", [
+  "UI_VISUAL",
+  "CRASH_ERROR",
+  "INCORRECT_DATA",
+  "PERFORMANCE",
+  "OTHER",
+]);
+
+export const bugReports = pgTable(
+  "bug_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reporterId: text("reporter_id").references(() => user.id),
+    type: bugReportTypeEnum("type").notNull(),
+    issue: text("issue").notNull(),
+    photoKey: text("photo_key"),
+    pageUrl: text("page_url"),
+    status: text("status").notNull().default("OPEN"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("bug_reports_status_idx").on(t.status), index("bug_reports_created_idx").on(t.createdAt)],
+);
+
 /* ------------------------------------------------------------- type aliases */
 
 export type ChallengeStatus = (typeof challengeStatusEnum.enumValues)[number];
+export type BugReportType = (typeof bugReportTypeEnum.enumValues)[number];
 export type Role = (typeof roleEnum.enumValues)[number];
 export type OrgVerificationStatus = (typeof orgVerificationStatusEnum.enumValues)[number];
 export type Domain = (typeof domainEnum.enumValues)[number];

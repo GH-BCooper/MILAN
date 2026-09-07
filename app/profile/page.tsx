@@ -8,10 +8,10 @@ import { eq } from "drizzle-orm";
 
 import { RoleBadge } from "@/components/role-badge";
 import { RoleShell } from "@/components/role-shell";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { organization, user as userTable, userProfiles } from "@/lib/db/schema";
+import { AvatarUpload } from "./avatar-upload";
 import { PasswordForm } from "./password-form";
 
 export const dynamic = "force-dynamic";
@@ -70,10 +70,7 @@ export default async function ProfilePage() {
       <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
         <div className="milan-glass rounded-xl p-5">
           <div className="flex items-center gap-4">
-            <Avatar className="size-16">
-              {row?.image ? <AvatarImage src={row.image} alt="" /> : null}
-              <AvatarFallback>{initials || "?"}</AvatarFallback>
-            </Avatar>
+            <AvatarUpload image={row?.image ?? null} initials={initials} />
             <div>
               <p className="text-lg font-semibold">{me.fullName}</p>
               <div className="mt-1">
@@ -82,7 +79,7 @@ export default async function ProfilePage() {
             </div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Profile photo upload is not enabled in this build — the initials stand in.
+            Click your photo to change it — JPEG, PNG or WebP, EXIF stripped on upload.
           </p>
         </div>
 
