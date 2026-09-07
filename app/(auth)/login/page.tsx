@@ -16,12 +16,12 @@ export default async function LoginPage({
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Sign in</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        You do not need an account to report a problem or to track one. Sign in to see your own
-        reports, or to work as a university, industry or government user.
+        An account is required to report a problem, browse a challenge&apos;s full detail, or work as
+        a university, industry or government user. Signing in takes you straight to your own page.
       </p>
 
       <div className="mt-6">
-        <LoginForm next={next && next.startsWith("/") ? next : "/me"} />
+        <LoginForm next={next && next.startsWith("/") ? next : "/post-login"} />
       </div>
 
       <p className="mt-6 text-sm text-muted-foreground">

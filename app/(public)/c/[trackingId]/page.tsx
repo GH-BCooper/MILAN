@@ -15,7 +15,7 @@ import { parseBreakdown } from "@/packages/scoring";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
-import { currentUser } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
 import { framingProvenance } from "@/lib/ai/stages/p1_framing";
 import { handoffContract } from "@/lib/ai/triage";
 import { db } from "@/lib/db";
@@ -64,7 +64,9 @@ export default async function ChallengePage({
 }) {
   const { trackingId } = await params;
   const decoded = decodeURIComponent(trackingId).toUpperCase();
-  const user = await currentUser();
+  // The list at /challenges is public; a specific report's full detail —
+  // credit chain, priority breakdown, pipeline trace — requires an account.
+  const user = await requireUser(`/c/${trackingId}`);
 
   const [row] = await db
     .select({

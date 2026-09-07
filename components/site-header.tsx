@@ -4,18 +4,7 @@ import { RoleBadge } from "@/components/role-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { currentUser } from "@/lib/auth/guards";
-
-/** Where each role lands when it clicks its own name. */
-const HOME_FOR = {
-  CITIZEN: "/me",
-  HEI_MEMBER: "/hei",
-  INDUSTRY: "/industry/discover",
-  GOVERNMENT: "/gov",
-  ADMIN: "/admin/triage",
-  ASSISTED_SUBMITTER: "/me",
-  INDEPENDENT_INNOVATOR: "/me",
-  EXPERT_PANEL: "/gov",
-} as const;
+import { HOME_FOR } from "@/lib/auth/home";
 
 export async function SiteHeader() {
   const user = await currentUser();

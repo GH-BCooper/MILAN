@@ -27,8 +27,8 @@ const PORTALS = [
     nameHi: "नागरिक",
     tagline: "Report it. Track it. Confirm it.",
     body:
-      "Describe a problem in Hindi or English, get a tracking ID in seconds, and confirm when it is actually fixed. No login, ever.",
-    points: ["Bilingual submission", "Tracking ID, no account", "You confirm the outcome"],
+      "Describe a problem in Hindi or English, get a tracking ID in seconds, and confirm when it is actually fixed. A verified account keeps every report attached to you.",
+    points: ["Bilingual submission", "Email + phone verified", "You confirm the outcome"],
     accent: "from-[var(--grad-3)] to-[var(--grad-2)]",
   },
   {

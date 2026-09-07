@@ -55,7 +55,11 @@ export default async function AdminTriage() {
         <Link className="text-primary underline underline-offset-4" href="/admin/ai-runs">
           the AI run log
         </Link>{" "}
-        for what every stage actually did.
+        for what every stage actually did, or{" "}
+        <Link className="text-primary underline underline-offset-4" href="/admin/verification">
+          the verification queue
+        </Link>{" "}
+        for HEI/Industry proof-of-affiliation reviews.
       </p>
 
       {queue.length === 0 ? (

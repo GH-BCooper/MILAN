@@ -206,10 +206,50 @@ async function sendViaMailpit(baseUrl: string, from: string, input: NotifyInput)
  * outbox, so /admin can show a judge exactly what the citizen would receive.
  */
 async function sendSms(input: NotifyInput): Promise<boolean> {
-  if (process.env.SMS_MODE !== "mock" || !input.phone) return false;
+  if (!input.phone) return false;
+
   const text = `${input.title}. ${input.body} ${absolute(input.actionUrl)}`.slice(0, 320);
+
+  // Real gateway: Twilio, if fully configured. A failure here throws and is
+  // reported by notify() as a failed channel — it never fails the caller
+  // (invariant 8).
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  const from = process.env.TWILIO_FROM_NUMBER;
+  if (sid && token && from) {
+    return sendViaTwilio(sid, token, from, input.phone, text);
+  }
+
+  // Offline / no-credentials fallback: the mock inbox, declared as a stub.
+  if (process.env.SMS_MODE !== "mock") return false;
   console.info(`[notify/sms:mock] to=${maskPhone(input.phone)} ${text}`);
   await recordMock("sms", input, text);
+  return true;
+}
+
+async function sendViaTwilio(
+  sid: string,
+  token: string,
+  from: string,
+  to: string,
+  text: string,
+): Promise<boolean> {
+  const body = new URLSearchParams({ To: to.replace(/\s/g, ""), From: from, Body: text });
+  const response = await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body,
+    },
+  );
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`twilio HTTP ${response.status}: ${detail.slice(0, 160)}`);
+  }
   return true;
 }
 

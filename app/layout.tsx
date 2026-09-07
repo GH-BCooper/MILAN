@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
-import { DemoClockBanner } from "@/components/demo-clock-banner";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -57,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider>
-          <DemoClockBanner />
           {children}
           <Toaster />
         </ThemeProvider>

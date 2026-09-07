@@ -5,7 +5,7 @@ import { FeatureGrid, PortalShell, StepList } from "../../landing-chrome";
 export const metadata: Metadata = {
   title: "Citizen portal",
   description:
-    "Report a local problem in Hindi or English, track it with an ID and no account, and confirm the outcome yourself.",
+    "Report a local problem in Hindi or English, track it with an ID, and confirm the outcome yourself with a verified account.",
 };
 
 /* Deliberately the shallowest of the three portals. A person reporting a
@@ -17,8 +17,8 @@ export default function CitizenPortalPage() {
       eyebrow="For citizens · नागरिकों के लिए"
       title="Report it. Track it. Confirm it."
       titleHi="समस्या दर्ज करें, स्थिति देखें, पुष्टि करें"
-      lede="Tell us the problem in your own language. You get a tracking ID in seconds and no account is ever required. When somebody says it is fixed, you are the one who confirms it — the impact counter moves on your confirmation and nowhere else."
-      primary={{ href: "/submit", label: "Report a problem" }}
+      lede="Tell us the problem in your own language. A quick, free account with an email and phone verification code keeps every report attached to you. When somebody says it is fixed, you are the one who confirms it — the impact counter moves on your confirmation and nowhere else."
+      primary={{ href: "/register", label: "Create an account" }}
       secondary={{ href: "/track", label: "Track with an ID" }}
     >
       <StepList
@@ -49,12 +49,12 @@ export default function CitizenPortalPage() {
 
       <FeatureGrid
         heading="Everything you can do"
-        blurb="No login is needed for any of these."
+        blurb="Reporting and full report detail need a verified account; tracking by ID and the list of challenges stay open to everyone."
         features={[
           {
             href: "/submit",
             title: "Report a problem",
-            tag: "No login",
+            tag: "Sign in",
             body: "Bilingual form with photo and location. A tracking ID in seconds.",
           },
           {

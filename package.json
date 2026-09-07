@@ -2,7 +2,7 @@
   "name": "milan",
   "version": "0.1.0",
   "private": true,
-  "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
+  "description": "Milan — citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
+    "@react-map/india": "^1.0.21",
     "@supabase/supabase-js": "^2.45.0",
     "better-auth": "^1.2.0",
     "class-variance-authority": "^0.7.1",

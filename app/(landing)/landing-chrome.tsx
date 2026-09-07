@@ -1,12 +1,16 @@
 import Link from "next/link";
 
+import { RoleBadge } from "@/components/role-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { currentUser } from "@/lib/auth/guards";
+import { HOME_FOR } from "@/lib/auth/home";
 
-/** The landing site has its own chrome. It deliberately does NOT render
- *  SiteHeader: the dashboard header is role-aware and auth-bound, and the
- *  landing page must render identically for a signed-out judge. */
-export function LandingHeader() {
+/** The landing site has its own chrome, but it is still auth-aware: a signed-in
+ *  judge who lands back on "/" must see themselves signed in, with a route into
+ *  their dashboard — not a "Sign in" button that implies they were logged out. */
+export async function LandingHeader() {
+  const user = await currentUser();
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div aria-hidden className="milan-hairline h-px w-full opacity-70" />
@@ -36,12 +40,29 @@ export function LandingHeader() {
 
         <div className="ms-auto flex items-center gap-2 sm:gap-3">
           <ThemeToggle />
-          <Button asChild variant="outline" size="sm">
-            <Link href="/login">Sign in</Link>
-          </Button>
-          <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/submit">Report a problem</Link>
-          </Button>
+          {user ? (
+            <>
+              <RoleBadge role={user.role} districtCode={user.districtCode} />
+              <Link
+                className="text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)]"
+                href={HOME_FOR[user.role]}
+              >
+                {user.fullName}
+              </Link>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/logout">Sign out</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/login">Sign in</Link>
+              </Button>
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link href="/submit">Report a problem</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>

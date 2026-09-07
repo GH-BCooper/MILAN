@@ -32,6 +32,7 @@ export interface MilanUser {
   orgId: string | null;
   preferredLang: string;
   verifiedTier: number;
+  orgVerificationStatus: "NOT_APPLICABLE" | "PENDING" | "APPROVED" | "REJECTED";
 }
 
 /** The session and profile of the current request, or null when signed out. */
@@ -58,8 +59,13 @@ export async function currentUser(): Promise<MilanUser | null> {
     orgId: profile?.orgId ?? null,
     preferredLang: profile?.preferredLang ?? "en",
     verifiedTier: profile?.verifiedTier ?? 1,
+    orgVerificationStatus: profile?.orgVerificationStatus ?? "NOT_APPLICABLE",
   };
 }
+
+/** HEI/Industry roles need an admin-approved proof of affiliation before their
+ *  dashboard unlocks (see /admin/verification). Everyone else is exempt. */
+const ORG_PROOF_ROLES: Role[] = ["HEI_MEMBER", "INDUSTRY"];
 
 /** Redirects to /login when signed out. Use in pages. */
 export async function requireUser(returnTo?: string): Promise<MilanUser> {
@@ -71,7 +77,10 @@ export async function requireUser(returnTo?: string): Promise<MilanUser> {
   return user;
 }
 
-/** Redirects a signed-out user to /login and a wrong-role user to /. */
+/** Redirects a signed-out user to /login, a wrong-role user to /, and an
+ *  HEI/Industry user whose proof of affiliation is not yet admin-approved to
+ *  the pending-review screen — one change point instead of a tier check
+ *  copy-pasted into every /hei and /industry page. */
 export async function requireRole(...roles: Role[]): Promise<MilanUser> {
   const user = await requireUser();
   if (!roles.includes(user.role)) {
@@ -79,6 +88,9 @@ export async function requireRole(...roles: Role[]): Promise<MilanUser> {
     // given the GOVERNMENT role too; implicit superuser access is how audit
     // trails get holes in them.
     redirect("/?denied=role");
+  }
+  if (ORG_PROOF_ROLES.includes(user.role) && user.orgVerificationStatus !== "APPROVED") {
+    redirect("/verify-account/pending");
   }
   return user;
 }

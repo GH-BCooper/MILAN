@@ -22,7 +22,7 @@ export const metadata = { title: "Challenges" };
 export const dynamic = "force-dynamic";
 
 const selectClass =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-auto";
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
 
 export default async function ChallengesPage({
   searchParams,
@@ -96,8 +96,11 @@ export default async function ChallengesPage({
 
         {/* A plain GET form: filters live in the URL, so a filtered view is a
             link somebody can send to a colleague, and it works with no JS. */}
-        <form method="get" className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="sm:w-56">
+        <form
+          method="get"
+          className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="district" className="text-xs font-medium text-muted-foreground">
               District
             </label>
@@ -111,7 +114,7 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="sm:w-56">
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="domain" className="text-xs font-medium text-muted-foreground">
               Domain
             </label>
@@ -125,7 +128,7 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="sm:w-56">
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="hazard" className="text-xs font-medium text-muted-foreground">
               Hazard
             </label>
@@ -139,7 +142,7 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="sm:w-56">
+          <div className="flex flex-col gap-1.5">
             <label htmlFor="status" className="text-xs font-medium text-muted-foreground">
               Status
             </label>
@@ -153,19 +156,22 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
             <button
               type="submit"
               className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
             >
               Apply
             </button>
-            <Link
+            {/* A plain <a>, not next/link: a soft client nav leaves the
+                uncontrolled <select> DOM nodes on their stale values, so the
+                filters look un-cleared. A full document load resets them. */}
+            <a
               href="/challenges"
               className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
             >
               Clear
-            </Link>
+            </a>
           </div>
         </form>
 
@@ -199,12 +205,12 @@ export default async function ChallengesPage({
                   </Link>
                   <StatusBadge status={r.status} />
                   {r.hazard && r.hazard !== "NONE" ? (
-                    <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+                    <span className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
                       {r.hazard.replaceAll("_", " ")}
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-base">{r.title}</p>
+                <p className="mt-1 text-base font-medium text-foreground">{r.title}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {r.districtName ?? "District not given"} ·{" "}
                   {r.corroborationCount === 1

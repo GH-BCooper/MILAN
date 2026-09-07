@@ -12,63 +12,66 @@
 :root {
   --radius: 0.85rem;
 
-  /* ── LIGHT (default document values) ─────────────────────────────────── */
-  --background: #f6f7fc;
-  --foreground: #131736;
+  /* ── LIGHT (default document values) ──────────────────────────────────
+     Forest & Earth: resilience and ground-truth. Forest green is the civic
+     voice; terracotta is the field accent. Warm off-white ground. */
+  --background: #f4f6f4;
+  --foreground: #16211c;
 
   --card: #ffffff;
-  --card-foreground: #131736;
+  --card-foreground: #16211c;
   --popover: #ffffff;
-  --popover-foreground: #131736;
+  --popover-foreground: #16211c;
 
-  --primary: #5b3fe0;
+  --primary: #1b4332;
   --primary-foreground: #ffffff;
-  --secondary: #eceefb;
-  --secondary-foreground: #26295a;
+  --secondary: #e4ebe5;
+  --secondary-foreground: #223129;
 
-  --muted: #eef0fa;
-  --muted-foreground: #555d8c;
+  --muted: #eaefea;
+  --muted-foreground: #4a5a50;
 
-  --accent: #e8ebfd;
-  --accent-foreground: #33377a;
+  --accent: #f1e4dc;
+  --accent-foreground: #7a3c22;
 
-  --destructive: #d92348;
+  --destructive: #b23a2e;
   --destructive-foreground: #ffffff;
 
-  --border: #d9dcf0;
-  --input: #c8cce8;
-  --ring: #6d55e8;
+  --border: #d5ddd6;
+  --input: #c4cfc5;
+  --ring: #2d6a4f;
 
-  /* The accent ramp every gradient in the product is drawn from. Darkened in
-     light mode so gradient text stays legible on a white ground. */
-  --grad-1: #5b3fe0;
-  --grad-2: #2563eb;
-  --grad-3: #0891b2;
-  --grad-4: #db2777;
+  /* The accent ramp every gradient in the product is drawn from:
+     forest → sage → terracotta. Kept deep in light mode for legible
+     gradient text on the warm-white ground. */
+  --grad-1: #1b4332;
+  --grad-2: #2d6a4f;
+  --grad-3: #40916c;
+  --grad-4: #c85a32;
 
-  --glow: 0 0 0 1px rgb(91 63 224 / 0.10), 0 18px 40px -24px rgb(37 99 235 / 0.45);
+  --glow: 0 0 0 1px rgb(27 67 50 / 0.10), 0 18px 40px -24px rgb(45 106 79 / 0.40);
 
   /* Surface tokens — the glass recipe, so panels invert with the theme. */
   --glass-top: rgb(255 255 255 / 0.92);
-  --glass-bottom: rgb(246 247 252 / 0.75);
+  --glass-bottom: rgb(244 246 244 / 0.75);
   --glass-solid: color-mix(in srgb, var(--card) 90%, transparent);
   --tint: rgb(255 255 255 / 0.85);
   --tint-strong: rgb(255 255 255 / 0.95);
-  --tint-hover: rgb(91 63 224 / 0.10);
-  --ink-strong: #0b0f2c;
-  --ink-soft: #2c3160;
-  --scrollbar-track: #e7e9f6;
-  --overlay: rgb(19 23 54 / 0.45);
-  --shadow-deep: 0 30px 70px -34px rgb(19 23 54 / 0.35);
+  --tint-hover: rgb(27 67 50 / 0.09);
+  --ink-strong: #0f1a14;
+  --ink-soft: #2c3a32;
+  --scrollbar-track: #e3e9e3;
+  --overlay: rgb(18 24 22 / 0.45);
+  --shadow-deep: 0 30px 70px -34px rgb(18 24 22 / 0.32);
 
-  /* The aurora, light skin: three pale washes, no colour cast on body text. */
+  /* The aurora, light skin: pale forest + terracotta washes, no cast on text. */
   --aurora:
-    radial-gradient(1100px 640px at 8% -8%, rgb(91 63 224 / 0.13), transparent 62%),
-    radial-gradient(950px 560px at 96% 4%, rgb(8 145 178 / 0.10), transparent 60%),
-    radial-gradient(1000px 700px at 50% 108%, rgb(219 39 119 / 0.07), transparent 62%);
+    radial-gradient(1100px 640px at 8% -8%, rgb(27 67 50 / 0.12), transparent 62%),
+    radial-gradient(950px 560px at 96% 4%, rgb(64 145 108 / 0.10), transparent 60%),
+    radial-gradient(1000px 700px at 50% 108%, rgb(200 90 50 / 0.07), transparent 62%);
 
-  /* The headline ramp. Light: ink → violet. Dark: white → cyan. */
-  --headline: linear-gradient(100deg, #0b0f2c 0%, #2b2f66 42%, var(--grad-1) 100%);
+  /* The headline ramp. Light: charcoal → forest. Dark: white → sage. */
+  --headline: linear-gradient(100deg, #0f1a14 0%, #1b4332 42%, #40916c 100%);
 
   color-scheme: light;
 }
@@ -77,57 +80,57 @@
    next-themes sets .dark on <html>. Only tokens are redefined here; not one
    rule below this block knows which theme it is running in. */
 .dark {
-  --background: #05060f;
-  --foreground: #eef1ff;
+  --background: #121816;
+  --foreground: #e8efe9;
 
-  --card: #0d1024;
-  --card-foreground: #eef1ff;
-  --popover: #0f1229;
-  --popover-foreground: #eef1ff;
+  --card: #1a2420;
+  --card-foreground: #e8efe9;
+  --popover: #1c2722;
+  --popover-foreground: #e8efe9;
 
-  --primary: #7c5cff;
-  --primary-foreground: #ffffff;
-  --secondary: #191d3d;
-  --secondary-foreground: #dfe4ff;
+  --primary: #52b788;
+  --primary-foreground: #0f1a14;
+  --secondary: #22302b;
+  --secondary-foreground: #d6e4dc;
 
-  --muted: #141834;
-  --muted-foreground: #a3abd8;
+  --muted: #1e2a25;
+  --muted-foreground: #9db0a5;
 
-  --accent: #1d2350;
-  --accent-foreground: #c9d2ff;
+  --accent: #33241c;
+  --accent-foreground: #e7b99f;
 
-  --destructive: #ff4d6d;
+  --destructive: #e5634d;
   --destructive-foreground: #ffffff;
 
-  --border: #262c58;
-  --input: #2a3164;
-  --ring: #8b7bff;
+  --border: #2c3a34;
+  --input: #33443c;
+  --ring: #52b788;
 
-  --grad-1: #7c5cff;
-  --grad-2: #4f8cff;
-  --grad-3: #22d3ee;
-  --grad-4: #f472b6;
+  --grad-1: #52b788;
+  --grad-2: #40916c;
+  --grad-3: #74c69d;
+  --grad-4: #e17b48;
 
-  --glow: 0 0 0 1px rgb(124 92 255 / 0.18), 0 18px 50px -20px rgb(79 140 255 / 0.55);
+  --glow: 0 0 0 1px rgb(82 183 136 / 0.18), 0 18px 50px -20px rgb(64 145 108 / 0.50);
 
-  --glass-top: rgb(255 255 255 / 0.07);
+  --glass-top: rgb(255 255 255 / 0.06);
   --glass-bottom: rgb(255 255 255 / 0.02);
   --glass-solid: color-mix(in srgb, var(--card) 88%, transparent);
   --tint: rgb(255 255 255 / 0.045);
   --tint-strong: rgb(255 255 255 / 0.07);
-  --tint-hover: rgb(124 92 255 / 0.16);
+  --tint-hover: rgb(82 183 136 / 0.16);
   --ink-strong: #ffffff;
-  --ink-soft: #c6cdf5;
-  --scrollbar-track: #080a18;
-  --overlay: rgb(3 4 12 / 0.72);
+  --ink-soft: #c3d6cb;
+  --scrollbar-track: #0d1210;
+  --overlay: rgb(8 12 10 / 0.72);
   --shadow-deep: 0 30px 80px -30px rgb(0 0 0 / 0.9);
 
   --aurora:
-    radial-gradient(1100px 640px at 8% -8%, rgb(124 92 255 / 0.30), transparent 62%),
-    radial-gradient(950px 560px at 96% 4%, rgb(34 211 238 / 0.16), transparent 60%),
-    radial-gradient(1000px 700px at 50% 108%, rgb(244 114 182 / 0.13), transparent 62%);
+    radial-gradient(1100px 640px at 8% -8%, rgb(82 183 136 / 0.24), transparent 62%),
+    radial-gradient(950px 560px at 96% 4%, rgb(116 198 157 / 0.14), transparent 60%),
+    radial-gradient(1000px 700px at 50% 108%, rgb(225 123 72 / 0.13), transparent 62%);
 
-  --headline: linear-gradient(100deg, #ffffff 0%, #cfd7ff 42%, var(--grad-3) 100%);
+  --headline: linear-gradient(100deg, #ffffff 0%, #c7e5d5 42%, var(--grad-3) 100%);
 
   color-scheme: dark;
 }
@@ -243,7 +246,7 @@
   }
   [data-slot="card"]:hover {
     border-color: color-mix(in srgb, var(--grad-2) 42%, var(--border));
-    box-shadow: 0 0 0 1px rgb(124 92 255 / 0.3), 0 26px 60px -22px rgb(79 140 255 / 0.7);
+    box-shadow: 0 0 0 1px rgb(82 183 136 / 0.3), 0 26px 60px -22px rgb(64 145 108 / 0.7);
   }
 
   [data-slot="card-title"] {
@@ -258,12 +261,12 @@
     border: 0;
     color: #fff;
     font-weight: 600;
-    box-shadow: 0 10px 30px -12px rgb(124 92 255 / 0.9);
+    box-shadow: 0 10px 30px -12px rgb(82 183 136 / 0.9);
     transition: background-position .45s ease, box-shadow .25s ease, transform .15s ease;
   }
   [data-slot="button"][data-variant="default"]:hover {
     background-position: 100% 50%;
-    box-shadow: 0 14px 38px -12px rgb(34 211 238 / 0.75);
+    box-shadow: 0 14px 38px -12px rgb(116 198 157 / 0.75);
   }
   [data-slot="button"][data-variant="default"]:active { transform: translateY(1px); }
 
@@ -281,7 +284,7 @@
     color: var(--ink-strong);
   }
   [data-slot="button"][data-variant="destructive"] {
-    background-image: linear-gradient(120deg, #ff4d6d, #f472b6);
+    background-image: linear-gradient(120deg, #b23a2e, #e17b48);
     border: 0;
     box-shadow: 0 10px 30px -12px rgb(255 77 109 / 0.8);
   }
@@ -320,7 +323,7 @@
   [data-slot="select-trigger"]:focus-visible {
     background: var(--tint-strong);
     border-color: var(--grad-2);
-    box-shadow: 0 0 0 3px rgb(124 92 255 / 0.28), 0 0 24px -6px rgb(34 211 238 / 0.6);
+    box-shadow: 0 0 0 3px rgb(82 183 136 / 0.28), 0 0 24px -6px rgb(116 198 157 / 0.6);
   }
 
   [data-slot="popover-content"],
@@ -348,7 +351,7 @@
     background-image: linear-gradient(120deg, var(--grad-1), var(--grad-2));
     color: #fff;
     border-color: transparent;
-    box-shadow: 0 8px 24px -12px rgb(124 92 255 / 0.9);
+    box-shadow: 0 8px 24px -12px rgb(82 183 136 / 0.9);
   }
 
   [data-slot="table"] thead th {
