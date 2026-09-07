@@ -13,7 +13,7 @@
  */
 import { DOMAINS, HAZARDS, type S2Input } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 
 export const SYSTEM = `You classify one citizen report for Milan, a Government of Jharkhand disaster
 risk reduction platform. Milan works on mitigation and preparedness in peacetime, not on emergency
@@ -107,6 +107,52 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       capital_works: false,
       confidence: 0.82,
       rationale: "Human-elephant conflict destroying a standing crop: a livelihood loss, not an NDMA hazard class.",
+    }),
+  },
+  // DRAFT — WATER vs HEALTHCARE, ENVIRONMENT vs HEALTHCARE, and a sub-0.7 severity, per the HUMAN note.
+  {
+    input:
+      "The hand pump water in our tola tastes salty and the children's teeth are brown and brittle. The " +
+      "anganwadi teacher says it is fluoride.",
+    output: JSON.stringify({
+      domain: "WATER",
+      hazard: "NONE",
+      hazard_strength: 0,
+      severity: 0.74,
+      solvability: "RESEARCH",
+      capital_works: false,
+      confidence: 0.84,
+      rationale: "Contaminated drinking water is a WATER problem; the dental effect is a consequence, not the domain.",
+    }),
+  },
+  {
+    input:
+      "The iron ore crusher near our colony throws red dust on the paddy and we cough all winter. The " +
+      "doctor says our lungs are damaged.",
+    output: JSON.stringify({
+      domain: "ENVIRONMENT",
+      hazard: "NONE",
+      hazard_strength: 0,
+      severity: 0.71,
+      solvability: "POLICY",
+      capital_works: false,
+      confidence: 0.8,
+      rationale: "Dust pollution from a crusher is an environmental hazard affecting health; domain is ENVIRONMENT, not HEALTHCARE.",
+    }),
+  },
+  {
+    input:
+      "The bus stop shelter blew away in the last storm and elders wait in the sun. It is inconvenient but " +
+      "nobody is in danger.",
+    output: JSON.stringify({
+      domain: "PUBLIC_SERVICE",
+      hazard: "NONE",
+      hazard_strength: 0,
+      severity: 0.42,
+      solvability: "CAPITAL_WORKS",
+      capital_works: true,
+      confidence: 0.86,
+      rationale: "A missing shelter is an access inconvenience with no life-safety consequence; severity stays well below the gate.",
     }),
   },
 ];
