@@ -166,6 +166,23 @@ export const districts = pgTable("districts", {
   lng: numeric("lng", { precision: 9, scale: 6 }),
   /** 0.00–1.00. A weighted term in the priority score (Phase 2). */
   vulnerabilityIndex: numeric("vulnerability_index", { precision: 3, scale: 2 }),
+  /* Task 4.9 — district reference data (JDIP Part 4.1). Populated from
+   * seed-data/districts-enrichment.csv by the seeder; nullable so existing
+   * rows migrate cleanly and a partial dataset says "not recorded" rather
+   * than inventing a default. */
+  /** One of the five administrative divisions of Jharkhand. */
+  division: text("division"),
+  /** Headcount from the reference census for the dataset. */
+  population: integer("population"),
+  /** 0–1 fraction of people with internet access; a planning input for the
+   *  voice/SMS-first story, which is why it lives next to the SLA board. */
+  internetPenetration: numeric("internet_penetration", { precision: 4, scale: 3 }),
+  /** Percent (0–100) Scheduled Tribe population — the Adivasi belt is the
+   *  platform's core constituency and the Hindi/Santali localisation case. */
+  tribalPopulationPct: numeric("tribal_population_pct", { precision: 4, scale: 1 }),
+  /** Per-hazard 0–1 vulnerability map: `{ "FLOOD": 0.8, "DROUGHT": 0.4 }`.
+   *  jsonb because the hazard enum is the universe, not a fixed column set. */
+  disasterVulnerability: jsonb("disaster_vulnerability"),
 });
 
 export const blocks = pgTable(

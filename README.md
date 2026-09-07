@@ -103,7 +103,8 @@ prior, declared honestly), and a separate API and inference service.
 pnpm install
 cp .env.example .env.local          # then fill in DATABASE_URL, DIRECT_URL, BETTER_AUTH_SECRET
 pnpm db:migrate
-pnpm seed --reset                   # 24 districts, 263 blocks, 20 orgs, 25 challenges
+pnpm seed --reset                   # 24 districts (incl. the JDIP 4.1 reference columns), 263 blocks, 20 orgs, 25 challenges
+pnpm seed:ai                        # optional: pre-sync every seed through the real pipeline (receipts on first load)
 pnpm dev                            # http://localhost:3000
 ```
 

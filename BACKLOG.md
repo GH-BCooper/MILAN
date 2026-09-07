@@ -302,6 +302,16 @@ already partly answered in code and you should know which:
 `PHASE_1_LEARN.md` §8. Answer all ten without looking anything up. If you cannot, re-read §2, §3
 and §4 of that file before Phase 2 — the Phase 2 build assumes you can.
 
+### 2.13 Reconcile the district reference data against the JDIP Part 4.1 table
+
+`seed-data/districts-enrichment.csv` (Task 4.9) carries division, population, internet penetration,
+tribal share and a per-hazard vulnerability map for all 24 districts. Populations and tribal shares
+are Census 2011 and the divisions are the state's standard five, but **internet_penetration is an
+NFHS-5-based planning estimate**, and the vulnerability figures are hand-tuned. When the official
+JDIP Part 4.1 table is available, overwrite these columns from it — the DC district pages read them
+directly, and a number a judge can contradict is worse than a blank. Provenance is written down per
+column in `seed-data/README.md`.
+
 ---
 
 ## 3. THINGS THAT WILL BITE YOU — read before you touch anything
