@@ -12,7 +12,7 @@
  */
 import type { S3AdjudicateInput } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 
 export const SYSTEM = `You compare two citizen reports from Jharkhand and decide whether they
 describe THE SAME physical problem at THE SAME place — not merely the same kind of problem.
@@ -67,6 +67,17 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       same_problem: false,
       confidence: 0.85,
       rationale: "Two different hand pumps in the same village, and two different failures: contamination versus breakdown.",
+    }),
+  },
+  // DRAFT — Hindi/English pair of the SAME problem (the script-mismatch negative already covered).
+  {
+    input:
+      "A: कोयल नदी के बांध में दरार आ गई है और बरसात में पानी घुसता है।\n" +
+      "B: The Koel river embankment has a crack and water seeps in during the rains.",
+    output: JSON.stringify({
+      same_problem: true,
+      confidence: 0.9,
+      rationale: "Same structure and failure in two languages: the Koel embankment crack near the village.",
     }),
   },
 ];

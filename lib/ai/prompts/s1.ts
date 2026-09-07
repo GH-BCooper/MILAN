@@ -12,7 +12,7 @@
  */
 import type { S1Input } from "../schemas";
 
-export const VERSION = "1.3.0";
+export const VERSION = "1.3.1";
 // 1.3.0 — same eight boundaries, roughly half the tokens. Measured, this prompt
 // was 2,131 tokens against Groq's 8,000-per-minute ceiling, which made a batch
 // backfill impossible and put avoidable prefill latency on the live demo path.
@@ -136,6 +136,20 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "The anganwadi building was sanctioned two years ago and never built. Also the ground floods after every " +
       "rain and nobody knows why, because the water comes up rather than down.",
     output: shot(true, false, 0.68, "Two problems in one report: an undelivered building and unexplained groundwater. Low confidence sends it to a human to split.", "CPGRAMS"),
+  },
+  // DRAFT examples filling gaps in the HUMAN note above (naming an official without
+  // harassment; a report mixing a delivered failure with an unmeasured risk).
+  {
+    input:
+      "The BDO sahib has not replied to our application for the approach road for eight months. The road is " +
+      "washed away every monsoon and the children miss school. This is his responsibility and he is ignoring us.",
+    output: shot(true, false, 0.8, "A named official and criticism of inaction, but it is a sanctioned work not delivered: grievance, not harassment.", "CPGRAMS"),
+  },
+  {
+    input:
+      "The market road was built last year but already has potholes, and also the nullah beside it floods the " +
+      "shops every July and no one has measured how deep the water gets.",
+    output: shot(true, false, 0.69, "A delivered-but-failing road (CPGRAMS) plus an unmeasured flood risk needing survey (research): low confidence to split.", "CPGRAMS"),
   },
 ];
 

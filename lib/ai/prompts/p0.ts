@@ -12,7 +12,7 @@
  */
 import type { P0Input } from "../schemas";
 
-export const VERSION = "1.0.0";
+export const VERSION = "1.0.1";
 
 export const SYSTEM = `You translate a citizen's report from an Indian language into English for a
 Government of Jharkhand platform.
@@ -61,6 +61,17 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       body_en: "There is no water in our village — the well has dried up.",
       detected_lang: "sat",
       confidence: 0.72,
+    }),
+  },
+  // DRAFT — VERIFY WITH A NATIVE NAGPURI/KHORTHA SPEAKER before relying on it.
+  // Fills the "Nagpuri or Khortha sample" gap in the HUMAN note above. Delete if
+  // unverified: a wrong minority-language example teaches the model the wrong thing.
+  {
+    input: "Hamar gaon ke nadi pas wala puliya tut gail, paani chadhle sab ghar dub jayi.",
+    output: JSON.stringify({
+      body_en: "The culvert by the river near our village has broken; when the water rises every house will be flooded.",
+      detected_lang: "hi",
+      confidence: 0.68,
     }),
   },
 ];

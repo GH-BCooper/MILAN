@@ -131,22 +131,33 @@ function absolute(path: string): string {
 }
 
 /**
- * Resend. Absent a key this returns false rather than throwing, and the caller
- * records "email: not configured" — which is the truth, and better than a
- * pretend success on a slide.
+ * Email delivery. Resend is the online path; when no Resend key is configured
+ * we fall through to Mailpit so the offline demo can still show a routing
+ * notification landing in an inbox at localhost:8025 — no external API, no key,
+ * nothing that can fail on a conference wifi. Either way, a missing channel is
+ * reported ("email: not configured"), never faked.
  */
 async function sendEmail(input: NotifyInput): Promise<boolean> {
-  const key = process.env.RESEND_API_KEY;
   const from = process.env.NOTIFY_FROM;
-  if (!key || !from || !input.email) return false;
+  if (!from || !input.email) return false;
 
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey) return sendViaResend(resendKey, from, input);
+
+  const mailpit = process.env.MAILPIT_URL;
+  if (mailpit) return sendViaMailpit(mailpit, from, input);
+
+  return false;
+}
+
+async function sendViaResend(key: string, from: string, input: NotifyInput): Promise<boolean> {
   const url = absolute(input.actionUrl);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify({
       from,
-      to: [input.email],
+      to: [input.email!],
       subject: input.title,
       text: `${input.body}\n\n${url}\n\nMilan — Government of Jharkhand`,
     }),
@@ -155,6 +166,33 @@ async function sendEmail(input: NotifyInput): Promise<boolean> {
   if (!response.ok) {
     const body = await response.text().catch(() => "");
     throw new Error(`resend HTTP ${response.status}: ${body.slice(0, 160)}`);
+  }
+  return true;
+}
+
+/**
+ * Offline path: POST straight into Mailpit's inbox via its HTTP send API (the
+ * same endpoint its SMTP receiver uses internally). Mailpit runs in
+ * docker-compose, so the judge watches the routing notification arrive at
+ * localhost:8025 on screen. For a literal SMTP transport, swap this for
+ * nodemailer -> :1025.
+ */
+async function sendViaMailpit(baseUrl: string, from: string, input: NotifyInput): Promise<boolean> {
+  const url = absolute(input.actionUrl);
+  const response = await fetch(`${baseUrl.replace(/\/+$/, "")}/api/v1/send`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      from,
+      to: [input.email!],
+      subject: input.title,
+      text: `${input.body}\n\n${url}\n\nMilan — Government of Jharkhand`,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(`mailpit HTTP ${response.status}: ${body.slice(0, 160)}`);
   }
   return true;
 }

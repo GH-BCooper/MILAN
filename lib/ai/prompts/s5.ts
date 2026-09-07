@@ -14,7 +14,7 @@
  */
 import type { S5ReasonInput } from "../schemas";
 
-export const VERSION = "1.1.0";
+export const VERSION = "1.1.1";
 // 1.1.0 — trimmed from three worked examples to two, and shortened both.
 // Measured on the seed set, three near-identical examples added roughly 800
 // tokens of prefill to every one of the three concurrent reason calls, which
@@ -82,6 +82,41 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       reason:
         "Matched to Central University of Jharkhand, Environmental Sciences: a close fit to the department's declared environmental monitoring work, 62 km from the reported location, with previous delivered work in this domain.",
       confidence: 0.9,
+    }),
+  },
+  // DRAFT — distance-led match (nearby polytechnic) and capacity-as-third-term, per the HUMAN note.
+  {
+    input: JSON.stringify({
+      institution: "Government Polytechnic, Jamshedpur",
+      department: "Civil Engineering",
+      lab: null,
+      terms: [
+        { label: "Distance", detail: "9 km from the reported location", contribution: 0.22 },
+        { label: "Semantic fit", detail: "general civil-works match to the department", contribution: 0.14 },
+        { label: "Track record", detail: "previous road-drainage work in the district", contribution: 0.05 },
+      ],
+    }),
+    output: JSON.stringify({
+      reason:
+        "Matched to Government Polytechnic, Jamshedpur, Civil Engineering: only 9 km from the reported location, a general civil-works fit to the department, with previous road-drainage work in the district.",
+      confidence: 0.89,
+    }),
+  },
+  {
+    input: JSON.stringify({
+      institution: "BIT Sindri",
+      department: "Mining Engineering",
+      lab: "Rock Mechanics Laboratory",
+      terms: [
+        { label: "Semantic fit", detail: "match to the lab's subsidence monitoring work", contribution: 0.2 },
+        { label: "Specialisation overlap", detail: "lab tags cover subsidence and ground stability", contribution: 0.17 },
+        { label: "Declared capacity", detail: "4 capstone slots open this window", contribution: 0.13 },
+      ],
+    }),
+    output: JSON.stringify({
+      reason:
+        "Matched to BIT Sindri, Mining Engineering — Rock Mechanics Laboratory: a semantic match to the lab's subsidence monitoring work, tags covering ground stability, with 4 capstone slots open this window.",
+      confidence: 0.92,
     }),
   },
 ];
