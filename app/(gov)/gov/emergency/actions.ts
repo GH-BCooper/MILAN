@@ -59,7 +59,7 @@ export async function setEmergency(_prev: { message: string } | null, form: Form
       // will fire on the next reaper, which in an emergency is the point.
       const rows = (await tx.execute(sql`
         UPDATE sla_deadlines d
-        SET due_at = ${at}::timestamptz + (d.due_at - ${at}::timestamptz) * ${EMERGENCY_TIME_SCALE}::float8,
+        SET due_at = ${at.toISOString()}::timestamptz + (d.due_at - ${at.toISOString()}::timestamptz) * ${EMERGENCY_TIME_SCALE}::float8,
             payload = COALESCE(d.payload, '{}'::jsonb) || jsonb_build_object('preEmergencyDueAt', to_jsonb(d.due_at))
         WHERE d.fired_at IS NULL AND d.cancelled_at IS NULL
           AND d.kind <> 'ANNUAL_REVIEW'
