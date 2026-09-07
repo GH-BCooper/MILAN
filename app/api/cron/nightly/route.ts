@@ -31,10 +31,12 @@ async function handle(request: Request) {
 
   const { rescoreAll } = await import("@/lib/ai/stages/s4");
   const rescored = await rescoreAll();
+  const { decayAllTrust } = await import("@/lib/credit/trust-writers");
+  const trust = await decayAllTrust();
   const drained = await drainOutbox();
   const anchor = await anchorLedger();
 
-  return NextResponse.json({ rescored, drained, anchor });
+  return NextResponse.json({ rescored, trust, drained, anchor });
 }
 
 export const GET = handle;

@@ -791,8 +791,15 @@ export const demoState = pgTable("demo_state", {
      *  EMERGENCY_TIME_SCALE (reversibly — see /gov/emergency). Never a stored
      *  priority score. */
     emergencyHazard: text("emergency_hazard"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+    /**
+     * When lib/credit/trust-writers last decayed everyone's trust toward the
+     * baseline. Stored here (not computed from "now") so a cron run that fires
+     * twice, or not at all for a week, decays exactly the days that elapsed —
+     * the same reasoning as the clock offset living here.
+     */
+    trustDecayedAt: timestamp("trust_decayed_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  });
 
 export const industryInterests = pgTable(
   "industry_interests",

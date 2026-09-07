@@ -16,6 +16,7 @@ import "server-only";
 import { and, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
+import { awardMerge } from "@/lib/credit/trust-writers";
 import { db } from "@/lib/db";
 import { transition } from "@/lib/db/stateMachine";
 import { appendEntry } from "@/lib/ledger/append";
@@ -289,6 +290,29 @@ export async function mergeInto(args: {
   const newCount = survivor.corroborationCount + carried;
 
   await db.transaction(async (tx: Tx) => {
+    // Both reporters earn merge credit (loophole row 7's trust writer): two
+    // independent people describing one physical problem is the platform's
+    // cheapest proof a report was real. Fails soft on purpose.
+    try {
+      const [survivorRow] = await tx
+        .select({ reporterId: challenges.reporterId })
+        .from(challenges)
+        .where(eq(challenges.id, survivor.id))
+        .limit(1);
+      await awardMerge(
+        tx,
+        {
+          survivorReporterId: survivorRow?.reporterId ?? null,
+          loserReporterId: loser.reporterId,
+          survivorTrackingId: survivor.trackingId,
+          loserTrackingId: loser.trackingId,
+        },
+        at,
+      );
+    } catch (e) {
+      console.error("[trust] merge award failed", e);
+    }
+
     // The unique index is (challenge_id, user_id): an anonymous merge (null
     // user) can happen more than once, a signed-in one cannot, which is
     // exactly the anti-brigading behaviour we want.

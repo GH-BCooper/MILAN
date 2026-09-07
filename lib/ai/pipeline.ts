@@ -22,6 +22,7 @@ import { and, eq, like } from "drizzle-orm";
 
 import { clockNow, elapsedMs } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { penaliseUnsafe } from "@/lib/credit/trust-writers";
 import { appendEntry } from "@/lib/ledger/append";
 import {
   blocks,
@@ -969,6 +970,19 @@ async function rejectUnsafe(ctx: Ctx, category: string, rationale: string): Prom
       at,
       payload: { decision: "REJECTED_UNSAFE", category, mediaPurged: media.length, by: "S1", at: at.toISOString() },
     });
+
+    // The sharp cost (loophole row 7): one unsafe report costs more trust than
+    // five verified reports earn, so brigading stays unprofitable. Fails soft —
+    // a trust write must never block the rejection itself.
+    try {
+      await penaliseUnsafe(
+        tx,
+        { reporterId: ctx.challenge.reporterId, trackingId: ctx.challenge.trackingId, category },
+        at,
+      );
+    } catch (e) {
+      console.error("[trust] penalise on REJECTED_UNSAFE failed", e);
+    }
   });
   ctx.challenge = { ...ctx.challenge, status: "REJECTED_UNSAFE" };
 }

@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
 import { execRaw } from "@/lib/db/raw";
+import { tierLabel } from "@/lib/credit/trust";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Credit record" };
@@ -32,8 +33,15 @@ interface Row extends Record<string, unknown> {
 export default async function CreditRecordPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params;
 
-  const who = await execRaw<{ full_name: string; role: string; org_name: string | null }>(sql`
-    SELECT p.full_name, p.role::text AS role, o.name AS org_name
+  const who = await execRaw<{
+    full_name: string;
+    role: string;
+    org_name: string | null;
+    trust_score: string | null;
+    verified_tier: number | null;
+  }>(sql`
+    SELECT p.full_name, p.role::text AS role, o.name AS org_name,
+           p.trust_score::text AS trust_score, p.verified_tier AS verified_tier
     FROM user_profiles p
     LEFT JOIN organization o ON o.id = p.org_id
     WHERE p.user_id = ${userId}
@@ -71,6 +79,32 @@ export default async function CreditRecordPage({ params }: { params: Promise<{ u
           {edges.length} recorded contribution{edges.length === 1 ? "" : "s"}. Every one is also a row
           in the append-only ledger, so nothing on this page can be removed — including by us.
         </p>
+
+        {/* Loophole row 7, made public: trust is earned only at CITIZEN_VERIFIED
+            events, lost on unsafe reports, and decays toward 0.50 — so it is
+            shown where the person can see their own record, with the policy. */}
+        <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="text-sm font-semibold">
+              Reporter trust {who[0].trust_score ? Number(who[0].trust_score).toFixed(2) : "0.50"}
+              <span className="font-normal text-muted-foreground"> / 1.00</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {tierLabel(Number(who[0].verified_tier ?? 1))}
+            </p>
+          </div>
+          <div className="mt-2 h-2 w-full max-w-sm overflow-hidden rounded-full bg-border" aria-hidden>
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${Math.round(Number(who[0].trust_score ?? 0.5) * 100)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Earned only when a report or corroboration is confirmed by the citizen who reported the
+            problem. Lost sharply on unsafe reports. Decays toward 0.50, so old credit never
+            subsidises new brigading. Every change is in the audit log.
+          </p>
+        </div>
 
         {edges.length === 0 ? (
           <p className="mt-6 rounded-lg border border-dashed border-border bg-muted p-6 text-sm text-muted-foreground">

@@ -22,6 +22,13 @@ export interface ScoringInput {
   peopleAffected: number | null;
   blockVulnerability: number | null;
   corroborationCount: number | null;
+  /**
+   * Mean trust (0..1) of the signed-in people who corroborated this challenge,
+   * or null when there is nothing to weight with. v1.1.0: multiplies the
+   * corroboration count (see normalise.corroborationTrustWeight). Unknown
+   * trust weighs exactly 1, so v1.0.0 behaviour is the fixed point.
+   */
+  corroborationTrust?: number | null;
   recurrence: string | null;
   officialEndorsed: boolean;
 }
@@ -76,14 +83,27 @@ export function computePriority(input: ScoringInput): ScoreResult {
         input.blockVulnerability === null ? "not seeded" : input.blockVulnerability.toFixed(2),
       rawNumber: input.blockVulnerability,
     },
-    corroborations: {
-      normalised: normalise.corroborations(input.corroborationCount),
-      rawValue:
+    corroborations: (() => {
+      // v1.1.0: the count, weighted by who counted. The arithmetic stays on
+      // screen: the raw number of reports, the trust multiplier, and the
+      // weighted total are all in rawValue, so a judge multiplies what we show
+      // and gets what we scored.
+      const trustWeight = normalise.corroborationTrustWeight(input.corroborationTrust ?? null);
+      const count = input.corroborationCount ?? 0;
+      const effective = count * trustWeight;
+      const base =
         input.corroborationCount === null
           ? "1 report"
-          : `${input.corroborationCount} report${input.corroborationCount === 1 ? "" : "s"}`,
-      rawNumber: input.corroborationCount,
-    },
+          : `${input.corroborationCount} report${input.corroborationCount === 1 ? "" : "s"}`;
+      return {
+        normalised: normalise.corroborations(effective),
+        rawValue:
+          trustWeight === 1
+            ? base
+            : `${base} · reporter trust ×${trustWeight.toFixed(2)} = ${effective.toFixed(1)} weighted`,
+        rawNumber: input.corroborationCount,
+      };
+    })(),
     recurrence: {
       normalised: normalise.recurrence(input.recurrence),
       rawValue: input.recurrence ?? "not given",
