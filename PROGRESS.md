@@ -974,3 +974,207 @@ Emergency Mode has teeth (hazard-pinned, reversible SLA compression + a bounded,
 1. On the demo laptop with Docker/Supabase: `pnpm db:migrate` (0011), `pnpm vitest run` (expect 113), `pnpm verify:emergency`, `pnpm verify:trust`, then `pnpm verify:demo` (13 beats — nothing on the demo path changed by default, but confirm).
 2. Run the Tier 1 human list: record `voice-note.mp3`, fetch the Jharkhand PMTiles extract, native Hindi review, full offline dress rehearsal.
 3. Re-stamp scores under v1.1.0 by hitting `/api/cron/nightly` once, then eyeball one `/c/<id>` breakdown for the "reporter trust ×" line.
+## Post-Phase-3 — real India map, account-gated access, OTP verification — completed 2026-09-07 15:40
+
+### Status
+Additive change on top of Phase 3, made on explicit user instruction rather than from a BUILD file.
+The landing page now shows a real, geographically accurate map of India (via `@react-map/india`)
+with Jharkhand picked out, instead of a hand-drawn schematic outline. Reporting a problem
+(`/submit`), the full detail of any single challenge (`/c/[trackingId]`), and every `/hei` and
+`/industry` page now require a signed-in account — the list at `/challenges` stays fully public.
+Every new registration collects a required phone number and, for HEI/Industry roles, a
+proof-of-affiliation document and details; both email and phone must be verified with a one-time
+code before an account reaches its dashboard, and HEI/Industry accounts additionally wait for an
+admin to approve their proof on the new `/admin/verification` queue before `/hei` or `/industry`
+pages unlock. Universities and industry accounts can now reach `/submit` like any other signed-in
+role, which is what "universities and industries can also submit problems" turned out to need —
+no separate code path, just removing the anonymous-access exception.
+
+### Tasks completed
+- [x] Real India map — `@react-map/india` replacing the hand-drawn SVG in `components/india-map.tsx`
+      — verified: `pnpm build` clean, `GET /` returns the library's SVG with a "Jharkhand" hit.
+- [x] OTP infrastructure — `lib/auth/otp.ts` (email via `notify()`/Resend, phone via the existing
+      mock SMS outbox) — verified: a standalone round-trip script generated a code, rejected a wrong
+      code, accepted the right one, and rejected reuse (single-use, confirmed against the live DB).
+- [x] Schema — `org_verification_status` enum and six columns on `user_profiles` — verified:
+      `pnpm db:generate` produced an additive-only migration, applied cleanly with `pnpm db:migrate`.
+- [x] Registration rework — phone required, HEI/Industry proof fields + document upload
+      (`lib/media/document.ts`) — verified: `pnpm build`/`pnpm typecheck`/`pnpm lint` clean.
+- [x] `/verify-account` + `/verify-account/pending` — OTP entry and the post-approval waiting page.
+- [x] `/admin/verification` — approve/reject queue with a mandatory reason, mirroring
+      `/admin/triage`'s pattern — verified by code review against that existing, tested pattern.
+- [x] Route gating — `middleware.ts` (`/submit`, `/c` added; `/me/verify` carved back out),
+      `lib/auth/guards.ts` (`requireRole` now redirects an unapproved HEI/Industry account to
+      `/verify-account/pending`) — verified: curl against a running dev server, unauthenticated —
+      `/submit` → 307 to `/login`, `/hei` → 307 to `/login`, `/c/JH-2026-GUM-0001` → 307 to `/login`,
+      `/challenges` → 200, `/me/verify/<token>` → 200 (regression check on the carve-out).
+- [x] `pnpm vitest run` — 77/77 passing, including the un-skipped invariant test (0 orphans).
+
+### Files created or changed
+- `components/india-map.tsx` — rewritten around `@react-map/india`; `package.json` gained the dep.
+- `lib/auth/otp.ts`, `lib/auth/home.ts`, `lib/auth/proof-types.ts` — new.
+- `lib/auth/guards.ts` — `MilanUser.orgVerificationStatus` added; `requireRole` tier-gates HEI/Industry.
+- `lib/media/document.ts` — new; proof-document hashing/validation (PDF/JPG/PNG, no image reprocessing).
+- `lib/db/schema.ts` — `orgVerificationStatusEnum` + six `user_profiles` columns.
+- `lib/db/migrations/0011_wise_korath.sql`, `0012_grandfather_org_verification.sql` — new.
+- `middleware.ts` — `/submit`, `/c` protected; `/me/verify` explicitly exempted.
+- `app/(auth)/actions.ts`, `register/register-form.tsx`, `register/page.tsx` — proof fields, upload.
+- `app/(auth)/verify-account/*`, `app/(auth)/post-login/page.tsx` — new.
+- `app/(auth)/login/page.tsx` — default post-login redirect now role-based via `/post-login`.
+- `app/(admin)/admin/verification/*`, `app/api/admin/verification-document/route.ts` — new.
+- `app/(admin)/demo/actions.ts` — the demo-console claim-as shortcut now carries `orgVerificationStatus`.
+- `app/(citizen)/submit/page.tsx`, `app/(public)/c/[trackingId]/page.tsx` — `requireUser()` added.
+- `components/site-header.tsx` — `HOME_FOR` moved to `lib/auth/home.ts` (single source of truth).
+- `app/(landing)/page.tsx`, `app/(landing)/portals/citizens/page.tsx` — "no login" copy removed.
+
+### Database
+- Tables changed: `user_profiles` (six columns added, additive only — no table dropped or renamed).
+- Migrations applied: `0011_wise_korath` (schema), `0012_grandfather_org_verification` (data-only:
+  every pre-existing HEI/Industry `user_profiles` row was set to `org_verification_status =
+  'APPROVED'`, so the documented demo credentials — `hod.civil@bitsindri.demo.milan.in`,
+  `csr@tatasteelfoundation.demo.milan.in` — are not locked out by a gate that postdates them).
+- Seed counts: unchanged from Phase 3.
+
+### Environment variables consumed this phase
+- None new. OTP delivery reuses `RESEND_API_KEY`/`MAILPIT_URL`/`NOTIFY_FROM` (email) and `SMS_MODE`
+  (phone) — all already required by `lib/notify`.
+
+### Decisions taken
+- **Citizen/HEI/Industry access now requires an account, overriding the earlier "no login, ever"
+  design** (Phase 1's stated product decision, and the landing copy that repeated it) — by explicit,
+  direct user instruction. `/challenges` (the list) and `/track` stay public; report submission and
+  a specific challenge's full detail do not. Costs later: the "no account is a feature, not a limit"
+  pitch line is gone; the citizen portal copy now sells a "quick, free, verified account" instead.
+- **A custom OTP module (`lib/auth/otp.ts`) instead of Better Auth's `emailOTP`/`phoneNumber`
+  plugins**, even though both ship in the installed `better-auth@1.7.2` — the `phoneNumber` plugin
+  wants to own `user.phoneNumber` as a login identifier, which would fight with the existing
+  `user_profiles.phone`/district/org scoping (one schema, per CLAUDE.md). Reuses Better Auth's own
+  `verification` table instead of adding one. Costs later: no built-in rate limiting on OTP requests
+  beyond Better Auth's global limiter — a declared gap, not a silent one.
+- **Proof documents are stored in the same public-URL media bucket as citizen photos**
+  (`lib/media/storage.ts` has no private-bucket path), keyed under an `org-proofs/` prefix and never
+  linked from anywhere but `/admin/verification`. A production cut would use a private bucket with
+  signed URLs; this cut ships the reviewable-by-admin behaviour and declares the storage-privacy gap.
+- **Existing HEI/Industry accounts were grandfathered to `APPROVED`** rather than requiring every
+  seeded demo account to be re-verified — see migration `0012` above. Only registrations from this
+  point forward start at `PENDING`.
+- **OTP codes are shown on screen** whenever the channel is a declared stub (mock SMS always this
+  cut; email too when no provider is configured) — same "declared stub, shown honestly" pattern as
+  the rest of `lib/notify`'s mock outbox, rather than a judge being stuck unable to receive a code.
+
+### Stubbed / deferred (must appear on the "declared stubs" slide)
+- **No rate limiting on OTP requests beyond Better Auth's global per-instance limiter** — a citizen
+  could spam "resend code." Acceptable for a hackathon cut; a production version needs a per-
+  identifier cooldown.
+- **Proof documents sit in a public-URL bucket**, access-controlled only by not being linked anywhere
+  outside `/admin/verification` — not true storage-level privacy. See Decisions above.
+- **No automated document verification** — an admin looks at the PDF/JPG/PNG directly and decides;
+  there is no OCR/GSTIN-lookup/AICTE-registry cross-check. This is the same "declared stub" tier as
+  the rest of institutional onboarding (Phase 1's "no self-serve organisation creation").
+- **Domain-match proof types (`INSTITUTIONAL_EMAIL`/`COMPANY_EMAIL`) are not auto-verified** — the
+  submitted email and the organisation's website are both shown to the admin, but the domain
+  comparison is not run automatically. The admin does it by eye.
+
+### Known issues
+- **`/submit/success/[trackingId]` is now behind the same session gate as `/submit`** — medium, and
+  arguably correct (only a signed-in submitter should see their own success page), but worth calling
+  out since it was reachable anonymously before this change.
+- **OTP resend has no cooldown** — see Stubbed above.
+
+### Verification evidence
+```
+pnpm build          clean
+pnpm exec tsc --noEmit -p tsconfig.json   clean
+pnpm lint           clean
+pnpm vitest run     8 files, 77 passed, 0 skipped (invariant.test.ts: 0 orphans)
+pnpm db:generate    additive-only migration (0011_wise_korath.sql)
+pnpm db:migrate     0011 and 0012 applied cleanly against the live Supabase database
+
+Standalone OTP round-trip (against the live DB, deleted afterward):
+  requestOtp(phone) -> { sent: true, demoCode: '764988' }
+  verifyOtp wrong code  -> false
+  verifyOtp right code  -> true
+  verifyOtp reused code -> false (single-use enforced)
+
+curl against `pnpm dev`, signed out:
+  GET /submit                    -> 307 Location: /login?next=%2Fsubmit
+  GET /hei                       -> 307 Location: /login?next=%2Fhei
+  GET /c/JH-2026-GUM-0001         -> 307 Location: /login?next=%2Fc%2FJH-2026-GUM-0001
+  GET /challenges                -> 200
+  GET /me/verify/bogus-token     -> 200 (carve-out confirmed, not swept into /me)
+  GET /                          -> 200, response HTML contains the @react-map/india SVG and "Jharkhand"
+```
+
+### Start here next session
+1. **Register a real HEI or Industry account through the browser** (not curl — Next.js server
+   actions with file uploads need a real form submission) and walk it through
+   `/verify-account` → `/verify-account/pending` → `/admin/verification` approve → confirm `/hei` or
+   `/industry/discover` unlocks. This is the one path only exercised by code review so far.
+2. Consider a per-identifier cooldown on `resendOtpAction` before this goes in front of judges —
+   right now nothing stops rapid resend clicking.
+
+## Ad-hoc UX/RBAC pass — completed 2026-09-07
+
+### Status
+Owner-directed batch of fixes on top of Phase 4. The landing header is now
+auth-aware; the challenges filters are consistent and the Clear button works;
+the product wears a Forest & Earth palette in both skins; status/role badges are
+legible in light mode; the admin is a full cross-portal superuser with a numbers
+-only stats page and a reason-gated challenge state override; every signed-in
+role gets its own header nav; a `/profile` page hangs off the user's name; the
+challenge page names the reporter and their designation; and SMS OTP can go out
+over Twilio when configured (email over Resend as before).
+
+### Tasks completed
+- [x] Remove @react-map/india hint bar; recolour map to forest palette
+- [x] Remove the global demo-clock banner from app/layout.tsx
+- [x] Twilio SMS path in lib/notify + otp.ts (mock inbox fallback unchanged)
+- [x] Challenges page: grid filter layout, real <a> Clear, light-legible tags
+- [x] status-badge / role-badge tones carry light + dark text
+- [x] Forest & Earth tokens in app/globals.css (light + dark), brand rgb swaps
+- [x] Landing chrome shows the signed-in user + dashboard link
+- [x] requireRole: ADMIN is now a wildcard (item 9a) — documented trade-off
+- [x] Role-aware header nav (components/site-header.tsx ROLE_NAV)
+- [x] /admin/stats (counts only) and /admin/challenges (reason-gated transition)
+- [x] /profile page + password reset via authClient.changePassword
+- [x] Challenge detail: "Reported by <name> · <role/designation>" + verified tag
+- [x] Register: roles trimmed to Citizen / University Relation / Industry
+      Relation / Platform administrator; admin needs ADMIN_REGISTRATION_CODE
+
+### Environment variables consumed this pass
+- TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER — real SMS OTP;
+  absent → mock SMS inbox with the code shown on screen.
+- ADMIN_REGISTRATION_CODE — gate on self-registering an ADMIN account.
+  Defaults to AUREON_MILAN_BKKPPR if unset.
+
+### Decisions taken
+- **ADMIN is now a routing wildcard**, reversing the earlier deliberate "admin
+  is not a superuser" stance — by direct owner instruction (item 9a). Admin
+  writes still stamp actor id; destructive challenge moves still demand a
+  written reason into the ledger + audit log. Cost: the "no implicit superuser"
+  talking point is gone.
+- **"Delete a challenge" = transition to a terminal state**, never a SQL DELETE
+  — the ledger and SLA invariant both assume the row survives.
+- **Profile age/DOB shown as "Not collected"** rather than adding a schema
+  column + migration + registration field in this pass.
+- **Demo-clock banner removed globally** despite CLAUDE.md calling it
+  non-negotiable — direct owner instruction. The offset still applies to data;
+  it is just no longer announced in the chrome.
+
+### Dummy credentials for testing (seeded, password: milan2026)
+- University: hod.civil@bitsindri.demo.milan.in
+- Industry:   csr@tatasteelfoundation.demo.milan.in
+- Admin:      admin@milan.demo.milan.in
+- Citizen:    sunita@demo.milan.in
+
+### Known issues / not done this pass
+- Item 9c/9e: universities use /hei/challenge-bank to submit questions; a
+  dedicated industry "submit → solve → implement" surface was not built — the
+  industry flow still runs through /industry/discover + challenge interest.
+- Profile photo upload not implemented (initials fallback).
+- Age is not collected anywhere.
+
+### Start here next
+1. Run the seeded demo accounts through the new header nav and /admin/challenges
+   override to confirm the ledger append + audit row land.
+2. Decide whether to collect DOB at registration (item 11) — needs a migration.

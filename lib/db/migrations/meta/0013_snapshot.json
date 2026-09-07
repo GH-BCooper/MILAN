@@ -3868,6 +3868,57 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "phone_verified": {
+          "name": "phone_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "org_verification_status": {
+          "name": "org_verification_status",
+          "type": "org_verification_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'NOT_APPLICABLE'"
+        },
+        "org_proof_type": {
+          "name": "org_proof_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_proof_meta": {
+          "name": "org_proof_meta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_proof_document_key": {
+          "name": "org_proof_document_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_verification_reason": {
+          "name": "org_verification_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_verification_decided_by": {
+          "name": "org_verification_decided_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_verification_decided_at": {
+          "name": "org_verification_decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3948,6 +3999,19 @@
           "tableTo": "organization",
           "columnsFrom": [
             "org_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_profiles_org_verification_decided_by_user_id_fk": {
+          "name": "user_profiles_org_verification_decided_by_user_id_fk",
+          "tableFrom": "user_profiles",
+          "tableTo": "user",
+          "columnsFrom": [
+            "org_verification_decided_by"
           ],
           "columnsTo": [
             "id"
@@ -4629,6 +4693,116 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.bug_reports": {
+      "name": "bug_reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "reporter_id": {
+          "name": "reporter_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "bug_report_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issue": {
+          "name": "issue",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photo_key": {
+          "name": "photo_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "page_url": {
+          "name": "page_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'OPEN'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "bug_reports_status_idx": {
+          "name": "bug_reports_status_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "bug_reports_created_idx": {
+          "name": "bug_reports_created_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "bug_reports_reporter_id_user_id_fk": {
+          "name": "bug_reports_reporter_id_user_id_fk",
+          "tableFrom": "bug_reports",
+          "tableTo": "user",
+          "columnsFrom": [
+            "reporter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -4760,6 +4934,27 @@
         "GATE_TIMEOUT",
         "CLOSURE_DUE",
         "DISPUTE_REVIEW"
+      ]
+    },
+    "public.bug_report_type": {
+      "name": "bug_report_type",
+      "schema": "public",
+      "values": [
+        "UI_VISUAL",
+        "CRASH_ERROR",
+        "INCORRECT_DATA",
+        "PERFORMANCE",
+        "OTHER"
+      ]
+    },
+    "public.org_verification_status": {
+      "name": "org_verification_status",
+      "schema": "public",
+      "values": [
+        "NOT_APPLICABLE",
+        "PENDING",
+        "APPROVED",
+        "REJECTED"
       ]
     }
   },

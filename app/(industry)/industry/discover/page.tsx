@@ -9,7 +9,7 @@ import { execRaw } from "@/lib/db/raw";
 import { domainEnum, hazardEnum, type ChallengeStatus } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Discover" };
+export const metadata = { title: "Challenges" };
 
 /**
  * What a firm can see.
@@ -65,7 +65,7 @@ export default async function IndustryDiscover({
     LEFT JOIN districts d ON d.code = c.district_code
     LEFT JOIN projects p ON p.challenge_id = c.id
     LEFT JOIN organization o ON o.id = p.org_id
-    WHERE c.status IN ('SOLUTION_PUBLISHED','INDUSTRY_INTEREST','AGREEMENT_SIGNED','PILOT','IMPLEMENTED','CITIZEN_VERIFIED','CLOSED','IN_RESEARCH','BOUNTY_LISTED','UNCLAIMED_ESCALATED','ROUTED')
+    WHERE c.status IN ('IN_RESEARCH','BOUNTY_LISTED','UNCLAIMED_ESCALATED','ROUTED')
       ${district ? sql`AND c.district_code = ${district}` : sql``}
       ${domain ? sql`AND c.domain::text = ${domain}` : sql``}
       ${hazard ? sql`AND c.hazard::text = ${hazard}` : sql``}
@@ -78,8 +78,8 @@ export default async function IndustryDiscover({
 
   return (
     <RoleShell
-      title="Discover"
-      subtitle={`Signed in as ${user.fullName}. ${rows.length} challenge${rows.length === 1 ? "" : "s"} and published solutions, filterable by domain, solvability, district and NDMA hazard.`}
+      title="Challenges"
+      subtitle={`Signed in as ${user.fullName}. ${rows.length} open challenge${rows.length === 1 ? "" : "s"} still looking for a partner, filterable by domain, solvability, district and NDMA hazard. Already-published work lives under Solutions.`}
     >
       <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <label className="flex flex-col gap-1 text-xs font-medium">

@@ -27,14 +27,16 @@ export default async function RegisterPage() {
   const orgOptions: Option[] = orgRows.map((o) => ({
     value: o.id,
     label: o.orgType ? `${o.name} — ${o.orgType}` : o.name,
+    orgType: o.orgType,
   }));
 
   return (
     <div>
       <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        You do not need an account to report a problem. Register to keep a permanent record of your
-        reports and the credit attached to them.
+        An account is required to report a problem, browse a challenge&apos;s full detail, or use the
+        university or industry tools. Registering also keeps a permanent record of your reports and
+        the credit attached to them.
       </p>
 
       <div className="mt-6">

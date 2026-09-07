@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
-import { DemoClockBanner } from "@/components/demo-clock-banner";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 /* Self-hosted (app/fonts/, SIL OFL 1.1 — licences sit beside the files) so
@@ -40,16 +40,25 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#05060f",
+  /* The browser chrome follows the skin the user actually picked. */
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f7fc" },
+    { media: "(prefers-color-scheme: dark)", color: "#05060f" },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${notoSans.variable} ${notoDevanagari.variable} h-full`}>
-      <body className="min-h-full flex flex-col antialiased selection:text-white">
-        <DemoClockBanner />
-        {children}
-        <Toaster theme="dark" />
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${notoSans.variable} ${notoDevanagari.variable} h-full`}
+    >
+      <body className="min-h-full flex flex-col antialiased">
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

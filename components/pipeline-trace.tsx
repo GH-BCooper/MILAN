@@ -343,8 +343,8 @@ function StageCard({
     : state.status === "done"
       ? "border-emerald-400/45 bg-emerald-500/[0.07] shadow-[0_0_34px_-16px_rgba(16,217,160,0.9)]"
       : state.status === "running"
-        ? "border-[var(--grad-2)] bg-white/5 shadow-[0_0_44px_-18px_rgba(79,140,255,0.95)]"
-        : "border-border bg-white/[0.03]";
+        ? "border-[var(--grad-2)] bg-foreground/5 shadow-[0_0_44px_-18px_rgba(79,140,255,0.95)]"
+        : "border-border bg-foreground/[0.03]";
 
   return (
     <div
@@ -362,7 +362,7 @@ function StageCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold tracking-tight">{title}</h3>
-            <span className="rounded-full border border-[var(--grad-1)]/40 bg-white/5 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest milan-gradient-text">
+            <span className="rounded-full border border-[var(--grad-1)]/40 bg-foreground/5 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest milan-gradient-text">
               {stageKey}
             </span>
             {degraded ? (
@@ -378,9 +378,9 @@ function StageCard({
           </div>
           <p className="text-sm text-muted-foreground">{blurb}</p>
 
-          {state.decision ? <p className="mt-2 text-sm font-semibold text-white">{state.decision}</p> : null}
+          {state.decision ? <p className="mt-2 text-sm font-semibold text-foreground">{state.decision}</p> : null}
           {state.rationale ? (
-            <p className="mt-2 rounded-lg border-s-2 border-[var(--grad-3)] bg-white/[0.04] px-3 py-2 text-sm italic text-[#cfe9ff]">&ldquo;{state.rationale}&rdquo;</p>
+            <p className="mt-2 rounded-lg border-s-2 border-[var(--grad-3)] bg-foreground/[0.04] px-3 py-2 text-sm italic text-[#cfe9ff]">&ldquo;{state.rationale}&rdquo;</p>
           ) : null}
           {state.note && !state.decision ? (
             <p className="mt-2 text-sm text-muted-foreground">{state.note}</p>

@@ -1,10 +1,23 @@
 import Link from "next/link";
-import { and, asc, desc, eq, inArray, isNull, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { STATUS_COLOUR } from "@/components/status-colour";
-import { SEVERITY_BANDS, SeverityChip, isSeverityBandKey } from "@/components/severity-chip";
+import {
+  SEVERITY_BANDS,
+  SeverityChip,
+  isSeverityBandKey,
+} from "@/components/severity-chip";
 import type { MapMarker } from "@/components/milan-map";
 import { emergencyState } from "@/lib/clock/server";
 import { db } from "@/lib/db";
@@ -25,7 +38,7 @@ export const metadata = { title: "Challenges" };
 export const dynamic = "force-dynamic";
 
 const selectClass =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:w-auto";
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm";
 
 /**
  * Lifecycle bands (Task 4.8): the 28-state machine is honest, but a citizen
@@ -35,7 +48,15 @@ const selectClass =
 const LIFECYCLE_BANDS = {
   intake: {
     label: "Intake — reported, being processed",
-    statuses: ["SUBMITTED", "NEEDS_MORE_INFO", "TRIAGED", "CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED"],
+    statuses: [
+      "SUBMITTED",
+      "NEEDS_MORE_INFO",
+      "TRIAGED",
+      "CLASSIFIED",
+      "CLUSTERED",
+      "PRIORITISED",
+      "VERIFIED",
+    ],
   },
   open: {
     label: "Open for a team to claim",
@@ -43,7 +64,14 @@ const LIFECYCLE_BANDS = {
   },
   research: {
     label: "In research",
-    statuses: ["CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "AT_RISK", "AGREEMENT_SIGNED", "PILOT"],
+    statuses: [
+      "CLAIMED",
+      "PROPOSAL_APPROVED",
+      "IN_RESEARCH",
+      "AT_RISK",
+      "AGREEMENT_SIGNED",
+      "PILOT",
+    ],
   },
   solution: {
     label: "Solution published",
@@ -55,9 +83,19 @@ const LIFECYCLE_BANDS = {
   },
   archived: {
     label: "Off the board (merged, forwarded, parked)",
-    statuses: ["REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "PARKED", "WITHDRAWN", "DISPUTED"],
+    statuses: [
+      "REJECTED_UNSAFE",
+      "FORWARDED_EXTERNAL",
+      "MERGED",
+      "PARKED",
+      "WITHDRAWN",
+      "DISPUTED",
+    ],
   },
-} as const satisfies Record<string, { label: string; statuses: readonly ChallengeStatus[] }>;
+} as const satisfies Record<
+  string,
+  { label: string; statuses: readonly ChallengeStatus[] }
+>;
 
 type LifecycleBandKey = keyof typeof LIFECYCLE_BANDS;
 
@@ -84,7 +122,9 @@ export default async function ChallengesPage({
   const hazard = hazardEnum.enumValues.includes(filters.hazard as Hazard)
     ? (filters.hazard as Hazard)
     : undefined;
-  const status = challengeStatusEnum.enumValues.includes(filters.status as ChallengeStatus)
+  const status = challengeStatusEnum.enumValues.includes(
+    filters.status as ChallengeStatus,
+  )
     ? (filters.status as ChallengeStatus)
     : undefined;
   const band = (
@@ -92,13 +132,16 @@ export default async function ChallengesPage({
   ) as LifecycleBandKey | undefined;
   // The JDIP wireframe calls this "severity"; it bands the same priority
   // score the cards badge, so the filter and the chip can never drift apart.
-  const severity = isSeverityBandKey(filters.severity) ? filters.severity : undefined;
+  const severity = isSeverityBandKey(filters.severity)
+    ? filters.severity
+    : undefined;
 
   if (district) where.push(eq(challenges.districtCode, district));
   if (domain) where.push(eq(challenges.domain, domain));
   if (hazard) where.push(eq(challenges.hazard, hazard));
   if (status) where.push(eq(challenges.status, status));
-  if (band) where.push(inArray(challenges.status, [...LIFECYCLE_BANDS[band].statuses]));
+  if (band)
+    where.push(inArray(challenges.status, [...LIFECYCLE_BANDS[band].statuses]));
   if (severity === "unscored") {
     where.push(isNull(challenges.priorityScore));
   } else if (severity) {
@@ -134,7 +177,10 @@ export default async function ChallengesPage({
       .where(where.length ? and(...where) : undefined)
       .orderBy(desc(challenges.createdAt))
       .limit(500),
-    db.select({ code: districts.code, name: districts.name }).from(districts).orderBy(asc(districts.name)),
+    db
+      .select({ code: districts.code, name: districts.name })
+      .from(districts)
+      .orderBy(asc(districts.name)),
   ]);
 
   // Emergency Mode pins the hazard filter unless the visitor chose one
@@ -149,9 +195,11 @@ export default async function ChallengesPage({
     .map((r) => ({
       row: r,
       surge: surgeRank({
-        priorityScore: r.priorityScore === null ? null : Number(r.priorityScore),
+        priorityScore:
+          r.priorityScore === null ? null : Number(r.priorityScore),
         hazard: r.hazard,
-        hazardStrength: r.hazardStrength === null ? null : Number(r.hazardStrength),
+        hazardStrength:
+          r.hazardStrength === null ? null : Number(r.hazardStrength),
         emergencyHazard: pinnedHazard,
       }),
     }))
@@ -174,18 +222,29 @@ export default async function ChallengesPage({
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Challenges</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Every problem reported to Milan, with its current status. Nothing is hidden and nothing is
-          deleted.
+          Every problem reported to Milan, with its current status. Nothing is
+          hidden and nothing is deleted.
         </p>
 
         {/* A plain GET form: filters live in the URL, so a filtered view is a
             link somebody can send to a colleague, and it works with no JS. */}
-        <form method="get" className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="sm:w-56">
-            <label htmlFor="district" className="text-xs font-medium text-muted-foreground">
+        <form
+          method="get"
+          className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        >
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="district"
+              className="text-xs font-medium text-muted-foreground"
+            >
               District
             </label>
-            <select id="district" name="district" defaultValue={district ?? ""} className={selectClass}>
+            <select
+              id="district"
+              name="district"
+              defaultValue={district ?? ""}
+              className={selectClass}
+            >
               <option value="">All districts</option>
               {districtRows.map((d) => (
                 <option key={d.code} value={d.code}>
@@ -195,11 +254,19 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="sm:w-56">
-            <label htmlFor="domain" className="text-xs font-medium text-muted-foreground">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="domain"
+              className="text-xs font-medium text-muted-foreground"
+            >
               Domain
             </label>
-            <select id="domain" name="domain" defaultValue={domain ?? ""} className={selectClass}>
+            <select
+              id="domain"
+              name="domain"
+              defaultValue={domain ?? ""}
+              className={selectClass}
+            >
               <option value="">All domains</option>
               {domainEnum.enumValues.map((d) => (
                 <option key={d} value={d}>
@@ -209,11 +276,19 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="sm:w-56">
-            <label htmlFor="hazard" className="text-xs font-medium text-muted-foreground">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="hazard"
+              className="text-xs font-medium text-muted-foreground"
+            >
               Hazard
             </label>
-            <select id="hazard" name="hazard" defaultValue={hazard ?? ""} className={selectClass}>
+            <select
+              id="hazard"
+              name="hazard"
+              defaultValue={hazard ?? ""}
+              className={selectClass}
+            >
               <option value="">All hazards</option>
               {hazardEnum.enumValues.map((h) => (
                 <option key={h} value={h}>
@@ -224,10 +299,18 @@ export default async function ChallengesPage({
           </div>
 
           <div className="sm:w-56">
-            <label htmlFor="severity" className="text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="severity"
+              className="text-xs font-medium text-muted-foreground"
+            >
               Severity
             </label>
-            <select id="severity" name="severity" defaultValue={severity ?? ""} className={selectClass}>
+            <select
+              id="severity"
+              name="severity"
+              defaultValue={severity ?? ""}
+              className={selectClass}
+            >
               <option value="">All severities</option>
               <option value="critical">Critical (75–100)</option>
               <option value="high">High (50–74)</option>
@@ -238,24 +321,42 @@ export default async function ChallengesPage({
           </div>
 
           <div className="sm:w-64">
-            <label htmlFor="band" className="text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="band"
+              className="text-xs font-medium text-muted-foreground"
+            >
               Lifecycle
             </label>
-            <select id="band" name="band" defaultValue={band ?? ""} className={selectClass}>
+            <select
+              id="band"
+              name="band"
+              defaultValue={band ?? ""}
+              className={selectClass}
+            >
               <option value="">Every stage of life</option>
-              {(Object.keys(LIFECYCLE_BANDS) as LifecycleBandKey[]).map((key) => (
-                <option key={key} value={key}>
-                  {LIFECYCLE_BANDS[key].label}
-                </option>
-              ))}
+              {(Object.keys(LIFECYCLE_BANDS) as LifecycleBandKey[]).map(
+                (key) => (
+                  <option key={key} value={key}>
+                    {LIFECYCLE_BANDS[key].label}
+                  </option>
+                ),
+              )}
             </select>
           </div>
 
           <div className="sm:w-56">
-            <label htmlFor="status" className="text-xs font-medium text-muted-foreground">
+            <label
+              htmlFor="status"
+              className="text-xs font-medium text-muted-foreground"
+            >
               Status (exact)
             </label>
-            <select id="status" name="status" defaultValue={status ?? ""} className={selectClass}>
+            <select
+              id="status"
+              name="status"
+              defaultValue={status ?? ""}
+              className={selectClass}
+            >
               <option value="">All statuses</option>
               {challengeStatusEnum.enumValues.map((s) => (
                 <option key={s} value={s}>
@@ -265,19 +366,22 @@ export default async function ChallengesPage({
             </select>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
             <button
               type="submit"
               className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
             >
               Apply
             </button>
-            <Link
+            {/* A plain <a>, not next/link: a soft client nav leaves the
+                uncontrolled <select> DOM nodes on their stale values, so the
+                filters look un-cleared. A full document load resets them. */}
+            <a
               href="/challenges"
               className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
             >
               Clear
-            </Link>
+            </a>
           </div>
         </form>
 
@@ -286,15 +390,19 @@ export default async function ChallengesPage({
         </div>
 
         <p className="mt-8 text-sm font-medium" aria-live="polite">
-          {displayRows.length} {displayRows.length === 1 ? "challenge" : "challenges"}
-          {district ? ` in ${districtRows.find((d) => d.code === district)?.name ?? district}` : ""}
+          {displayRows.length}{" "}
+          {displayRows.length === 1 ? "challenge" : "challenges"}
+          {district
+            ? ` in ${districtRows.find((d) => d.code === district)?.name ?? district}`
+            : ""}
         </p>
 
         {pinnedHazard ? (
           <p className="mt-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-200">
-            Emergency mode: the list is filtered to {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted
-            by a display surge of up to ×1.25. That changes what is shown, never a stored score. Choose a
-            different hazard above to override the pin.
+            Emergency mode: the list is filtered to{" "}
+            {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted by a
+            display surge of up to ×1.25. That changes what is shown, never a
+            stored score. Choose a different hazard above to override the pin.
           </p>
         ) : null}
 
@@ -302,13 +410,17 @@ export default async function ChallengesPage({
           <div className="milan-glass mt-3 rounded-xl p-5 text-sm">
             <p className="font-semibold">Nothing matches that combination.</p>
             <p className="mt-1 text-muted-foreground">
-              The filters are exact on purpose — what you see is all there is, never a sample.
-              Loosen one and the board fills back in: a district the pipeline is still processing
-              will sit under <em>Intake</em>, and a report the scoring stage has not reached yet is
-              under <em>Not scored yet</em>.
+              The filters are exact on purpose — what you see is all there is,
+              never a sample. Loosen one and the board fills back in: a district
+              the pipeline is still processing will sit under <em>Intake</em>,
+              and a report the scoring stage has not reached yet is under{" "}
+              <em>Not scored yet</em>.
             </p>
             <p className="mt-2">
-              <Link className="text-primary underline underline-offset-4" href="/challenges">
+              <Link
+                className="text-primary underline underline-offset-4"
+                href="/challenges"
+              >
                 Clear the filters
               </Link>
             </p>
@@ -325,9 +437,13 @@ export default async function ChallengesPage({
                     {r.trackingId}
                   </Link>
                   <StatusBadge status={r.status} />
-                  <SeverityChip score={r.priorityScore === null ? null : Number(r.priorityScore)} />
+                  <SeverityChip
+                    score={
+                      r.priorityScore === null ? null : Number(r.priorityScore)
+                    }
+                  />
                   {r.hazard && r.hazard !== "NONE" ? (
-                    <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+                    <span className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
                       {r.hazard.replaceAll("_", " ")}
                     </span>
                   ) : null}
@@ -340,7 +456,9 @@ export default async function ChallengesPage({
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-base">{r.title}</p>
+                <p className="mt-1 text-base font-medium text-foreground">
+                  {r.title}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {r.districtName ?? "District not given"} ·{" "}
                   {r.corroborationCount === 1

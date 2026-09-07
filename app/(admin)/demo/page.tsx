@@ -205,8 +205,6 @@ export default async function DemoConsole() {
             {[
               ["/", "Landing"],
               ["/submit", "Submit a problem"],
-              ["/gov/gate", "Human gate"],
-              ["/gov", "District dashboard"],
               ["/bounties", "Bounty board"],
               ["/ledger", "Ledger + verify"],
               ["/stats", "Public statistics"],

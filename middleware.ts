@@ -14,10 +14,29 @@ import { getSessionCookie } from "better-auth/cookies";
  * directly and never pass through this file. Middleware redirects; the server
  * guard refuses.
  */
-const PROTECTED_PREFIXES = ["/me", "/hei", "/industry", "/gov", "/admin", "/demo"];
+const PROTECTED_PREFIXES = [
+  "/me",
+  "/hei",
+  "/industry",
+  "/gov",
+  "/admin",
+  "/demo",
+  "/submit",
+  "/submit-question",
+  "/c",
+  "/profile",
+];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // The impact-confirmation link (/me/verify/[token]) is deliberately no-login:
+  // it authenticates with its own signed, single-purpose token
+  // (lib/verify/token.ts), not a session, and is emailed/texted to citizens who
+  // may never have created an account. It must not be swept into "/me".
+  if (pathname.startsWith("/me/verify/")) {
+    return NextResponse.next();
+  }
 
   if (!PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
@@ -35,5 +54,17 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/me/:path*", "/hei/:path*", "/industry/:path*", "/gov/:path*", "/admin/:path*", "/demo/:path*"],
+  matcher: [
+    "/me/:path*",
+    "/hei/:path*",
+    "/industry/:path*",
+    "/gov/:path*",
+    "/admin/:path*",
+    "/demo/:path*",
+    "/submit",
+    "/submit/:path*",
+    "/submit-question",
+    "/c/:path*",
+    "/profile",
+  ],
 };

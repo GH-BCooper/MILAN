@@ -233,6 +233,7 @@ export async function runScenario(_prev: DemoResult | null, form: FormData): Pro
           role: userProfiles.role,
           preferredLang: userProfiles.preferredLang,
           verifiedTier: userProfiles.verifiedTier,
+          orgVerificationStatus: userProfiles.orgVerificationStatus,
           email: userTable.email,
           name: userTable.name,
         })

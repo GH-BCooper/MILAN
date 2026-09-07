@@ -123,6 +123,17 @@ export const licenceEnum = pgEnum("licence", ["CC_BY", "RESTRICTED"]);
 
 export const orgTypeEnum = pgEnum("org_type", ["HEI", "INDUSTRY", "GOVERNMENT"]);
 
+/** NOT_APPLICABLE for citizens/government; HEI and Industry registrants start
+ *  PENDING and need an admin to move them to APPROVED before their dashboard
+ *  unlocks (see lib/auth/guards.ts requireRole). Real institutional onboarding
+ *  is a declared stub elsewhere in this file — this is that stub's gate. */
+export const orgVerificationStatusEnum = pgEnum("org_verification_status", [
+  "NOT_APPLICABLE",
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
+
 export const slaKindEnum = pgEnum("sla_kind", [
   "CLAIM_WINDOW",
   "WIDEN",
@@ -221,6 +232,25 @@ export const userProfiles = pgTable(
     /** 1 = phone only, 2 = verified by an official, 3 = Aadhaar-tier. Phase 1 seeds 1. */
     verifiedTier: integer("verified_tier").notNull().default(1),
     orgId: text("org_id").references(() => organization.id),
+
+    /** OTP-verified at registration; email verification reuses Better Auth's
+     *  own `user.emailVerified` rather than duplicating it here. */
+    phoneVerified: boolean("phone_verified").notNull().default(false),
+
+    /** Proof-of-affiliation gate for HEI/Industry self-registration. */
+    orgVerificationStatus: orgVerificationStatusEnum("org_verification_status")
+      .notNull()
+      .default("NOT_APPLICABLE"),
+    /** e.g. "INSTITUTIONAL_ID", "APPOINTMENT_LETTER", "GST_CIN", "COMPANY_AUTH_LETTER". */
+    orgProofType: text("org_proof_type"),
+    /** Designation, employee/student ID, GSTIN/CIN, institutional/company email — free-form. */
+    orgProofMeta: jsonb("org_proof_meta"),
+    /** Content-hash storage key of the uploaded proof document, same convention
+     *  as challenge media (lib/media/upload.ts). */
+    orgProofDocumentKey: text("org_proof_document_key"),
+    orgVerificationReason: text("org_verification_reason"),
+    orgVerificationDecidedBy: text("org_verification_decided_by").references(() => user.id),
+    orgVerificationDecidedAt: timestamp("org_verification_decided_at", { withTimezone: true }),
   },
   (t) => [index("user_profiles_role_idx").on(t.role), index("user_profiles_district_idx").on(t.districtCode)],
 );
@@ -930,10 +960,41 @@ export const impactConfirmations = pgTable(
   (t) => [index("impact_confirmations_challenge_idx").on(t.challengeId)],
 );
 
+/**
+ * A bug report filed from the public "Report a bug" link. Separate from
+ * `challenges` on purpose — a platform defect is not a citizen's civic problem,
+ * and mixing the two would pollute the routing pipeline with software issues.
+ * Reviewed only at /admin/bugs.
+ */
+export const bugReportTypeEnum = pgEnum("bug_report_type", [
+  "UI_VISUAL",
+  "CRASH_ERROR",
+  "INCORRECT_DATA",
+  "PERFORMANCE",
+  "OTHER",
+]);
+
+export const bugReports = pgTable(
+  "bug_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    reporterId: text("reporter_id").references(() => user.id),
+    type: bugReportTypeEnum("type").notNull(),
+    issue: text("issue").notNull(),
+    photoKey: text("photo_key"),
+    pageUrl: text("page_url"),
+    status: text("status").notNull().default("OPEN"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("bug_reports_status_idx").on(t.status), index("bug_reports_created_idx").on(t.createdAt)],
+);
+
 /* ------------------------------------------------------------- type aliases */
 
 export type ChallengeStatus = (typeof challengeStatusEnum.enumValues)[number];
+export type BugReportType = (typeof bugReportTypeEnum.enumValues)[number];
 export type Role = (typeof roleEnum.enumValues)[number];
+export type OrgVerificationStatus = (typeof orgVerificationStatusEnum.enumValues)[number];
 export type Domain = (typeof domainEnum.enumValues)[number];
 export type Hazard = (typeof hazardEnum.enumValues)[number];
 export type SlaKind = (typeof slaKindEnum.enumValues)[number];

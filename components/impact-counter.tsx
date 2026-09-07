@@ -35,7 +35,7 @@ export function ImpactCounter({ counts, scopeLabel }: { counts: ImpactCounts; sc
         </p>
       </div>
 
-      <div className="rounded-xl border border-border bg-white/5 p-4 backdrop-blur-md">
+      <div className="rounded-xl border border-border bg-foreground/5 p-4 backdrop-blur-md">
         <p className="text-3xl font-bold tabular-nums text-muted-foreground">{counts.claimedUnconfirmed}</p>
         <p className="mt-1 text-sm font-semibold text-muted-foreground">Claimed, not confirmed</p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -66,7 +66,7 @@ export function ConfirmationGap({ counts, href = "/stats" }: { counts: ImpactCou
         {counts.disputed > 0 ? `, ${counts.disputed} disputed` : ""}.
       </p>
 
-      <div className="mt-3 h-6 w-full overflow-hidden rounded-full border border-border bg-white/5">
+      <div className="mt-3 h-6 w-full overflow-hidden rounded-full border border-border bg-foreground/5">
         <div className="flex h-full">
           <div
             className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
@@ -79,7 +79,7 @@ export function ConfirmationGap({ counts, href = "/stats" }: { counts: ImpactCou
             title={`${counts.partial} partly fixed`}
           />
           <div
-            className="h-full bg-white/20"
+            className="h-full bg-foreground/20"
             style={{ width: `${claimed === 0 ? 0 : (counts.claimedUnconfirmed / claimed) * 100}%` }}
             title={`${counts.claimedUnconfirmed} claimed, not confirmed`}
           />

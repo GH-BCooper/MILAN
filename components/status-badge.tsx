@@ -37,41 +37,60 @@ export const STATUS_LABEL: Record<ChallengeStatus, string> = {
   DISPUTED: "Disputed",
 };
 
-const TONE: Record<ChallengeStatus, string> = {
-  SUBMITTED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
-  TRIAGED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
-  CLASSIFIED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
-  CLUSTERED: "bg-slate-500/15 text-slate-200 border-slate-400/40",
-  PRIORITISED: "bg-sky-500/15 text-sky-200 border-sky-400/40",
-  VERIFIED: "bg-sky-500/15 text-sky-200 border-sky-400/40",
-  ROUTED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
-  CLAIMED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
-  PROPOSAL_APPROVED: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
-  IN_RESEARCH: "bg-indigo-500/15 text-indigo-200 border-indigo-400/40",
-  SOLUTION_PUBLISHED: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
-  INDUSTRY_INTEREST: "bg-amber-500/15 text-amber-200 border-amber-400/40",
+/**
+ * Tone families. Each entry names a colour that renders with real contrast in
+ * BOTH skins — dark text on a pale wash in light mode, pale text in dark mode.
+ * The earlier map used `text-*-200` unconditionally, which is invisible on the
+ * light ground the block officer actually uses.
+ */
+type Tone = "neutral" | "sky" | "indigo" | "emerald" | "amber" | "orange" | "violet" | "red";
+
+const TONE_CLASS: Record<Tone, string> = {
+  neutral: "bg-slate-500/12 text-slate-700 border-slate-400/40 dark:bg-slate-500/15 dark:text-slate-200",
+  sky: "bg-sky-500/12 text-sky-800 border-sky-400/40 dark:bg-sky-500/15 dark:text-sky-200",
+  indigo: "bg-indigo-500/12 text-indigo-800 border-indigo-400/40 dark:bg-indigo-500/15 dark:text-indigo-200",
+  emerald: "bg-emerald-500/12 text-emerald-800 border-emerald-500/40 dark:bg-emerald-500/15 dark:text-emerald-200",
+  amber: "bg-amber-500/15 text-amber-800 border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-200",
+  orange: "bg-orange-500/15 text-orange-800 border-orange-500/40 dark:bg-orange-500/15 dark:text-orange-200",
+  violet: "bg-violet-500/12 text-violet-800 border-violet-400/40 dark:bg-violet-500/15 dark:text-violet-200",
+  red: "bg-red-500/12 text-red-800 border-red-400/40 dark:bg-red-500/15 dark:text-red-200",
+};
+
+const TONE: Record<ChallengeStatus, Tone> = {
+  SUBMITTED: "neutral",
+  TRIAGED: "neutral",
+  CLASSIFIED: "neutral",
+  CLUSTERED: "neutral",
+  PRIORITISED: "sky",
+  VERIFIED: "sky",
+  ROUTED: "indigo",
+  CLAIMED: "indigo",
+  PROPOSAL_APPROVED: "indigo",
+  IN_RESEARCH: "indigo",
+  SOLUTION_PUBLISHED: "emerald",
+  INDUSTRY_INTEREST: "amber",
   // Deliberately not green. An implementer's claim is not a confirmation.
-  IMPLEMENTED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  CITIZEN_VERIFIED: "bg-emerald-500/15 text-emerald-200 border-emerald-400/40",
-  CLOSED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  REJECTED_UNSAFE: "bg-red-500/15 text-red-200 border-red-400/40",
-  FORWARDED_EXTERNAL: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  NEEDS_MORE_INFO: "bg-amber-500/15 text-amber-200 border-amber-400/40",
-  MERGED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  UNCLAIMED_ESCALATED: "bg-orange-500/15 text-orange-200 border-orange-400/40",
-  BOUNTY_LISTED: "bg-amber-500/15 text-amber-200 border-amber-400/40",
-  AT_RISK: "bg-orange-500/15 text-orange-200 border-orange-400/40",
-  FORKED: "bg-violet-500/15 text-violet-200 border-violet-400/40",
-  PARKED: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  WITHDRAWN: "bg-neutral-500/15 text-neutral-200 border-neutral-400/40",
-  AGREEMENT_SIGNED: "bg-amber-500/15 text-amber-200 border-amber-400/40",
-  PILOT: "bg-amber-500/15 text-amber-200 border-amber-400/40",
-  DISPUTED: "bg-red-500/15 text-red-200 border-red-400/40",
+  IMPLEMENTED: "neutral",
+  CITIZEN_VERIFIED: "emerald",
+  CLOSED: "neutral",
+  REJECTED_UNSAFE: "red",
+  FORWARDED_EXTERNAL: "neutral",
+  NEEDS_MORE_INFO: "amber",
+  MERGED: "neutral",
+  UNCLAIMED_ESCALATED: "orange",
+  BOUNTY_LISTED: "amber",
+  AT_RISK: "orange",
+  FORKED: "violet",
+  PARKED: "neutral",
+  WITHDRAWN: "neutral",
+  AGREEMENT_SIGNED: "amber",
+  PILOT: "amber",
+  DISPUTED: "red",
 };
 
 export function StatusBadge({ status }: { status: ChallengeStatus }) {
   return (
-    <Badge variant="outline" className={`font-medium backdrop-blur-md ${TONE[status]}`}>
+    <Badge variant="outline" className={`font-medium backdrop-blur-md ${TONE_CLASS[TONE[status]]}`}>
       {STATUS_LABEL[status]}
     </Badge>
   );

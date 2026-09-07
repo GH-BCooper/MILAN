@@ -81,9 +81,9 @@ export function CreditChain({ nodes, trackingId }: { nodes: CreditNode[]; tracki
       {ordered.map((node, i) => (
         <li key={node.id} className="relative">
           {i > 0 ? <div aria-hidden className="ml-6 h-4 w-px bg-gradient-to-b from-[var(--grad-1)] to-[var(--grad-3)]" /> : null}
-          <div className={`rounded-xl border p-3 backdrop-blur-md ${RELATION_COLOUR[node.relation] ?? "border-border bg-white/[0.04]"}`}>
+          <div className={`rounded-xl border p-3 backdrop-blur-md ${RELATION_COLOUR[node.relation] ?? "border-border bg-foreground/[0.04]"}`}>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+              <span className="rounded-full border border-foreground/15 bg-foreground/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
                 {RELATION_LABEL[node.relation] ?? node.relation.replace(/_/g, " ")}
               </span>
               {node.userId ? (
@@ -105,7 +105,7 @@ export function CreditChain({ nodes, trackingId }: { nodes: CreditNode[]; tracki
               {node.note ?? RELATION_BLURB[node.relation] ?? "Contributed to this challenge."}
             </p>
             {node.forkedFrom ? (
-              <p className="mt-1 rounded bg-white/5 px-2 py-1 text-[11px] font-medium">
+              <p className="mt-1 rounded bg-foreground/5 px-2 py-1 text-[11px] font-medium">
                 Carried over from the team that started this work. Their contribution is preserved and
                 attributed even though another team finished it.
               </p>

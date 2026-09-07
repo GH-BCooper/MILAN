@@ -28,7 +28,7 @@ function Log({ result }: { result: DemoResult | null }) {
       {result.fired && result.fired.length > 0 ? (
         <ol className="mt-3 space-y-1">
           {result.fired.map((f) => (
-            <li key={f.deadlineId} className="rounded-lg border border-[var(--grad-1)]/30 bg-white/5 px-3 py-2 text-xs backdrop-blur-md">
+            <li key={f.deadlineId} className="rounded-lg border border-[var(--grad-1)]/30 bg-foreground/5 px-3 py-2 text-xs backdrop-blur-md">
               <span className="font-mono font-bold">{f.kind}</span>{" "}
               <span className="font-semibold">{f.trackingId}</span>{" "}
               <span className="text-muted-foreground">

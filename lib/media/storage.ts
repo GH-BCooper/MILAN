@@ -17,7 +17,7 @@ import {
  * the photo is simply missing. A citizen who reported a cracked embankment on a
  * bad connection has still reported it.
  *
- * Two backends, selected by what env is present (see `backend()`):
+ * Two backends, selected by what env is present:
  *   - Supabase Storage (online) when NEXT_PUBLIC_SUPABASE_URL + service key set.
  *   - S3 / MinIO (offline) when S3_ENDPOINT + credentials set. MinIO runs in
  *     docker-compose with the `media` bucket set to anonymous download, so the

@@ -23,7 +23,7 @@ function csvCell(value: unknown): string {
 }
 
 export async function GET(request: Request) {
-  const user = await requireRole("GOVERNMENT", "EXPERT_PANEL", "ADMIN");
+  const user = await requireRole("GOVERNMENT", "EXPERT_PANEL");
   const asked = new URL(request.url).searchParams.get("district") ?? user.districtCode;
   if (!asked) return new Response("No district on this account.", { status: 400 });
   await requireDistrict(asked);

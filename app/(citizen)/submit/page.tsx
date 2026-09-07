@@ -1,7 +1,7 @@
 import { asc } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
-import { currentUser } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { blocks, districts } from "@/lib/db/schema";
 import { SubmitWizard } from "./submit-wizard";
@@ -16,7 +16,7 @@ export default async function SubmitPage({
 }) {
   const [{ draft }, user, districtRows, blockRows] = await Promise.all([
     searchParams,
-    currentUser(),
+    requireUser("/submit"),
     db
       .select({ code: districts.code, name: districts.name, nameHi: districts.nameHi, lat: districts.lat, lng: districts.lng })
       .from(districts)

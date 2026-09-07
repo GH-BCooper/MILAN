@@ -35,7 +35,7 @@ const Input = z.object({
 });
 
 export async function setEmergency(_prev: { message: string } | null, form: FormData): Promise<{ message: string }> {
-  const user = await requireRole("GOVERNMENT", "ADMIN");
+  const user = await requireRole("GOVERNMENT");
   const parsed = Input.safeParse({ on: form.get("on"), hazard: form.get("hazard") || undefined });
   if (!parsed.success) return { message: "That could not be read." };
 

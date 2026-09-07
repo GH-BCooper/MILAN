@@ -3,48 +3,166 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Milan renders as a deep-space control surface: an aurora-gradient ground,
-   glass panels, and a violet→cyan accent ramp. Contrast is still held above
-   WCAG AA on every text token — colour is decoration, never the only signal.
-   The font stack must render Devanagari correctly on Android, Windows and iOS,
-   hence the explicit Noto Sans Devanagari / Nirmala UI entries. */
+/* Milan renders as a control surface in two skins. Dark is the demo default —
+   a deep-space ground with an aurora wash. Light is the daylight skin a block
+   officer actually uses on a cheap laptop in a lit room; it is not an
+   afterthought, it is the same layout with the surface tokens inverted.
+   Every colour below is a token: no component hardcodes a hex, so both skins
+   come from this one block. Contrast is held above WCAG AA in both. */
 :root {
   --radius: 0.85rem;
 
-  --background: #05060f;
-  --foreground: #eef1ff;
+  /* ── LIGHT (default document values) ──────────────────────────────────
+     Forest & Earth: resilience and ground-truth. Forest green is the civic
+     voice; terracotta is the field accent. Warm off-white ground. */
+  --background: #f4f6f4;
+  --foreground: #16211c;
 
-  --card: #0d1024;
-  --card-foreground: #eef1ff;
-  --popover: #0f1229;
-  --popover-foreground: #eef1ff;
+  --card: #ffffff;
+  --card-foreground: #16211c;
+  --popover: #ffffff;
+  --popover-foreground: #16211c;
 
-  --primary: #7c5cff;
+  --primary: #1b4332;
   --primary-foreground: #ffffff;
-  --secondary: #191d3d;
-  --secondary-foreground: #dfe4ff;
+  --secondary: #e4ebe5;
+  --secondary-foreground: #223129;
 
-  --muted: #141834;
-  --muted-foreground: #a3abd8;
+  --muted: #eaefea;
+  --muted-foreground: #4a5a50;
 
-  --accent: #1d2350;
-  --accent-foreground: #c9d2ff;
+  --accent: #f1e4dc;
+  --accent-foreground: #7a3c22;
 
-  --destructive: #ff4d6d;
+  --destructive: #b23a2e;
   --destructive-foreground: #ffffff;
 
-  --border: #262c58;
-  --input: #2a3164;
-  --ring: #8b7bff;
+  --border: #d5ddd6;
+  --input: #c4cfc5;
+  --ring: #2d6a4f;
 
-  /* The accent ramp every gradient in the product is drawn from. */
-  --grad-1: #7c5cff;
-  --grad-2: #4f8cff;
-  --grad-3: #22d3ee;
-  --grad-4: #f472b6;
+  /* The accent ramp every gradient in the product is drawn from:
+     forest → sage → terracotta. Kept deep in light mode for legible
+     gradient text on the warm-white ground. */
+  --grad-1: #1b4332;
+  --grad-2: #2d6a4f;
+  --grad-3: #40916c;
+  --grad-4: #c85a32;
+
+  --glow: 0 0 0 1px rgb(27 67 50 / 0.1), 0 18px 40px -24px rgb(45 106 79 / 0.4);
+
+  /* Surface tokens — the glass recipe, so panels invert with the theme. */
+  --glass-top: rgb(255 255 255 / 0.92);
+  --glass-bottom: rgb(244 246 244 / 0.75);
+  --glass-solid: color-mix(in srgb, var(--card) 90%, transparent);
+  --tint: rgb(255 255 255 / 0.85);
+  --tint-strong: rgb(255 255 255 / 0.95);
+  --tint-hover: rgb(27 67 50 / 0.09);
+  --ink-strong: #0f1a14;
+  --ink-soft: #2c3a32;
+  --scrollbar-track: #e3e9e3;
+  --overlay: rgb(18 24 22 / 0.45);
+  --shadow-deep: 0 30px 70px -34px rgb(18 24 22 / 0.32);
+
+  /* The aurora, light skin: pale forest + terracotta washes, no cast on text. */
+  --aurora:
+    radial-gradient(
+      1100px 640px at 8% -8%,
+      rgb(27 67 50 / 0.12),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 560px at 96% 4%,
+      rgb(64 145 108 / 0.1),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 50% 108%,
+      rgb(200 90 50 / 0.07),
+      transparent 62%
+    );
+
+  /* The headline ramp. Light: charcoal → forest. Dark: white → sage. */
+  --headline: linear-gradient(100deg, #0f1a14 0%, #1b4332 42%, #40916c 100%);
+
+  color-scheme: light;
+}
+
+/* ── DARK ─────────────────────────────────────────────────────────────────
+   next-themes sets .dark on <html>. Only tokens are redefined here; not one
+   rule below this block knows which theme it is running in. */
+.dark {
+  --background: #121816;
+  --foreground: #e8efe9;
+
+  --card: #1a2420;
+  --card-foreground: #e8efe9;
+  --popover: #1c2722;
+  --popover-foreground: #e8efe9;
+
+  --primary: #52b788;
+  --primary-foreground: #0f1a14;
+  --secondary: #22302b;
+  --secondary-foreground: #d6e4dc;
+
+  --muted: #1e2a25;
+  --muted-foreground: #9db0a5;
+
+  --accent: #33241c;
+  --accent-foreground: #e7b99f;
+
+  --destructive: #e5634d;
+  --destructive-foreground: #ffffff;
+
+  --border: #2c3a34;
+  --input: #33443c;
+  --ring: #52b788;
+
+  --grad-1: #52b788;
+  --grad-2: #40916c;
+  --grad-3: #74c69d;
+  --grad-4: #e17b48;
 
   --glow:
-    0 0 0 1px rgb(124 92 255 / 0.18), 0 18px 50px -20px rgb(79 140 255 / 0.55);
+    0 0 0 1px rgb(82 183 136 / 0.18), 0 18px 50px -20px rgb(64 145 108 / 0.5);
+
+  --glass-top: rgb(255 255 255 / 0.06);
+  --glass-bottom: rgb(255 255 255 / 0.02);
+  --glass-solid: color-mix(in srgb, var(--card) 88%, transparent);
+  --tint: rgb(255 255 255 / 0.045);
+  --tint-strong: rgb(255 255 255 / 0.07);
+  --tint-hover: rgb(82 183 136 / 0.16);
+  --ink-strong: #ffffff;
+  --ink-soft: #c3d6cb;
+  --scrollbar-track: #0d1210;
+  --overlay: rgb(8 12 10 / 0.72);
+  --shadow-deep: 0 30px 80px -30px rgb(0 0 0 / 0.9);
+
+  --aurora:
+    radial-gradient(
+      1100px 640px at 8% -8%,
+      rgb(82 183 136 / 0.24),
+      transparent 62%
+    ),
+    radial-gradient(
+      950px 560px at 96% 4%,
+      rgb(116 198 157 / 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 50% 108%,
+      rgb(225 123 72 / 0.13),
+      transparent 62%
+    );
+
+  --headline: linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #c7e5d5 42%,
+    var(--grad-3) 100%
+  );
+
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -77,7 +195,8 @@
      degraded to whatever the OS happened to have (tofu on font-poor systems).
      The self-hosted devanagari var precedes the quoted system names so the
      shipped file always wins over a mismatched OS fallback. */
-  --font-sans: var(--font-milan-sans), var(--font-milan-devanagari), system-ui, sans-serif;
+  --font-sans:
+    var(--font-milan-sans), var(--font-milan-devanagari), system-ui, sans-serif;
 }
 
 @layer base {
@@ -87,7 +206,6 @@
   }
 
   html {
-    color-scheme: dark;
     scroll-behavior: smooth;
   }
 
@@ -106,22 +224,7 @@
       sans-serif;
     /* The aurora. Three fixed radial washes over the base ground — no image,
        no animation cost on first paint, holds up at 320px. */
-    background-image:
-      radial-gradient(
-        1100px 640px at 8% -8%,
-        rgb(124 92 255 / 0.3),
-        transparent 62%
-      ),
-      radial-gradient(
-        950px 560px at 96% 4%,
-        rgb(34 211 238 / 0.16),
-        transparent 60%
-      ),
-      radial-gradient(
-        1000px 700px at 50% 108%,
-        rgb(244 114 182 / 0.13),
-        transparent 62%
-      );
+    background-image: var(--aurora);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
@@ -136,7 +239,7 @@
 
   ::selection {
     background: color-mix(in srgb, var(--grad-1) 45%, transparent);
-    color: #fff;
+    color: var(--ink-strong);
   }
 
   ::-webkit-scrollbar {
@@ -144,7 +247,7 @@
     height: 10px;
   }
   ::-webkit-scrollbar-track {
-    background: #080a18;
+    background: var(--scrollbar-track);
   }
   ::-webkit-scrollbar-thumb {
     border-radius: 9999px;
@@ -152,12 +255,7 @@
   }
 
   h1 {
-    background: linear-gradient(
-      100deg,
-      #ffffff 0%,
-      #cfd7ff 42%,
-      var(--grad-3) 100%
-    );
+    background: var(--headline);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -165,7 +263,7 @@
   }
 
   strong {
-    color: #ffffff;
+    color: var(--ink-strong);
   }
 
   a:focus-visible,
@@ -186,11 +284,11 @@
     background:
       linear-gradient(
         160deg,
-        rgb(255 255 255 / 0.07),
-        rgb(255 255 255 / 0.02) 45%,
-        rgb(255 255 255 / 0.045)
+        var(--glass-top),
+        var(--glass-bottom) 45%,
+        var(--tint)
       ),
-      color-mix(in srgb, var(--card) 88%, transparent);
+      var(--glass-solid);
     backdrop-filter: blur(14px) saturate(140%);
     box-shadow: var(--glow);
     overflow: hidden;
@@ -219,13 +317,13 @@
   [data-slot="card"]:hover {
     border-color: color-mix(in srgb, var(--grad-2) 42%, var(--border));
     box-shadow:
-      0 0 0 1px rgb(124 92 255 / 0.3),
-      0 26px 60px -22px rgb(79 140 255 / 0.7);
+      0 0 0 1px rgb(82 183 136 / 0.3),
+      0 26px 60px -22px rgb(64 145 108 / 0.7);
   }
 
   [data-slot="card-title"] {
     letter-spacing: -0.01em;
-    color: #f4f6ff;
+    color: var(--ink-strong);
   }
 
   [data-slot="button"][data-variant="default"] {
@@ -240,7 +338,7 @@
     border: 0;
     color: #fff;
     font-weight: 600;
-    box-shadow: 0 10px 30px -12px rgb(124 92 255 / 0.9);
+    box-shadow: 0 10px 30px -12px rgb(82 183 136 / 0.9);
     transition:
       background-position 0.45s ease,
       box-shadow 0.25s ease,
@@ -248,7 +346,7 @@
   }
   [data-slot="button"][data-variant="default"]:hover {
     background-position: 100% 50%;
-    box-shadow: 0 14px 38px -12px rgb(34 211 238 / 0.75);
+    box-shadow: 0 14px 38px -12px rgb(116 198 157 / 0.75);
   }
   [data-slot="button"][data-variant="default"]:active {
     transform: translateY(1px);
@@ -256,25 +354,25 @@
 
   [data-slot="button"][data-variant="outline"],
   [data-slot="button"][data-variant="secondary"] {
-    background: rgb(255 255 255 / 0.04);
+    background: var(--tint);
     border: 1px solid color-mix(in srgb, var(--grad-1) 30%, var(--border));
     color: var(--foreground);
     backdrop-filter: blur(10px);
   }
   [data-slot="button"][data-variant="outline"]:hover,
   [data-slot="button"][data-variant="secondary"]:hover {
-    background: rgb(124 92 255 / 0.16);
+    background: var(--tint-hover);
     border-color: color-mix(in srgb, var(--grad-2) 55%, var(--border));
-    color: #fff;
+    color: var(--ink-strong);
   }
   [data-slot="button"][data-variant="destructive"] {
-    background-image: linear-gradient(120deg, #ff4d6d, #f472b6);
+    background-image: linear-gradient(120deg, #b23a2e, #e17b48);
     border: 0;
     box-shadow: 0 10px 30px -12px rgb(255 77 109 / 0.8);
   }
   [data-slot="button"][data-variant="ghost"]:hover {
-    background: rgb(124 92 255 / 0.14);
-    color: #fff;
+    background: var(--tint-hover);
+    color: var(--ink-strong);
   }
 
   [data-slot="badge"][data-variant="default"] {
@@ -283,19 +381,19 @@
     color: #fff;
   }
   [data-slot="badge"][data-variant="secondary"] {
-    background: rgb(255 255 255 / 0.07);
+    background: var(--tint-strong);
     border: 1px solid color-mix(in srgb, var(--grad-1) 25%, var(--border));
     color: var(--foreground);
   }
   [data-slot="badge"][data-variant="outline"] {
-    background: rgb(255 255 255 / 0.04);
+    background: var(--tint);
     backdrop-filter: blur(8px);
   }
 
   [data-slot="input"],
   [data-slot="textarea"],
   [data-slot="select-trigger"] {
-    background: rgb(255 255 255 / 0.045);
+    background: var(--tint);
     border-color: color-mix(in srgb, var(--grad-1) 24%, var(--border));
     color: var(--foreground);
     backdrop-filter: blur(8px);
@@ -311,11 +409,11 @@
   [data-slot="input"]:focus-visible,
   [data-slot="textarea"]:focus-visible,
   [data-slot="select-trigger"]:focus-visible {
-    background: rgb(255 255 255 / 0.07);
+    background: var(--tint-strong);
     border-color: var(--grad-2);
     box-shadow:
-      0 0 0 3px rgb(124 92 255 / 0.28),
-      0 0 24px -6px rgb(34 211 238 / 0.6);
+      0 0 0 3px rgb(82 183 136 / 0.28),
+      0 0 24px -6px rgb(116 198 157 / 0.6);
   }
 
   [data-slot="popover-content"],
@@ -327,18 +425,16 @@
     background: color-mix(in srgb, var(--popover) 92%, transparent);
     backdrop-filter: blur(18px) saturate(150%);
     border: 1px solid color-mix(in srgb, var(--grad-1) 30%, var(--border));
-    box-shadow:
-      0 30px 80px -30px rgb(0 0 0 / 0.9),
-      var(--glow);
+    box-shadow: var(--shadow-deep), var(--glow);
   }
   [data-slot="dialog-overlay"],
   [data-slot="sheet-overlay"] {
-    background: rgb(3 4 12 / 0.72);
+    background: var(--overlay);
     backdrop-filter: blur(6px);
   }
 
   [data-slot="tabs-list"] {
-    background: rgb(255 255 255 / 0.05);
+    background: var(--tint);
     border: 1px solid color-mix(in srgb, var(--grad-1) 22%, var(--border));
     backdrop-filter: blur(10px);
   }
@@ -346,11 +442,11 @@
     background-image: linear-gradient(120deg, var(--grad-1), var(--grad-2));
     color: #fff;
     border-color: transparent;
-    box-shadow: 0 8px 24px -12px rgb(124 92 255 / 0.9);
+    box-shadow: 0 8px 24px -12px rgb(82 183 136 / 0.9);
   }
 
   [data-slot="table"] thead th {
-    color: #c6cdf5;
+    color: var(--ink-soft);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 0.68rem;
@@ -360,7 +456,7 @@
     transition: background 0.18s ease;
   }
   [data-slot="table"] tbody tr:hover {
-    background: rgb(124 92 255 / 0.1);
+    background: var(--tint-hover);
   }
 
   [data-slot="separator"] {
@@ -374,14 +470,14 @@
   }
 
   [data-slot="progress"] {
-    background: rgb(255 255 255 / 0.08);
+    background: color-mix(in srgb, var(--foreground) 10%, transparent);
   }
   [data-slot="progress-indicator"] {
     background-image: linear-gradient(90deg, var(--grad-1), var(--grad-3));
   }
 
   [data-slot="alert"] {
-    background: rgb(255 255 255 / 0.05);
+    background: var(--tint);
     border: 1px solid color-mix(in srgb, var(--grad-1) 28%, var(--border));
     backdrop-filter: blur(12px);
   }
@@ -389,9 +485,9 @@
   [data-slot="skeleton"] {
     background: linear-gradient(
       90deg,
-      rgb(255 255 255 / 0.05),
-      rgb(124 92 255 / 0.18),
-      rgb(255 255 255 / 0.05)
+      var(--tint),
+      color-mix(in srgb, var(--grad-1) 20%, transparent),
+      var(--tint)
     );
     background-size: 200% 100%;
     animation: milan-shimmer 1.4s linear infinite;
@@ -414,11 +510,7 @@
 
   /* A free-standing glass panel for markup that does not use <Card>. */
   .milan-glass {
-    background: linear-gradient(
-      160deg,
-      rgb(255 255 255 / 0.07),
-      rgb(255 255 255 / 0.02)
-    );
+    background: linear-gradient(160deg, var(--glass-top), var(--glass-bottom));
     border: 1px solid color-mix(in srgb, var(--grad-1) 22%, var(--border));
     backdrop-filter: blur(14px) saturate(140%);
     box-shadow: var(--glow);

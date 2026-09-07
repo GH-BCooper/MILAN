@@ -1,4 +1,8 @@
 {
+  "name": "milan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Milan — citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -7,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "seed": "tsx --conditions=react-server seed/index.mts",
+    "seed:ai": "tsx --conditions=react-server seed/presync.mts",
     "seed:ai": "tsx --conditions=react-server seed/presync.mts",
     "seed:states": "tsx --conditions=react-server -r ./seed/tsx-shims.cjs seed/states.mts",
     "db:generate": "drizzle-kit generate",
@@ -49,6 +54,8 @@
   "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
+    "@react-map/india": "^1.0.21",
+    "@react-map/india": "^1.0.21",
     "@supabase/supabase-js": "^2.45.0",
     "better-auth": "^1.2.0",
     "class-variance-authority": "^0.7.1",
@@ -57,6 +64,7 @@
     "drizzle-orm": "^0.44.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.460.0",
+    "maplibre-gl": "^5.0.0",
     "nanoid": "^5.0.9",
     "next": "15.5.25",
     "next-themes": "^0.4.6",

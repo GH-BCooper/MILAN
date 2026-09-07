@@ -20,7 +20,7 @@ export const metadata = { title: "Emergency filter" };
  * a declared stub and appears on the stubs slide.
  */
 export default async function EmergencyPage() {
-  await requireRole("GOVERNMENT", "ADMIN");
+  await requireRole("GOVERNMENT");
 
   const rows = await execRaw<{ emergency_mode: boolean; emergency_hazard: string | null }>(
     sql`SELECT emergency_mode, emergency_hazard FROM demo_state WHERE id = 1`,

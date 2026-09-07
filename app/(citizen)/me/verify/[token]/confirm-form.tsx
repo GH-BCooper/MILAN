@@ -73,7 +73,7 @@ export function ConfirmForm({ token }: { token: string }) {
           name="answer"
           value="NO"
           disabled={pending}
-          className="flex w-full flex-col items-start rounded-lg border-2 border-red-400/40 bg-white/5 px-5 py-4 text-left disabled:opacity-50"
+          className="flex w-full flex-col items-start rounded-lg border-2 border-red-400/40 bg-foreground/5 px-5 py-4 text-left disabled:opacity-50"
         >
           <span className="text-lg font-bold text-red-200">No, nothing changed</span>
           <span className="mt-1 text-sm text-red-200">
