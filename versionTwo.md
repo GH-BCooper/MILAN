@@ -150,11 +150,18 @@ dependency was added.**
 ```
 pnpm exec tsc --noEmit     # clean
 pnpm build                 # passes; / and /portals/* prerender as static (○)
-pnpm test                  # scoring (18) and ledger (14) pass; the DB-backed
-                           # invariant suite is slow and was still running at
-                           # hand-off. No tested logic was touched by this pass —
-                           # the changes are routing, CSS tokens and components.
+pnpm test                  # 76 passed, 1 failed
 ```
+
+The single failure is `state machine > accepts every legal edge`, and it is a
+**timeout, not an assertion failure** — it hit the local `testTimeout: 180_000`
+in `vitest.config.ts` exactly (180008ms) while walking ~80 real transitions
+against Postgres. CI is already given 600s for this reason. It is environmental
+slowness on the dev machine, and it is not attributable to this pass: the v2
+diff touches only `app/`, `components/` and `app/globals.css`, nothing in
+`lib/`, `packages/` or `tests/`. Every other DB-backed test passed, including
+state-machine atomicity, terminal-state refusal, the ledger's append-only
+triggers, and invariant 1 (no challenge may silently die).
 
 Not verified: pixel screenshots. No browser binary is available in this
 environment, so both skins were checked structurally (token parity between
