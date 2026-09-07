@@ -4,7 +4,6 @@ import { RoleBadge } from "@/components/role-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { currentUser } from "@/lib/auth/guards";
-import { HOME_FOR } from "@/lib/auth/home";
 
 /** The landing site has its own chrome, but it is still auth-aware: a signed-in
  *  judge who lands back on "/" must see themselves signed in, with a route into
@@ -45,7 +44,7 @@ export async function LandingHeader() {
               <RoleBadge role={user.role} districtCode={user.districtCode} />
               <Link
                 className="text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)]"
-                href={HOME_FOR[user.role]}
+                href="/profile"
               >
                 {user.fullName}
               </Link>

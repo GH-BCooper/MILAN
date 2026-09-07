@@ -83,10 +83,12 @@ export async function requireUser(returnTo?: string): Promise<MilanUser> {
  *  copy-pasted into every /hei and /industry page. */
 export async function requireRole(...roles: Role[]): Promise<MilanUser> {
   const user = await requireUser();
+  // Owner-directed (item 9a): the platform administrator can open every portal —
+  // citizen, university, industry and government screens included — so the demo
+  // can walk all of them from one account. Admin-initiated writes still record
+  // the actor id and, for destructive challenge actions, a mandatory reason.
+  if (user.role === "ADMIN") return user;
   if (!roles.includes(user.role)) {
-    // ADMIN is deliberately not a wildcard. An admin who needs a gov screen is
-    // given the GOVERNMENT role too; implicit superuser access is how audit
-    // trails get holes in them.
     redirect("/?denied=role");
   }
   if (ORG_PROOF_ROLES.includes(user.role) && user.orgVerificationStatus !== "APPROVED") {

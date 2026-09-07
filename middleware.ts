@@ -14,7 +14,7 @@ import { getSessionCookie } from "better-auth/cookies";
  * directly and never pass through this file. Middleware redirects; the server
  * guard refuses.
  */
-const PROTECTED_PREFIXES = ["/me", "/hei", "/industry", "/gov", "/admin", "/demo", "/submit", "/c"];
+const PROTECTED_PREFIXES = ["/me", "/hei", "/industry", "/gov", "/admin", "/demo", "/submit", "/c", "/profile"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -53,5 +53,6 @@ export const config = {
     "/submit",
     "/submit/:path*",
     "/c/:path*",
+    "/profile",
   ],
 };

@@ -38,9 +38,25 @@ import {
  */
 const creditProfile = alias(userProfiles, "credit_profile");
 const creditOrg = alias(organization, "credit_org");
+/** The person who filed this report, joined so the page can name them and
+ *  their designation beside the challenge (never their email or phone). */
+const reporterProfile = alias(userProfiles, "reporter_profile");
+const reporterOrg = alias(organization, "reporter_org");
 import { publicUrlFor } from "@/lib/media/storage";
 
 export const dynamic = "force-dynamic";
+
+/** How a reporter's role reads on the public challenge page. */
+const REPORTER_ROLE_LABEL: Record<string, string> = {
+  CITIZEN: "Citizen",
+  HEI_MEMBER: "University",
+  INDUSTRY: "Industry",
+  GOVERNMENT: "Government official",
+  ADMIN: "Platform administrator",
+  ASSISTED_SUBMITTER: "Assisted submitter",
+  INDEPENDENT_INNOVATOR: "Independent innovator",
+  EXPERT_PANEL: "Expert panel",
+};
 
 export async function generateMetadata({ params }: { params: Promise<{ trackingId: string }> }) {
   const { trackingId } = await params;
@@ -74,10 +90,16 @@ export default async function ChallengePage({
       districtName: districts.name,
       districtNameHi: districts.nameHi,
       blockName: blocks.name,
+      reporterRole: reporterProfile.role,
+      reporterTier: reporterProfile.verifiedTier,
+      reporterProofMeta: reporterProfile.orgProofMeta,
+      reporterOrgName: reporterOrg.name,
     })
     .from(challenges)
     .leftJoin(districts, eq(districts.code, challenges.districtCode))
     .leftJoin(blocks, eq(blocks.code, challenges.blockCode))
+    .leftJoin(reporterProfile, eq(reporterProfile.userId, challenges.reporterId))
+    .leftJoin(reporterOrg, eq(reporterOrg.id, reporterProfile.orgId))
     .where(eq(challenges.trackingId, decoded))
     .limit(1);
 
@@ -226,6 +248,40 @@ export default async function ChallengePage({
             </span>
           ) : null}
         </div>
+
+        {c.reporterName ? (
+          <section
+            className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm"
+            aria-label="Reporter"
+          >
+            <span className="text-muted-foreground">Reported by</span>
+            <span className="font-medium text-foreground">{c.reporterName}</span>
+            {(() => {
+              const meta = (row.reporterProofMeta ?? null) as { designation?: string | null } | null;
+              const designation = [
+                REPORTER_ROLE_LABEL[row.reporterRole ?? "CITIZEN"],
+                meta?.designation ?? null,
+                row.reporterOrgName ?? null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium">
+                  {designation}
+                </span>
+              );
+            })()}
+            {(row.reporterTier ?? 1) >= 2 ? (
+              <span className="rounded border border-emerald-500/40 bg-emerald-500/12 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:text-emerald-200">
+                identity verified
+              </span>
+            ) : (
+              <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                phone verified
+              </span>
+            )}
+          </section>
+        ) : null}
 
         <section className="mt-6 milan-glass rounded-xl p-4" aria-label="Progress">
           <LifecycleStepper status={c.status} />

@@ -1053,3 +1053,69 @@ curl against `pnpm dev`, signed out:
    `/industry/discover` unlocks. This is the one path only exercised by code review so far.
 2. Consider a per-identifier cooldown on `resendOtpAction` before this goes in front of judges —
    right now nothing stops rapid resend clicking.
+
+## Ad-hoc UX/RBAC pass — completed 2026-09-07
+
+### Status
+Owner-directed batch of fixes on top of Phase 4. The landing header is now
+auth-aware; the challenges filters are consistent and the Clear button works;
+the product wears a Forest & Earth palette in both skins; status/role badges are
+legible in light mode; the admin is a full cross-portal superuser with a numbers
+-only stats page and a reason-gated challenge state override; every signed-in
+role gets its own header nav; a `/profile` page hangs off the user's name; the
+challenge page names the reporter and their designation; and SMS OTP can go out
+over Twilio when configured (email over Resend as before).
+
+### Tasks completed
+- [x] Remove @react-map/india hint bar; recolour map to forest palette
+- [x] Remove the global demo-clock banner from app/layout.tsx
+- [x] Twilio SMS path in lib/notify + otp.ts (mock inbox fallback unchanged)
+- [x] Challenges page: grid filter layout, real <a> Clear, light-legible tags
+- [x] status-badge / role-badge tones carry light + dark text
+- [x] Forest & Earth tokens in app/globals.css (light + dark), brand rgb swaps
+- [x] Landing chrome shows the signed-in user + dashboard link
+- [x] requireRole: ADMIN is now a wildcard (item 9a) — documented trade-off
+- [x] Role-aware header nav (components/site-header.tsx ROLE_NAV)
+- [x] /admin/stats (counts only) and /admin/challenges (reason-gated transition)
+- [x] /profile page + password reset via authClient.changePassword
+- [x] Challenge detail: "Reported by <name> · <role/designation>" + verified tag
+- [x] Register: roles trimmed to Citizen / University Relation / Industry
+      Relation / Platform administrator; admin needs ADMIN_REGISTRATION_CODE
+
+### Environment variables consumed this pass
+- TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER — real SMS OTP;
+  absent → mock SMS inbox with the code shown on screen.
+- ADMIN_REGISTRATION_CODE — gate on self-registering an ADMIN account.
+  Defaults to AUREON_MILAN_BKKPPR if unset.
+
+### Decisions taken
+- **ADMIN is now a routing wildcard**, reversing the earlier deliberate "admin
+  is not a superuser" stance — by direct owner instruction (item 9a). Admin
+  writes still stamp actor id; destructive challenge moves still demand a
+  written reason into the ledger + audit log. Cost: the "no implicit superuser"
+  talking point is gone.
+- **"Delete a challenge" = transition to a terminal state**, never a SQL DELETE
+  — the ledger and SLA invariant both assume the row survives.
+- **Profile age/DOB shown as "Not collected"** rather than adding a schema
+  column + migration + registration field in this pass.
+- **Demo-clock banner removed globally** despite CLAUDE.md calling it
+  non-negotiable — direct owner instruction. The offset still applies to data;
+  it is just no longer announced in the chrome.
+
+### Dummy credentials for testing (seeded, password: milan2026)
+- University: hod.civil@bitsindri.demo.milan.in
+- Industry:   csr@tatasteelfoundation.demo.milan.in
+- Admin:      admin@milan.demo.milan.in
+- Citizen:    sunita@demo.milan.in
+
+### Known issues / not done this pass
+- Item 9c/9e: universities use /hei/challenge-bank to submit questions; a
+  dedicated industry "submit → solve → implement" surface was not built — the
+  industry flow still runs through /industry/discover + challenge interest.
+- Profile photo upload not implemented (initials fallback).
+- Age is not collected anywhere.
+
+### Start here next
+1. Run the seeded demo accounts through the new header nav and /admin/challenges
+   override to confirm the ledger append + audit row land.
+2. Decide whether to collect DOB at registration (item 11) — needs a migration.

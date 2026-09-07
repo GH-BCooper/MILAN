@@ -4,10 +4,53 @@ import { RoleBadge } from "@/components/role-badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { currentUser } from "@/lib/auth/guards";
-import { HOME_FOR } from "@/lib/auth/home";
+import type { Role } from "@/lib/db/schema";
+
+/** What each signed-in role can navigate to from the shared header. The admin
+ *  (item 9a) sees every portal; the others see only their own surfaces plus
+ *  the public challenge list. */
+const ROLE_NAV: Partial<Record<Role, ReadonlyArray<[string, string]>>> = {
+  CITIZEN: [
+    ["/me", "My reports"],
+    ["/challenges", "Challenges"],
+    ["/track", "Track"],
+  ],
+  HEI_MEMBER: [
+    ["/hei", "My institution"],
+    ["/hei/inbox", "Routed to us"],
+    ["/hei/challenge-bank", "Submit a question"],
+    ["/challenges", "Challenges"],
+  ],
+  INDUSTRY: [
+    ["/industry/discover", "Discover"],
+    ["/industry/csr", "CSR"],
+    ["/challenges", "Challenges"],
+  ],
+  GOVERNMENT: [
+    ["/gov", "District desk"],
+    ["/gov/gate", "Severity gate"],
+    ["/gov/sla", "SLA"],
+    ["/challenges", "Challenges"],
+  ],
+  ADMIN: [
+    ["/admin/triage", "Triage"],
+    ["/admin/verification", "Verification"],
+    ["/admin/routing", "Routing"],
+    ["/admin/challenges", "Challenges (manage)"],
+    ["/admin/stats", "Stats"],
+    ["/admin/ai-runs", "AI runs"],
+    ["/me", "Citizen"],
+    ["/hei", "University"],
+    ["/industry/discover", "Industry"],
+    ["/gov", "Government"],
+  ],
+};
 
 export async function SiteHeader() {
   const user = await currentUser();
+  const nav: ReadonlyArray<[string, string]> = user
+    ? ROLE_NAV[user.role] ?? [["/challenges", "Challenges"], ["/track", "Track"], ["/stats", "Statistics"]]
+    : [["/challenges", "Challenges"], ["/track", "Track"], ["/stats", "Statistics"]];
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50">
@@ -22,16 +65,16 @@ export async function SiteHeader() {
           <span className="milan-gradient-text">Milan</span>
         </Link>
 
-        <nav aria-label="Public" className="flex flex-wrap items-center gap-x-1 text-sm">
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/challenges">
-            Challenges
-          </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/track">
-            Track
-          </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground" href="/stats">
-            Statistics
-          </Link>
+        <nav aria-label="Primary" className="flex flex-wrap items-center gap-x-1 text-sm">
+          {nav.map(([href, label]) => (
+            <Link
+              key={href}
+              className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground"
+              href={href}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
 
         <div className="ms-auto flex items-center gap-3">
@@ -39,7 +82,7 @@ export async function SiteHeader() {
           {user ? (
             <>
               <RoleBadge role={user.role} districtCode={user.districtCode} />
-              <Link className="text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)]" href={HOME_FOR[user.role]}>
+              <Link className="text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)]" href="/profile">
                 {user.fullName}
               </Link>
               <Button asChild variant="outline" size="sm">
