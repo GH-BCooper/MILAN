@@ -81,6 +81,19 @@ export interface ActionCtx {
   deadline: DeadlineRow;
   challenge: ChallengeRow;
   prep: ActionPrep;
+  /**
+   * Emergency Mode: 1 in peacetime, EMERGENCY_TIME_SCALE when the state pins
+   * this challenge's hazard. Follow-on deadlines and claim windows opened by an
+   * action use `ctxDays()` so a ladder that escalated under an emergency keeps
+   * running at emergency speed instead of snapping back to peacetime halfway up.
+   */
+  clockScale?: number;
+}
+
+/** A peacetime day-count, at this challenge's emergency speed. */
+function ctxDays(ctx: ActionCtx, n: number): Date {
+  const scale = ctx.clockScale && ctx.clockScale > 0 && ctx.clockScale <= 1 ? ctx.clockScale : 1;
+  return new Date(ctx.now.getTime() + n * scale * 86_400_000);
 }
 
 /* ------------------------------------------------------------- recipients */
@@ -200,7 +213,7 @@ async function widen(ctx: ActionCtx): Promise<ActionResult> {
         reasonText: o.reasonText,
         reasonTerms: o.reasonTerms as never,
         notifiedAt: now,
-        claimWindowEndsAt: plusDays(now, 7),
+        claimWindowEndsAt: ctxDays(ctx, 7),
         state: "OFFERED",
         createdAt: now,
       })),
@@ -337,7 +350,7 @@ async function proposalDue(ctx: ActionCtx): Promise<ActionResult> {
       });
       if (s) emails.push(s);
     }
-    await openDeadline(ctx, "PROPOSAL_DUE", plusDays(now, 7), { stage: 2 });
+    await openDeadline(ctx, "PROPOSAL_DUE", ctxDays(ctx, 7), { stage: 2 });
     await ledger(ctx, { action: "PROPOSAL_DUE", stage: 1 });
     return { summary: `PROPOSAL_DUE — lead and HOD nudged, claim released in 7 days`, newStatus: challenge.status, emails };
   }
@@ -422,7 +435,7 @@ async function silent45(ctx: ActionCtx): Promise<ActionResult> {
     });
     if (s) emails.push(s);
   }
-  await openDeadline(ctx, "STAGE_TIMEOUT", plusDays(now, 30), { expect: "fork-or-park" });
+  await openDeadline(ctx, "STAGE_TIMEOUT", ctxDays(ctx, 30), { expect: "fork-or-park" });
   return { summary: `SILENT_45 — fork rights open, prior team credited on any fork`, newStatus: challenge.status, emails };
 }
 
@@ -450,7 +463,7 @@ async function impactUnconfirmed(ctx: ActionCtx): Promise<ActionResult> {
   }
 
   await ledger(ctx, { action: "IMPACT_UNCONFIRMED_30", note: "Claim remains unconfirmed and is rendered grey everywhere, including the CSR export." });
-  await openDeadline(ctx, "IMPACT_UNCONFIRMED_30", plusDays(now, 30), { round: 2 });
+  await openDeadline(ctx, "IMPACT_UNCONFIRMED_30", ctxDays(ctx, 30), { round: 2 });
   return {
     summary: `IMPACT_UNCONFIRMED_30 — second message to the citizen; the claim stays grey`,
     newStatus: challenge.status,
@@ -521,7 +534,7 @@ async function stageTimeout(ctx: ActionCtx): Promise<ActionResult> {
     });
     if (s) emails.push(s);
   }
-  await openDeadline(ctx, "STAGE_TIMEOUT", plusDays(now, 3), { expect, escalated: true });
+  await openDeadline(ctx, "STAGE_TIMEOUT", ctxDays(ctx, 3), { expect, escalated: true });
   await ledger(ctx, { action: "STAGE_TIMEOUT", status: challenge.status, expect });
   return { summary: `STAGE_TIMEOUT — stalled at ${challenge.status}, escalated to admin`, newStatus: challenge.status, emails };
 }
@@ -542,7 +555,7 @@ async function gateTimeout(ctx: ActionCtx): Promise<ActionResult> {
     });
     if (s) emails.push(s);
   }
-  await openDeadline(ctx, "GATE_TIMEOUT", plusDays(now, 2), { escalated: true });
+  await openDeadline(ctx, "GATE_TIMEOUT", ctxDays(ctx, 2), { escalated: true });
   await ledger(ctx, { action: "GATE_TIMEOUT" });
   return { summary: `GATE_TIMEOUT — the District Collector re-notified, gate still closed`, newStatus: challenge.status, emails };
 }
@@ -569,7 +582,7 @@ async function disputeReview(ctx: ActionCtx): Promise<ActionResult> {
     });
     if (s) emails.push(s);
   }
-  await openDeadline(ctx, "DISPUTE_REVIEW", plusDays(now, 14), { round: 2 });
+  await openDeadline(ctx, "DISPUTE_REVIEW", ctxDays(ctx, 14), { round: 2 });
   await ledger(ctx, { action: "DISPUTE_REVIEW" });
   return { summary: `DISPUTE_REVIEW — district notified; the counter stays where it is`, newStatus: challenge.status, emails };
 }
@@ -609,7 +622,13 @@ export async function runAction(ctx: ActionCtx): Promise<ActionResult> {
  * substitute for `deadlinesFor` — if it ever fires in practice that is a bug in
  * the action, and it says so in the ledger payload.
  */
-export async function ensureOpenDeadline(tx: Tx, challengeId: string, status: ChallengeStatus, now: Date): Promise<boolean> {
+export async function ensureOpenDeadline(
+  tx: Tx,
+  challengeId: string,
+  status: ChallengeStatus,
+  now: Date,
+  clockScale = 1,
+): Promise<boolean> {
   const { isTerminal } = await import("@/lib/db/stateMachine");
   if (isTerminal(status) && status !== "PARKED") return false;
 
@@ -619,7 +638,7 @@ export async function ensureOpenDeadline(tx: Tx, challengeId: string, status: Ch
   )) as unknown as Array<{ n: number }>;
   if (Number(open[0]?.n ?? 0) > 0) return false;
 
-  const specs = deadlinesFor(status, { now });
+  const specs = deadlinesFor(status, { now, clockScale });
   const rows = specs.length > 0 ? specs : [{ kind: "STAGE_TIMEOUT" as SlaKind, dueAt: new Date(now.getTime() + 30 * 86_400_000), payload: { reason: "invariant-1 backstop" } }];
   await tx.insert(slaDeadlines).values(
     rows.map((r) => ({ challengeId, kind: r.kind, dueAt: r.dueAt, payload: r.payload ?? {}, createdAt: now })),

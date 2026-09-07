@@ -785,9 +785,12 @@ export const auditLog = pgTable(
 export const demoState = pgTable("demo_state", {
   id: integer("id").primaryKey().default(1),
   clockOffsetDays: integer("clock_offset_days").notNull().default(0),
-  emergencyMode: boolean("emergency_mode").notNull().default(false),
-  /** Which hazard the emergency filter is pinned to. Display and sort only — never the stored score. */
-  emergencyHazard: text("emergency_hazard"),
+    emergencyMode: boolean("emergency_mode").notNull().default(false),
+    /** Which hazard the emergency is pinned to. Filters display, drives the
+     *  surge re-rank and compresses the pinned hazard's SLA clocks to
+     *  EMERGENCY_TIME_SCALE (reversibly — see /gov/emergency). Never a stored
+     *  priority score. */
+    emergencyHazard: text("emergency_hazard"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

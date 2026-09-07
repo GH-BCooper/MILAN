@@ -34,6 +34,8 @@ interface OpenRow extends Record<string, unknown> {
   n: number;
   next_due: string | null;
   overdue: number;
+  /** Rows whose clocks Emergency Mode compressed (carry the payload marker). */
+  compressed: number;
 }
 
 interface InstRow extends Record<string, unknown> {
@@ -65,7 +67,9 @@ export default async function SlaPage() {
     execRaw<OpenRow>(sql`
       SELECT d.kind::text AS kind, count(*)::int AS n,
              min(d.due_at)::text AS next_due,
-             count(*) FILTER (WHERE d.due_at <= clock_now())::int AS overdue
+             count(*) FILTER (WHERE d.due_at <= clock_now())::int AS overdue,
+             count(*) FILTER (WHERE COALESCE(d.payload, '{}'::jsonb) ? 'preEmergencyDueAt'
+                            OR (d.payload->>'emergencyClock') IS NOT NULL)::int AS compressed
       FROM sla_deadlines d
       JOIN challenges c ON c.id = d.challenge_id
       WHERE d.fired_at IS NULL AND d.cancelled_at IS NULL ${scope}
@@ -102,7 +106,8 @@ export default async function SlaPage() {
           <p className="mb-2 mt-1 text-xs text-muted-foreground">
             Every non-terminal challenge has at least one open row here. That is enforced by a CI
             query, not by convention — if this table were ever empty while challenges were open, the
-            build would fail.
+            build would fail. Under Emergency Mode, clocks linked to the pinned hazard run at half
+            speed; the original due date is kept in the row and restored when the emergency ends.
           </p>
           {open.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border bg-muted p-4 text-sm text-muted-foreground">
@@ -116,6 +121,7 @@ export default async function SlaPage() {
                     <th className="py-2 pr-3">Deadline</th>
                     <th className="py-2 pr-3 text-right">Open</th>
                     <th className="py-2 pr-3 text-right">Already overdue</th>
+                    <th className="py-2 pr-3 text-right">At emergency speed</th>
                     <th className="py-2">Next due</th>
                   </tr>
                 </thead>
@@ -125,6 +131,9 @@ export default async function SlaPage() {
                       <td className="py-2 pr-3 font-medium">{o.kind.replace(/_/g, " ").toLowerCase()}</td>
                       <td className="py-2 pr-3 text-right tabular-nums">{o.n}</td>
                       <td className={`py-2 pr-3 text-right tabular-nums ${o.overdue > 0 ? "font-semibold text-red-700" : ""}`}>{o.overdue}</td>
+                      <td className={`py-2 pr-3 text-right tabular-nums ${Number(o.compressed) > 0 ? "font-semibold text-red-700" : "text-muted-foreground"}`}>
+                        {Number(o.compressed) > 0 ? `${o.compressed} ×0.5` : "—"}
+                      </td>
                       <td className="py-2 text-xs text-muted-foreground">{o.next_due?.slice(0, 16) ?? "—"}</td>
                     </tr>
                   ))}

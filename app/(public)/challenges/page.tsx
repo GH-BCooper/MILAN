@@ -5,7 +5,9 @@ import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { STATUS_COLOUR } from "@/components/status-colour";
 import type { MapMarker } from "@/components/milan-map";
+import { emergencyState } from "@/lib/clock/server";
 import { db } from "@/lib/db";
+import { surgeRank } from "@/lib/emergency/surge";
 import {
   challenges,
   districts,
@@ -63,6 +65,8 @@ export default async function ChallengesPage({
         districtCode: challenges.districtCode,
         districtName: districts.name,
         corroborationCount: challenges.corroborationCount,
+        priorityScore: challenges.priorityScore,
+        hazardStrength: challenges.hazardStrength,
         createdAt: challenges.createdAt,
       })
       .from(challenges)
@@ -73,9 +77,29 @@ export default async function ChallengesPage({
     db.select({ code: districts.code, name: districts.name }).from(districts).orderBy(asc(districts.name)),
   ]);
 
-  const markers: MapMarker[] = rows
-    .filter((r) => r.lat !== null && r.lng !== null)
+  // Emergency Mode pins the hazard filter unless the visitor chose one
+  // explicitly, and re-sorts the list by the display surge. Honest by design:
+  // the banner explains it, each surged row is labelled, and the stored score
+  // shown on the challenge page never moved.
+  const emergency = await emergencyState();
+  const pinnedHazard = emergency.on && !hazard ? emergency.hazard : null;
+  const displayRows = (
+    pinnedHazard === null ? rows : rows.filter((r) => r.hazard === pinnedHazard)
+  )
     .map((r) => ({
+      row: r,
+      surge: surgeRank({
+        priorityScore: r.priorityScore === null ? null : Number(r.priorityScore),
+        hazard: r.hazard,
+        hazardStrength: r.hazardStrength === null ? null : Number(r.hazardStrength),
+        emergencyHazard: pinnedHazard,
+      }),
+    }))
+    .sort((a, b) => b.surge.sortKey - a.surge.sortKey);
+
+  const markers: MapMarker[] = displayRows
+    .filter(({ row: r }) => r.lat !== null && r.lng !== null)
+    .map(({ row: r }) => ({
       id: r.id,
       lat: Number(r.lat),
       lng: Number(r.lng),
@@ -174,11 +198,19 @@ export default async function ChallengesPage({
         </div>
 
         <p className="mt-8 text-sm font-medium" aria-live="polite">
-          {rows.length} {rows.length === 1 ? "challenge" : "challenges"}
+          {displayRows.length} {displayRows.length === 1 ? "challenge" : "challenges"}
           {district ? ` in ${districtRows.find((d) => d.code === district)?.name ?? district}` : ""}
         </p>
 
-        {rows.length === 0 ? (
+        {pinnedHazard ? (
+          <p className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-900">
+            Emergency mode: the list is filtered to {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted
+            by a display surge of up to ×1.25. That changes what is shown, never a stored score. Choose a
+            different hazard above to override the pin.
+          </p>
+        ) : null}
+
+        {displayRows.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">
             Nothing matches those filters.{" "}
             <Link className="text-primary underline underline-offset-4" href="/challenges">
@@ -188,7 +220,7 @@ export default async function ChallengesPage({
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
-            {rows.map((r) => (
+            {displayRows.map(({ row: r, surge }) => (
               <li key={r.id} className="p-4">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Link
@@ -201,6 +233,14 @@ export default async function ChallengesPage({
                   {r.hazard && r.hazard !== "NONE" ? (
                     <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
                       {r.hazard.replaceAll("_", " ")}
+                    </span>
+                  ) : null}
+                  {surge.matched ? (
+                    <span
+                      className="rounded border border-red-300 bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900"
+                      title={`stored score ${surge.storedScore?.toFixed(1) ?? "unscored"} × ${surge.multiplier.toFixed(2)} emergency surge = ${surge.sortKey.toFixed(1)} (display only)`}
+                    >
+                      emergency surge ×{surge.multiplier.toFixed(2)}
                     </span>
                   ) : null}
                 </div>

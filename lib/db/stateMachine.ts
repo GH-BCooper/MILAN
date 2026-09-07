@@ -17,7 +17,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { appendEntry } from "@/lib/ledger/append";
-import { deadlinesFor } from "@/lib/sla/deadlines";
+import { deadlinesFor, emergencyScale } from "@/lib/sla/deadlines";
 import type { Tx } from "./index";
 import {
   challenges,
@@ -184,13 +184,29 @@ export function contentHashOf(payload: unknown): string {
  * The caller owns the transaction so that a state change can be bundled with
  * whatever else the same action writes — media rows, credit edges, a project.
  */
+/**
+ * The emergency clock scale for this challenge, read from demo_state on the
+ * transaction itself. Fails open to peacetime: a demo_state row that cannot be
+ * read must not freeze every state change in the product.
+ */
+async function emergencyClockScale(tx: Tx, hazard: string | null): Promise<number> {
+  try {
+    const rows = (await tx.execute<{ emergency_mode: boolean; emergency_hazard: string | null }>(
+      sql`SELECT emergency_mode, emergency_hazard FROM demo_state WHERE id = 1`,
+    )) as unknown as Array<{ emergency_mode: boolean; emergency_hazard: string | null }>;
+    return emergencyScale(Boolean(rows[0]?.emergency_mode), rows[0]?.emergency_hazard ?? null, hazard);
+  } catch {
+    return 1;
+  }
+}
+
 export async function transition(tx: Tx, input: TransitionInput): Promise<TransitionResult> {
   const { challengeId, to, actorId = null, reason = null, meta = {} } = input;
 
   // Lock the row. Two reapers firing on the same challenge in the same minute is
   // not hypothetical: Vercel Cron can overlap runs.
   const [row] = await tx
-    .select({ id: challenges.id, trackingId: challenges.trackingId, status: challenges.status })
+    .select({ id: challenges.id, trackingId: challenges.trackingId, status: challenges.status, hazard: challenges.hazard })
     .from(challenges)
     .where(eq(challenges.id, challengeId))
     .for("update");
@@ -235,10 +251,19 @@ export async function transition(tx: Tx, input: TransitionInput): Promise<Transi
     )
     .returning({ id: slaDeadlines.id });
 
+  // Emergency Mode: when the state pins this challenge's hazard, the clocks
+  // this transition opens run at EMERGENCY_TIME_SCALE. Read inside the
+  // transaction (one row, one read) rather than through lib/clock/server, so
+  // this module stays importable without a database — tests/sla.test.ts
+  // enumerates the machine against no DB at all, and that property is worth
+  // more than a shared helper.
+  const clockScale = await emergencyClockScale(tx, row.hazard);
+
   const specs = deadlinesFor(to, {
     now: at,
     projectId: input.projectId ?? null,
     lastActivityAt: input.lastActivityAt ?? null,
+    clockScale,
   });
   if (specs.length > 0) {
     await tx.insert(slaDeadlines).values(
