@@ -150,8 +150,17 @@ dependency was added.**
 ```
 pnpm exec tsc --noEmit     # clean
 pnpm build                 # passes; / and /portals/* prerender as static (○)
-pnpm test                  # unchanged suite, passing
+pnpm test                  # scoring (18) and ledger (14) pass; the DB-backed
+                           # invariant suite is slow and was still running at
+                           # hand-off. No tested logic was touched by this pass —
+                           # the changes are routing, CSS tokens and components.
 ```
+
+Not verified: pixel screenshots. No browser binary is available in this
+environment, so both skins were checked structurally (token parity between
+`:root` and `.dark`, live HTTP 200s and rendered markup on every new route)
+rather than visually. Open `/` and press the Light button in the header to
+confirm by eye.
 
 Routes added: `/`, `/portals/citizens`, `/portals/universities`,
 `/portals/industry` — all four static.
