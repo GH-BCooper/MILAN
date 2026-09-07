@@ -22,7 +22,7 @@ const {
   applyDelta,
 } = await import("@/lib/credit/trust");
 
-interface ProfileRow {
+interface ProfileRow extends Record<string, unknown> {
   user_id: string;
   trust_score: string;
 }
