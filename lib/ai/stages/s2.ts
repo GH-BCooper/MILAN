@@ -13,12 +13,13 @@
  */
 import "server-only";
 
-import { and, isNotNull, ne, sql } from "drizzle-orm";
+import { and, asc, isNotNull, ne, sql } from "drizzle-orm";
 
-import { db } from "@/lib/db";
+import { db, sql as rawSql } from "@/lib/db";
 import { challenges } from "@/lib/db/schema";
 import { runWithChain } from "../providers/chain";
 import { toVectorLiteral } from "../providers/embed";
+import { JS_VECTOR_SCAN_LIMIT, jsCosineRank, supportsVector } from "../vector-candidates";
 import * as prompt from "../prompts/s2";
 import { S2Schema, type S2Input, type S2Output } from "../schemas";
 import type { StageRun } from "../types";
@@ -53,6 +54,39 @@ export async function knnPrior(
   k = S2_THRESHOLDS.priorK,
 ): Promise<S2Input["priors"]> {
   if (embedding.length === 0) return [];
+
+  if (!(await supportsVector(rawSql))) {
+    // No pgvector below us (the embedded sandbox Postgres, most visibly).
+    // Same rows, same cosine, ranked in-process over a bounded scan — at the
+    // seeded corpus size this is single-digit milliseconds. The stage then
+    // answers for real instead of being marked degraded on a query error.
+    const scan = await db
+      .select({
+        title: challenges.title,
+        domain: challenges.domain,
+        hazard: challenges.hazard,
+        embedding: challenges.embedding,
+      })
+      .from(challenges)
+      .where(
+        and(
+          isNotNull(challenges.embedding),
+          isNotNull(challenges.domain),
+          excludeChallengeId ? ne(challenges.id, excludeChallengeId) : undefined,
+        ),
+      )
+      .orderBy(asc(challenges.createdAt))
+      .limit(JS_VECTOR_SCAN_LIMIT);
+
+    return jsCosineRank(scan, embedding, k)
+      .filter((r) => r.domain && r.hazard && r.similarity >= S2_THRESHOLDS.priorMinSimilarity)
+      .map((r) => ({
+        title: r.title,
+        domain: r.domain as string,
+        hazard: r.hazard as string,
+        similarity: r.similarity,
+      }));
+  }
 
   const literal = toVectorLiteral(embedding);
   const rows = await db

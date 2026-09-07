@@ -13,11 +13,11 @@
  */
 import "server-only";
 
-import { and, eq, isNotNull, ne, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, ne, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { awardMerge } from "@/lib/credit/trust-writers";
-import { db } from "@/lib/db";
+import { db, sql as rawSql } from "@/lib/db";
 import { transition } from "@/lib/db/stateMachine";
 import { appendEntry } from "@/lib/ledger/append";
 import {
@@ -30,6 +30,7 @@ import {
 import { runWithChain } from "../providers/chain";
 import { haversineKm } from "../routing";
 import { toVectorLiteral } from "../providers/embed";
+import { JS_VECTOR_SCAN_LIMIT, jsCosineRank, supportsVector } from "../vector-candidates";
 import * as prompt from "../prompts/s3";
 import { S3Schema, type S3AdjudicateInput, type S3Output } from "../schemas";
 import type { StageRun } from "../types";
@@ -128,7 +129,6 @@ export async function findCandidates(challenge: {
   embedding: number[];
 }): Promise<Candidate[]> {
   if (challenge.embedding.length === 0) return [];
-  const literal = toVectorLiteral(challenge.embedding);
 
   const blockPool = challenge.blockCode
     ? await db
@@ -145,6 +145,62 @@ export async function findCandidates(challenge: {
     : challenge.districtCode
       ? eq(challenges.districtCode, challenge.districtCode)
       : undefined;
+
+  if (!(await supportsVector(rawSql))) {
+    // No pgvector below us: rank the same scoped rows by cosine in-process
+    // over a bounded scan instead of degrading the whole stage on
+    // `type "vector" does not exist`. Demo corpus scale: tens of rows.
+    const scan = await db
+      .select({
+        id: challenges.id,
+        trackingId: challenges.trackingId,
+        title: challenges.title,
+        bodyEn: challenges.bodyEn,
+        bodyOriginal: challenges.bodyOriginal,
+        blockCode: challenges.blockCode,
+        districtCode: challenges.districtCode,
+        status: challenges.status,
+        corroborationCount: challenges.corroborationCount,
+        reporterId: challenges.reporterId,
+        reporterName: challenges.reporterName,
+        lat: challenges.lat,
+        lng: challenges.lng,
+        createdAt: challenges.createdAt,
+        embedding: challenges.embedding,
+      })
+      .from(challenges)
+      .where(
+        and(
+          ne(challenges.id, challenge.id),
+          isNotNull(challenges.embedding),
+          ne(challenges.status, "MERGED"),
+          ne(challenges.status, "REJECTED_UNSAFE"),
+          eq(challenges.isParent, false),
+          scope,
+        ),
+      )
+      .orderBy(asc(challenges.createdAt))
+      .limit(JS_VECTOR_SCAN_LIMIT);
+
+    return jsCosineRank(scan, challenge.embedding, S3_THRESHOLDS.candidateK).map((r) => ({
+      id: r.id,
+      trackingId: r.trackingId,
+      title: r.title,
+      body: r.bodyEn ?? r.bodyOriginal,
+      blockCode: r.blockCode,
+      districtCode: r.districtCode,
+      status: r.status,
+      corroborationCount: r.corroborationCount,
+      reporterId: r.reporterId,
+      reporterName: r.reporterName,
+      lat: r.lat,
+      lng: r.lng,
+      createdAt: r.createdAt,
+      similarity: r.similarity,
+    }));
+  }
+
+  const literal = toVectorLiteral(challenge.embedding);
 
   const rows = await db
     .select({
@@ -522,6 +578,62 @@ export async function findRollupCandidates(challenge: {
   similarity: number;
 }> | null> {
   if (!challenge.districtCode || challenge.embedding.length === 0) return null;
+
+  if (!(await supportsVector(rawSql))) {
+    // Same fallback as findCandidates: in-process cosine over the district's
+    // bounded row set when `<=>` cannot run.
+    const scan = await db
+      .select({
+        id: challenges.id,
+        trackingId: challenges.trackingId,
+        title: challenges.title,
+        corroborationCount: challenges.corroborationCount,
+        blockCode: challenges.blockCode,
+        lat: challenges.lat,
+        lng: challenges.lng,
+        domain: challenges.domain,
+        hazard: challenges.hazard,
+        isParent: challenges.isParent,
+        parentId: challenges.parentId,
+        status: challenges.status,
+        embedding: challenges.embedding,
+      })
+      .from(challenges)
+      .where(
+        and(eq(challenges.districtCode, challenge.districtCode), isNotNull(challenges.embedding)),
+      )
+      .orderBy(asc(challenges.createdAt))
+      .limit(JS_VECTOR_SCAN_LIMIT);
+
+    const children = jsCosineRank(scan, challenge.embedding, JS_VECTOR_SCAN_LIMIT).filter(
+      (r) =>
+        !r.isParent &&
+        r.parentId === null &&
+        r.status !== "MERGED" &&
+        r.status !== "REJECTED_UNSAFE" &&
+        r.status !== "FORWARDED_EXTERNAL" &&
+        r.similarity >= ROLLUP.minSimilarity,
+    );
+
+    if (children.length < ROLLUP.minChildren) return null;
+    const places = new Set(children.map((c) => c.blockCode ?? "unknown"));
+    if (places.size < ROLLUP.minDistinctPlaces) return null;
+    if (!children.some((c) => c.id === challenge.id)) return null;
+
+    return children.map((c) => ({
+      id: c.id,
+      trackingId: c.trackingId,
+      title: c.title,
+      corroborationCount: c.corroborationCount,
+      blockCode: c.blockCode,
+      lat: c.lat,
+      lng: c.lng,
+      domain: c.domain,
+      hazard: c.hazard,
+      similarity: c.similarity,
+    }));
+  }
+
   const literal = toVectorLiteral(challenge.embedding);
 
   const rows = await db

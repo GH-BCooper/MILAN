@@ -12,7 +12,8 @@ import { nextTrackingId } from "@/lib/db/trackingId";
 import { MediaRejectedError, processImage } from "@/lib/media/upload";
 import { putObject } from "@/lib/media/storage";
 import { runP1 } from "@/lib/ai/stages/p1_framing";
-import { blocks, districts } from "@/lib/db/schema";
+import { blocks, districts, slaDeadlines } from "@/lib/db/schema";
+import { deadlinesFor } from "@/lib/sla/deadlines";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { MIN_BODY_CHARS, SubmitSchema, bucketMidpoint, deriveTitle } from "./schema";
@@ -247,6 +248,27 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
           updatedAt: now,
         })
         .returning({ id: challenges.id });
+
+      /**
+       * Invariant 1 starts at intake, not at the first transition. Deadlines
+       * are materialised by `transition()`, but a report that never reaches
+       * one — S1 held for a human, which on the rules tier is every Hindi
+       * report — would sit in SUBMITTED with no clock at all: exactly the
+       * "silently dies" state the SLA engine exists to prevent. The state
+       * machine cancels and replaces this row the moment the report moves.
+       */
+      const intakeDeadlines = deadlinesFor("SUBMITTED", { now });
+      if (intakeDeadlines.length > 0) {
+        await tx.insert(slaDeadlines).values(
+          intakeDeadlines.map((s) => ({
+            challengeId: challenge.id,
+            kind: s.kind,
+            dueAt: s.dueAt,
+            payload: s.payload ?? {},
+            createdAt: now,
+          })),
+        );
+      }
 
       if (input.media.length > 0) {
         await tx.insert(challengeMedia).values(
