@@ -461,7 +461,15 @@ CREATE INDEX "challenges_domain_idx" ON "challenges" USING btree ("domain");--> 
 CREATE INDEX "challenges_hazard_idx" ON "challenges" USING btree ("hazard");--> statement-breakpoint
 CREATE INDEX "challenges_cluster_idx" ON "challenges" USING btree ("cluster_id");--> statement-breakpoint
 CREATE INDEX "challenges_search_idx" ON "challenges" USING gin ("search_tsv");--> statement-breakpoint
-CREATE INDEX "challenges_title_trgm_idx" ON "challenges" USING gin ("title" gin_trgm_ops);--> statement-breakpoint
+/* The trgm index only exists where pg_trgm loaded (see 0000). Guarded rather
+ * than conditional on a migration flag so a plain full-PostgreSQL run is
+ * byte-identical to history. */
+DO $$
+BEGIN
+  CREATE INDEX "challenges_title_trgm_idx" ON "challenges" USING gin ("title" gin_trgm_ops);
+EXCEPTION WHEN undefined_object OR undefined_file OR feature_not_supported THEN
+  RAISE NOTICE 'challenges_title_trgm_idx skipped: pg_trgm missing on this build; title search falls back to a seq scan (fine at seed scale)';
+END $$;--> statement-breakpoint
 CREATE INDEX "clusters_block_idx" ON "clusters" USING btree ("block_code");--> statement-breakpoint
 CREATE UNIQUE INDEX "corroborations_challenge_user_uniq" ON "corroborations" USING btree ("challenge_id","user_id");--> statement-breakpoint
 CREATE INDEX "corroborations_challenge_idx" ON "corroborations" USING btree ("challenge_id");--> statement-breakpoint

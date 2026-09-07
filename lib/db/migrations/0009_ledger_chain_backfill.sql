@@ -12,13 +12,19 @@
 -- whitespace, and createdAt as an ISO-8601 UTC string truncated to milliseconds
 -- (which is what JavaScript's Date.toISOString() produces).
 
+/* Created only where pgcrypto (digest()) exists — see 0000. On minimal
+ * builds the TypeScript chain (lib/ledger/hash.ts) remains the sole writer,
+ * which it already is at runtime; this helper is a recompute convenience. */
+DO $outer$
+BEGIN
+  EXECUTE $fn$
 CREATE OR REPLACE FUNCTION milan_entry_hash(
   p_seq bigint,
   p_content_hash text,
   p_prev_hash text,
   p_author_id text,
   p_created_at timestamptz
-) RETURNS text AS $$
+) RETURNS text AS $body$
   SELECT encode(
     digest(
       '{"authorId":' ||
@@ -34,10 +40,20 @@ CREATE OR REPLACE FUNCTION milan_entry_hash(
     ),
     'hex'
   );
-$$ LANGUAGE sql IMMUTABLE;
+$body$ LANGUAGE sql IMMUTABLE;
+$fn$;
+EXCEPTION WHEN undefined_function OR undefined_file THEN
+  RAISE NOTICE 'milan_entry_hash skipped: pgcrypto unavailable on this PostgreSQL build';
+END $outer$;
 --> statement-breakpoint
-COMMENT ON FUNCTION milan_entry_hash IS
-  'The SQL twin of computeEntryHash() in lib/ledger/hash.ts. Used by the Phase 3 backfill and available to anyone who wants to recompute the chain without leaving psql.';
+/* COMMENT ON fails when the guarded CREATE above skipped the function
+ * (pgcrypto-less minimal builds), so the comment is guarded the same way. */
+DO $$
+BEGIN
+  EXECUTE 'COMMENT ON FUNCTION milan_entry_hash IS $doc$The SQL twin of computeEntryHash() in lib/ledger/hash.ts. Used by the Phase 3 backfill and available to anyone who wants to recompute the chain without leaving psql.$doc$';
+EXCEPTION WHEN undefined_function THEN
+  NULL; -- the CREATE's NOTICE already explained the skip
+END $$;
 --> statement-breakpoint
 
 -- The backfill. One pass in seq order, carrying the previous entry_hash forward.
@@ -63,6 +79,11 @@ BEGIN
     n := n + 1;
   END LOOP;
   RAISE NOTICE 'ledger backfill: % entries linked, head = %', n, prev;
+EXCEPTION WHEN undefined_function THEN
+  /* pgcrypto-free build (see the guarded CREATE above). Any rows written
+     since (all of them, on such a build) carry TS-computed chain hashes, so
+     there is nothing to backfill; the notice keeps the skip visible. */
+  RAISE NOTICE 'ledger backfill skipped: milan_entry_hash unavailable without pgcrypto';
 END $$;
 --> statement-breakpoint
 

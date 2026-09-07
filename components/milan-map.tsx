@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 
+import { SEVERITY_BAND_HEX, severityBandOf } from "@/components/severity-chip";
+
 /**
  * The one map component. Used by the submit wizard to drop a pin and by
  * /challenges and /gov to plot markers.
@@ -58,8 +60,25 @@ const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="36" 
   <circle cx="13" cy="13" r="5" fill="#ffffff"/>
 </svg>`;
 
+/** A severity-weighted district heat circle (Task 4.7's /stats heatmap). */
+export interface MapHeat {
+  id: string;
+  lat: number;
+  lng: number;
+  /** Reports in this district; scales the circle. */
+  count: number;
+  /** Average severity on the 0-100 band scale; picks the band colour. */
+  avgSeverity: number | null;
+  /** Shown verbatim in the tooltip — plain text, never interpolated. */
+  label: string;
+  /** If set, clicking the circle navigates (district click-through). */
+  href?: string;
+}
+
 export interface MilanMapProps {
   markers?: MapMarker[];
+  /** Heat circles drawn UNDER the markers: severity colour, count radius. */
+  heat?: MapHeat[];
   /** When set, clicking the map moves the pin and calls back. */
   pin?: { lat: number; lng: number } | null;
   onPinChange?: (lat: number, lng: number) => void;
@@ -72,6 +91,7 @@ export interface MilanMapProps {
 
 export function MilanMap({
   markers = [],
+  heat = [],
   pin = null,
   onPinChange,
   zoom = 6.4,
@@ -82,6 +102,7 @@ export function MilanMap({
   const container = useRef<HTMLDivElement | null>(null);
   const map = useRef<import("leaflet").Map | null>(null);
   const markerRefs = useRef<import("leaflet").CircleMarker[]>([]);
+  const heatRefs = useRef<import("leaflet").CircleMarker[]>([]);
   const pinRef = useRef<import("leaflet").Marker | null>(null);
   const onPinChangeRef = useRef(onPinChange);
   const [basemap, setBasemap] = useState<"loading" | "tiles" | "blank">("loading");
@@ -207,6 +228,46 @@ export function MilanMap({
       cancelled = true;
     };
   }, [markers, basemap]);
+
+  /* Heat circles. Same wholesale rebuild discipline as markers. Heat and
+     markers are never mixed on one map today (heat is the /stats overview,
+     markers are per-challenge pages); if they ever are, draw heat via its
+     own lower-z-index pane so pins stay clickable. */
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      const L = await import("leaflet");
+      const instance = map.current;
+      if (cancelled || !instance) return;
+
+      for (const h of heatRefs.current) h.remove();
+      heatRefs.current = [];
+
+      for (const cell of heat) {
+        const band = severityBandOf(cell.avgSeverity);
+        const hex = SEVERITY_BAND_HEX[band.key];
+        const cm = L.circleMarker([cell.lat, cell.lng], {
+          // sqrt keeps 25 reports from swallowing the state at this zoom.
+          radius: 8 + Math.min(22, Math.sqrt(cell.count) * 5),
+          color: hex,
+          weight: 1.5,
+          fillColor: hex,
+          fillOpacity: 0.3,
+        });
+        cm.bindTooltip(cell.label, { direction: "top" });
+        if (cell.href) {
+          cm.on("click", () => window.location.assign(cell.href!));
+        }
+        cm.addTo(instance);
+        heatRefs.current.push(cm);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [heat, basemap]);
 
   /* The draggable pin, when this map is being used to choose a location. */
   useEffect(() => {

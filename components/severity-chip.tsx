@@ -62,6 +62,20 @@ export function severityBandOf(score: number | null): SeverityBand {
   );
 }
 
+/**
+ * The same bands as hex colours, for canvas surfaces (the /stats district
+ * heatmap) that cannot read Tailwind classes. Kept next to the className
+ * bands so the two never drift silently — if a band's meaning moves, both
+ * representations move in the same commit.
+ */
+export const SEVERITY_BAND_HEX: Record<SeverityBand["key"], string> = {
+  critical: "#f87171",
+  high: "#fbbf24",
+  moderate: "#7dd3fc",
+  low: "#94a3b8",
+  unscored: "#64748b",
+} as const;
+
 export function isSeverityBandKey(value: string | undefined): value is SeverityBand["key"] {
   return value === "unscored" || SEVERITY_BANDS.some((b) => b.key === value);
 }
