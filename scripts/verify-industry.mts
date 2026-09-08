@@ -44,12 +44,12 @@ console.log(`\nTask 3.7 — industry and CSR, against ${BASE}\n${"-".repeat(72)}
 
 /* --- a challenge worth funding --------------------------------------------- */
 
-const [target] = await sql<Array<{ tracking_id: string; title: string; status: string }>>`
-  SELECT c.tracking_id, c.title, c.status::text AS status
+const [target] = await sql<Array<{ tracking_id: string; title: string; status: string; project_id: string }>>`
+  SELECT c.tracking_id, c.title, c.status::text AS status, p.id AS project_id
   FROM challenges c
   JOIN projects p ON p.challenge_id = c.id
   WHERE c.status IN ('SOLUTION_PUBLISHED','IMPLEMENTED','IN_RESEARCH','CITIZEN_VERIFIED','INDUSTRY_INTEREST')
-  ORDER BY c.priority_score DESC NULLS LAST LIMIT 1`;
+  ORDER BY (c.status = 'IN_RESEARCH') DESC, c.priority_score DESC NULLS LAST LIMIT 1`;
 if (!target) {
   console.log("No claimed challenge to fund. Run the HEI claim flow first.");
   process.exit(1);
@@ -139,7 +139,48 @@ const after = await sql<Array<{ n: number; org: string | null }>>`
 record("acceptance writes a FUNDER credit edge", Number(after[0].n) > Number(before[0].n), `${before[0].n} → ${after[0].n}, ${after[0].org}`);
 
 const [statusRow] = await sql<Array<{ status: string }>>`SELECT status::text AS status FROM challenges WHERE id = ${challengeId}`;
-record("and sets INDUSTRY_INTEREST where the state machine allows it", statusRow.status === "INDUSTRY_INTEREST" || statusRow.status === "CITIZEN_VERIFIED" || statusRow.status === "CLOSED", statusRow.status);
+// H-17: INDUSTRY_INTEREST is only a legal edge from SOLUTION_PUBLISHED, so an
+// accept on a challenge still IN_RESEARCH records the funder and says plainly
+// when the move will happen — it must not claim a transition the machine
+// refused. (The move itself is asserted by the publish beat below.)
+record(
+  "and reports the state machine's decision honestly",
+  /FUNDER credit edge is on the public chain/.test(acceptBody.message) &&
+    (/is now INDUSTRY_INTEREST/.test(acceptBody.message) ===
+      (statusRow.status === "INDUSTRY_INTEREST")) &&
+    (statusRow.status !== "INDUSTRY_INTEREST"
+      ? /it will move to INDUSTRY_INTEREST when the solution is published/.test(acceptBody.message)
+      : true),
+  `status ${statusRow.status} — "${acceptBody.message}"`,
+);
+
+/* --- publishing carries the accepted funder through (H-17) ------------------ */
+
+const canPublish = ["CLAIMED", "PROPOSAL_APPROVED", "IN_RESEARCH", "AT_RISK", "FORKED"].includes(
+  statusRow.status,
+);
+if (canPublish) {
+  const publish = await fetch(`${BASE}/api/hei/publish`, {
+    method: "POST",
+    headers: { cookie: hod, "content-type": "application/x-www-form-urlencoded", origin: BASE },
+    body: new URLSearchParams({ projectId: target.project_id }).toString(),
+  });
+  const publishBody = (await publish.json()) as { ok: boolean; message?: string };
+  const [published] = await sql<Array<{ status: string }>>`SELECT status::text AS status FROM challenges WHERE id = ${challengeId}`;
+  record(
+    "publishing carries the accepted funder into INDUSTRY_INTEREST",
+    publishBody.ok === true &&
+      /INDUSTRY_INTEREST/.test(publishBody.message ?? "") &&
+      published.status === "INDUSTRY_INTEREST",
+    `${published.status} — "${publishBody.message ?? publishBody}"`,
+  );
+} else {
+  record(
+    "publishing carries the accepted funder into INDUSTRY_INTEREST",
+    true,
+    `already at ${statusRow.status} — publish beat not exercised`,
+  );
+}
 
 /* --- the CSR export --------------------------------------------------------- */
 

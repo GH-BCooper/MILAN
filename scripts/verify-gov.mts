@@ -152,9 +152,14 @@ record(
 /* --- and the scope check is real ------------------------------------------- */
 
 const dhanbad = await get("/gov/district/DHN", dc);
+const dhanbadHtml = await dhanbad.text();
+// The refusal renders as a calm panel (G-01): the scope decision is made
+// server-side, so the page itself says no — no data, no error channel.
 record(
   "the DC of Gumla is REFUSED a Dhanbad-scoped page",
-  dhanbad.status >= 400 || dhanbad.status === 307 || dhanbad.status === 302,
+  dhanbad.status === 200 &&
+    /That district is not yours/.test(dhanbadHtml) &&
+    !/district in numbers/.test(dhanbadHtml),
   `HTTP ${dhanbad.status}`,
 );
 
