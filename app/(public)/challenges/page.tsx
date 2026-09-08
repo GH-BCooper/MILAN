@@ -9,8 +9,6 @@ import {
   sql,
   type SQL,
 } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { STATUS_COLOUR } from "@/components/status-colour";
 import {
@@ -218,7 +216,6 @@ export default async function ChallengesPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Challenges</h1>
         <p className="mt-1 text-sm text-muted-foreground">

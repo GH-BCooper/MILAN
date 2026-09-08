@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { nativeSelectClassName } from "@/components/select-with-other";
 import { execRaw } from "@/lib/db/raw";
@@ -41,7 +39,7 @@ interface Row extends Record<string, unknown> {
   routed_at: string | null;
   days_unclaimed: number | null;
   corroboration_count: number;
-  top_terms: Array<{ key: string; weight: number; value: number; contribution: number }> | null;
+  top_terms: Array<{ key: string; label?: string; weight: number; normalised: number; contribution: number }> | null;
 }
 
 const STAGE_LABEL: Record<string, string> = {
@@ -184,7 +182,6 @@ export default async function BountiesPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Bounty board</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
@@ -243,17 +240,17 @@ export default async function BountiesPage({
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                    <span className="rounded bg-red-500/15 px-2 py-1 font-semibold text-red-200">
+                    <span className="rounded bg-red-500/15 px-2 py-1 font-semibold text-red-800 dark:text-red-200">
                       {r.days_unclaimed ?? 0} day{r.days_unclaimed === 1 ? "" : "s"} unclaimed
                     </span>
                     <span className="rounded bg-muted px-2 py-1 font-medium">{STATUS_LABEL[r.status]}</span>
                     {r.escalation_stage ? (
-                      <span className="rounded bg-amber-500/15 px-2 py-1 font-medium text-amber-200">
+                      <span className="rounded bg-amber-500/15 px-2 py-1 font-medium text-amber-800 dark:text-amber-200">
                         {STAGE_LABEL[r.escalation_stage] ?? r.escalation_stage}
                       </span>
                     ) : null}
                     {r.grand_challenge ? (
-                      <span className="rounded bg-indigo-500/15 px-2 py-1 font-semibold text-indigo-200">
+                      <span className="rounded bg-indigo-500/15 px-2 py-1 font-semibold text-indigo-800 dark:text-indigo-200">
                         Jharkhand Grand Challenge
                       </span>
                     ) : null}
@@ -270,8 +267,12 @@ export default async function BountiesPage({
                       {terms.map((t, i) => (
                         <span key={t.key}>
                           {i > 0 ? ", " : ""}
-                          <span className="font-medium text-foreground">{t.key.replace(/([A-Z])/g, " $1").toLowerCase()}</span> (
-                          {t.weight} × {Number(t.value).toFixed(2)} = {Number(t.contribution).toFixed(3)})
+                          <span className="font-medium text-foreground">
+                            {(t.label ?? t.key.replace(/([A-Z])/g, " $1")).toLowerCase()}
+                          </span>{" "}
+                          {/* the stored term calls its 0..1 figure `normalised`; reading `value` here
+                              printed "0.15 × NaN" on every bounty card. */}
+                          ({t.weight} × {Number(t.normalised).toFixed(2)} = {Number(t.contribution).toFixed(3)})
                         </span>
                       ))}
                       .

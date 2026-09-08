@@ -162,7 +162,7 @@ export default async function AdminRouting() {
                 </div>
 
                 {gated ? (
-                  <p className="mt-2 rounded border border-amber-400/40 bg-amber-500/15 p-2 text-xs text-amber-200">
+                  <p className="mt-2 rounded border border-amber-400/40 bg-amber-500/15 p-2 text-xs text-amber-800 dark:text-amber-200">
                     Held at the human gate — severity {head.severity ? Number(head.severity).toFixed(2) : "—"}.
                     Nothing has been notified. A District Collector releases it at /gov/gate.
                   </p>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import type { StyleSpecification } from "maplibre-gl";
 
 import { SEVERITY_BAND_HEX, severityBandOf } from "@/components/severity-chip";
 
@@ -9,16 +10,19 @@ import { SEVERITY_BAND_HEX, severityBandOf } from "@/components/severity-chip";
  * The one map component. Used by the submit wizard to drop a pin and by
  * /challenges and /gov to plot markers.
  *
- * The library is Leaflet — the JDIP document asks for it by name — but the
- * basemap is NOT OpenStreetMap's tile server. Tiles come from the committed
- * Protomaps archive at NEXT_PUBLIC_PMTILES_URL (served same-origin from
- * public/), rendered to canvas by protomaps-leaflet. That choice is invariant
- * 8: a tile server is a vendor that can fail on stage, so the demo must not
- * depend on one. If the archive is unset or unreadable the map still works —
- * it falls back to a blank canvas with our own markers on it and says so.
+ * Locked stack (CLAUDE.md §3): MapLibre GL + Protomaps PMTiles, no API token.
+ * The archive is served same-origin from public/ (NEXT_PUBLIC_PMTILES_URL,
+ * committed at public/jharkhand.pmtiles) and read via the `pmtiles://`
+ * protocol registered with `maplibregl.addProtocol`. That choice is
+ * invariant 8: a tile server is a vendor that can fail on stage, so the demo
+ * must not depend on one. If the archive is unset or unreadable the map
+ * still works — it falls back to a blank canvas with our own markers on it
+ * and says so, once, on its own line.
  *
- * Leaflet, protomaps-leaflet and pmtiles are all window-only and loaded
- * lazily inside the effects, so this module is safe to server-render.
+ * maplibre-gl and pmtiles are both window-only and loaded lazily inside the
+ * effects, so this module stays safe to import from a server component
+ * (see app/(gov)/gov/page.tsx, which imports it directly rather than via
+ * next/dynamic).
  */
 
 export interface MapMarker {
@@ -36,22 +40,69 @@ const JHARKHAND_CENTRE: [number, number] = [85.3, 23.6]; // [lng, lat], as calle
 const FALLBACK_BACKGROUND = "#070a1a";
 
 /**
- * The dark basemap, layer for layer what the old MapLibre style painted, so
- * the switch of renderer changes nothing on the projector: same earth, same
- * water, same roads, same dashed purple boundaries, and no labels — the
+ * The dark basemap style: same earth, same water, same roads, same dashed
+ * purple boundaries as the design doc calls for, and no labels — the
  * markers are the information; the basemap is orientation.
  */
-function darkPaintRules(mod: typeof import("protomaps-leaflet")): import("protomaps-leaflet").PaintRule[] {
-  return [
-    { dataLayer: "earth", symbolizer: new mod.PolygonSymbolizer({ fill: "#0b1024" }) },
-    { dataLayer: "landuse", symbolizer: new mod.PolygonSymbolizer({ fill: "#0f1533" }) },
-    { dataLayer: "water", symbolizer: new mod.PolygonSymbolizer({ fill: "#10224a" }) },
-    { dataLayer: "roads", symbolizer: new mod.LineSymbolizer({ color: "#2a3468", width: 1 }) },
-    {
-      dataLayer: "boundaries",
-      symbolizer: new mod.LineSymbolizer({ color: "#7c5cff", width: 1, dash: [2, 2] }),
+function darkStyle(pmtilesUrl: string): StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      protomaps: {
+        type: "vector",
+        url: `pmtiles://${pmtilesUrl}`,
+      },
     },
-  ];
+    layers: [
+      { id: "background", type: "background", paint: { "background-color": FALLBACK_BACKGROUND } },
+      {
+        id: "earth",
+        type: "fill",
+        source: "protomaps",
+        "source-layer": "earth",
+        paint: { "fill-color": "#0b1024" },
+      },
+      {
+        id: "landuse",
+        type: "fill",
+        source: "protomaps",
+        "source-layer": "landuse",
+        paint: { "fill-color": "#0f1533" },
+      },
+      {
+        id: "water",
+        type: "fill",
+        source: "protomaps",
+        "source-layer": "water",
+        paint: { "fill-color": "#10224a" },
+      },
+      {
+        id: "roads",
+        type: "line",
+        source: "protomaps",
+        "source-layer": "roads",
+        paint: { "line-color": "#2a3468", "line-width": 1 },
+      },
+      {
+        id: "boundaries",
+        type: "line",
+        source: "protomaps",
+        "source-layer": "boundaries",
+        paint: { "line-color": "#7c5cff", "line-width": 1, "line-dasharray": [2, 2] },
+      },
+    ],
+  } as unknown as StyleSpecification;
+}
+
+/** The blank fallback: solid background, no source, no network request. */
+function blankStyle(): StyleSpecification {
+  return {
+    version: 8,
+    sources: {},
+    layers: [
+      { id: "background", type: "background", paint: { "background-color": FALLBACK_BACKGROUND } },
+    ],
+  } as unknown as StyleSpecification;
 }
 
 /** The drop-pin, drawn as inline SVG so no image asset URL is ever requested. */
@@ -100,10 +151,10 @@ export function MilanMap({
   ariaLabel,
 }: MilanMapProps) {
   const container = useRef<HTMLDivElement | null>(null);
-  const map = useRef<import("leaflet").Map | null>(null);
-  const markerRefs = useRef<import("leaflet").CircleMarker[]>([]);
-  const heatRefs = useRef<import("leaflet").CircleMarker[]>([]);
-  const pinRef = useRef<import("leaflet").Marker | null>(null);
+  const map = useRef<import("maplibre-gl").Map | null>(null);
+  const markerRefs = useRef<import("maplibre-gl").Marker[]>([]);
+  const heatRefs = useRef<import("maplibre-gl").Marker[]>([]);
+  const pinRef = useRef<import("maplibre-gl").Marker | null>(null);
   const onPinChangeRef = useRef(onPinChange);
   const [basemap, setBasemap] = useState<"loading" | "tiles" | "blank">("loading");
 
@@ -115,18 +166,12 @@ export function MilanMap({
 
     void (async () => {
       if (!container.current || map.current) return;
-      const L = await import("leaflet");
+      const maplibregl = (await import("maplibre-gl")).default;
       if (cancelled || !container.current || map.current) return;
-
-      const instance = L.map(container.current, {
-        center: [centre[1], centre[0]],
-        zoom,
-        zoomControl: true,
-      });
 
       // Root-relative (the default: the archive ships in public/) is made
       // absolute here; a bare "/x.pmtiles" is not guaranteed to survive being
-      // handed through the layer machinery.
+      // handed through the pmtiles:// protocol machinery.
       const configured = process.env.NEXT_PUBLIC_PMTILES_URL;
       const pmtilesUrl = configured
         ? configured.startsWith("/")
@@ -135,27 +180,19 @@ export function MilanMap({
         : null;
 
       let tilesOk = false;
+      let style = blankStyle();
       if (pmtilesUrl) {
         try {
-          const { PMTiles } = await import("pmtiles");
-          const source = new PMTiles(pmtilesUrl);
-          // The canary: a fetch of the 512KB root header proves the archive is
+          const pmtiles = await import("pmtiles");
+          const protocol = new pmtiles.Protocol();
+          maplibregl.addProtocol("pmtiles", protocol.tile);
+          const source = new pmtiles.PMTiles(pmtilesUrl);
+          protocol.add(source);
+          // The canary: a fetch of the archive's root header proves it is
           // there before we draw a single tile onto the demo projector.
           await source.getHeader();
-          const protomaps = await import("protomaps-leaflet");
           if (cancelled) return;
-          protomaps
-            .leafletLayer({
-              // The URL string, not our PMTiles instance: protomaps-leaflet
-              // builds its own from a pinned older pmtiles, and the two are
-              // deliberately not made to hold hands across versions.
-              url: pmtilesUrl,
-              backgroundColor: FALLBACK_BACKGROUND,
-              paintRules: darkPaintRules(protomaps),
-              labelRules: [],
-              attribution: "© OpenStreetMap · Protomaps",
-            })
-            .addTo(instance);
+          style = darkStyle(pmtilesUrl);
           tilesOk = true;
         } catch (e) {
           console.warn(
@@ -167,31 +204,39 @@ export function MilanMap({
 
       if (cancelled) return;
 
+      const instance = new maplibregl.Map({
+        container: container.current,
+        style,
+        center: centre,
+        zoom,
+        attributionControl: { compact: true },
+      });
+      instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+      instance.on("click", (e) => {
+        onPinChangeRef.current?.(e.lngLat.lat, e.lngLat.lng);
+      });
+
       // The map must exist in the ref BEFORE we flip the status: the marker
       // and pin effects key off this flip, and they no-op while the ref is
       // empty. Assign first, announce second.
-      instance.on("click", (e) => {
-        onPinChangeRef.current?.(e.latlng.lat, e.latlng.lng);
-      });
-      map.current = instance;
-      setBasemap(pmtilesUrl && tilesOk ? "tiles" : "blank");
-
-      // Leaflet measures its container's size once, at construction. Inside a
-      // multi-step wizard the container can still be mid-layout (fonts not
-      // painted, the step's height transition not settled) at that instant,
-      // which is what "the map sometimes doesn't work" actually is: it comes
-      // up sized or centred wrong, silently, with no error. Re-measuring one
-      // frame later — after layout has definitely settled — fixes it without
-      // guessing at a fixed delay.
-      requestAnimationFrame(() => {
-        if (!cancelled) instance.invalidateSize();
-      });
+      const announce = () => {
+        if (cancelled) return;
+        map.current = instance;
+        setBasemap(pmtilesUrl && tilesOk ? "tiles" : "blank");
+        // A map created inside a still-settling layout (a multi-step wizard
+        // step, a fonts-not-painted first frame) sometimes measures its
+        // container wrong. Re-measuring one frame after "load" fixes it
+        // without guessing at a fixed delay.
+        requestAnimationFrame(() => {
+          if (!cancelled) instance.resize();
+        });
+      };
+      instance.once("load", announce);
     })();
 
     // Keep re-measuring as the container itself changes size (a step
-    // transition, a phone rotated, the sidebar collapsing) — the same fix as
-    // above, but for every resize after the first, not just the initial one.
-    const observer = new ResizeObserver(() => map.current?.invalidateSize());
+    // transition, a phone rotated, the sidebar collapsing).
+    const observer = new ResizeObserver(() => map.current?.resize());
     if (container.current) observer.observe(container.current);
 
     return () => {
@@ -213,7 +258,7 @@ export function MilanMap({
     let cancelled = false;
 
     void (async () => {
-      const L = await import("leaflet");
+      const maplibregl = (await import("maplibre-gl")).default;
       const instance = map.current;
       if (cancelled || !instance) return;
 
@@ -221,13 +266,15 @@ export function MilanMap({
       markerRefs.current = [];
 
       for (const marker of markers) {
-        const cm = L.circleMarker([marker.lat, marker.lng], {
-          radius: 7,
-          color: "#ffffff",
-          weight: 2,
-          fillColor: marker.colour ?? "#1e3a8a",
-          fillOpacity: 1,
-        });
+        const el = document.createElement("div");
+        el.style.width = "14px";
+        el.style.height = "14px";
+        el.style.borderRadius = "50%";
+        el.style.border = "2px solid #ffffff";
+        el.style.background = marker.colour ?? "#1e3a8a";
+        el.style.cursor = "pointer";
+        el.style.boxShadow = "0 0 0 1px rgba(0,0,0,0.35)";
+
         // Popup content is a DOM node, not an HTML string: a challenge title
         // is citizen text and is never interpolated into markup.
         const content = document.createElement(marker.href ? "a" : "span");
@@ -236,9 +283,13 @@ export function MilanMap({
           content.href = marker.href;
           content.className = "underline";
         }
-        cm.bindPopup(content);
-        cm.addTo(instance);
-        markerRefs.current.push(cm);
+        const popup = new maplibregl.Popup({ closeButton: true, offset: 10 }).setDOMContent(content);
+
+        const gl = new maplibregl.Marker({ element: el })
+          .setLngLat([marker.lng, marker.lat])
+          .setPopup(popup)
+          .addTo(instance);
+        markerRefs.current.push(gl);
       }
     })();
 
@@ -249,13 +300,13 @@ export function MilanMap({
 
   /* Heat circles. Same wholesale rebuild discipline as markers. Heat and
      markers are never mixed on one map today (heat is the /stats overview,
-     markers are per-challenge pages); if they ever are, draw heat via its
-     own lower-z-index pane so pins stay clickable. */
+     markers are per-challenge pages); if they ever are, heat should move to
+     its own layer under the marker layer so pins stay clickable. */
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const L = await import("leaflet");
+      const maplibregl = (await import("maplibre-gl")).default;
       const instance = map.current;
       if (cancelled || !instance) return;
 
@@ -265,20 +316,26 @@ export function MilanMap({
       for (const cell of heat) {
         const band = severityBandOf(cell.avgSeverity);
         const hex = SEVERITY_BAND_HEX[band.key];
-        const cm = L.circleMarker([cell.lat, cell.lng], {
-          // sqrt keeps 25 reports from swallowing the state at this zoom.
-          radius: 8 + Math.min(22, Math.sqrt(cell.count) * 5),
-          color: hex,
-          weight: 1.5,
-          fillColor: hex,
-          fillOpacity: 0.3,
-        });
-        cm.bindTooltip(cell.label, { direction: "top" });
+        // sqrt keeps 25 reports from swallowing the state at this zoom.
+        const diameter = 2 * (8 + Math.min(22, Math.sqrt(cell.count) * 5));
+
+        const el = document.createElement("div");
+        el.style.width = `${diameter}px`;
+        el.style.height = `${diameter}px`;
+        el.style.borderRadius = "50%";
+        el.style.border = `1.5px solid ${hex}`;
+        el.style.background = hex;
+        el.style.opacity = "0.3";
+        el.title = cell.label;
         if (cell.href) {
-          cm.on("click", () => window.location.assign(cell.href!));
+          el.style.cursor = "pointer";
+          el.addEventListener("click", () => window.location.assign(cell.href!));
         }
-        cm.addTo(instance);
-        heatRefs.current.push(cm);
+
+        const gl = new maplibregl.Marker({ element: el })
+          .setLngLat([cell.lng, cell.lat])
+          .addTo(instance);
+        heatRefs.current.push(gl);
       }
     })();
 
@@ -292,7 +349,7 @@ export function MilanMap({
     let cancelled = false;
 
     void (async () => {
-      const L = await import("leaflet");
+      const maplibregl = (await import("maplibre-gl")).default;
       const instance = map.current;
       if (cancelled || !instance) return;
 
@@ -303,22 +360,21 @@ export function MilanMap({
       }
 
       if (!pinRef.current) {
-        const icon = L.divIcon({
-          className: "milan-pin",
-          html: PIN_SVG,
-          iconSize: [26, 36],
-          iconAnchor: [13, 35],
-        });
-        pinRef.current = L.marker([pin.lat, pin.lng], { icon, draggable: true }).addTo(instance);
+        const el = document.createElement("div");
+        el.innerHTML = PIN_SVG;
+        el.style.cursor = "grab";
+        pinRef.current = new maplibregl.Marker({ element: el, draggable: true, anchor: "bottom" })
+          .setLngLat([pin.lng, pin.lat])
+          .addTo(instance);
         pinRef.current.on("dragend", () => {
-          const p = pinRef.current?.getLatLng();
+          const p = pinRef.current?.getLngLat();
           if (p) onPinChangeRef.current?.(p.lat, p.lng);
         });
       } else {
-        pinRef.current.setLatLng([pin.lat, pin.lng]);
+        pinRef.current.setLngLat([pin.lng, pin.lat]);
       }
 
-      instance.setView([pin.lat, pin.lng], Math.max(instance.getZoom(), 10), { animate: true });
+      instance.easeTo({ center: [pin.lng, pin.lat], zoom: Math.max(instance.getZoom(), 10) });
     })();
 
     return () => {
@@ -327,18 +383,18 @@ export function MilanMap({
   }, [pin, basemap]);
 
   return (
-    <div className={className}>
+    <div className={`flex h-full flex-col ${className ?? ""}`}>
       <div
         ref={container}
         role="application"
         aria-label={ariaLabel}
         style={{ backgroundColor: FALLBACK_BACKGROUND }}
-        className="h-full w-full milan-glass rounded-xl"
+        className="milan-glass min-h-0 flex-1 rounded-xl"
       />
       {basemap === "blank" ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Basemap tiles are not loaded, so only the points are shown. Everything on this map still
-          works.
+        <p className="mt-1 shrink-0 text-xs text-muted-foreground">
+          Basemap tiles are not loaded, so only the points are shown — everything else on this map
+          still works.
         </p>
       ) : null}
     </div>

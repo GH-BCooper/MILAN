@@ -321,9 +321,6 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
         createdAt: now,
       });
 
-      // TODO(Phase 3 Task 3.4): link prev_hash/entry_hash to the chain tip
-      // inside this transaction. The append-only trigger permits exactly one
-      // write of those two columns, from NULL.
       await appendEntry(tx, {
         challengeId: challenge.id,
         kind: "PROBLEM_TEXT",

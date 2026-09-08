@@ -2,7 +2,6 @@ import Link from "next/link";
 import { sql } from "drizzle-orm";
 
 import { DistrictHeatMap, type DistrictHeatWeight } from "@/components/district-heat";
-import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { ConfirmationGap, ImpactCounter } from "@/components/impact-counter";
 import { execRaw } from "@/lib/db/raw";
@@ -179,7 +178,6 @@ export default async function StatsPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Public statistics</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -194,11 +192,11 @@ export default async function StatsPage() {
           </div>
 
           <div className="rounded-lg border-2 border-emerald-400/40 bg-emerald-500/15 p-4">
-            <p className="text-sm font-medium text-emerald-200">Confirmed impact</p>
-            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-200">
+            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Confirmed impact</p>
+            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">
               {impactN.toLocaleString("en-IN")}
             </p>
-            <p className="mt-2 text-xs font-medium text-emerald-200">
+            <p className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-200">
               Impact counts only citizen-confirmed outcomes.
               {impact.partial > 0 ? ` ${impact.partial} more were confirmed as partly fixed and are counted separately.` : ""}
             </p>

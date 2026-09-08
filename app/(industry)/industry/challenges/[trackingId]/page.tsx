@@ -76,7 +76,7 @@ export default async function IndustryChallengePage({ params }: { params: Promis
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded bg-muted px-2 py-1">{(c.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()}</span>
           {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-200">NDMA hazard: {c.hazard.replace(/_/g, " ").toLowerCase()}</span>
+            <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-800 dark:text-amber-200">NDMA hazard: {c.hazard.replace(/_/g, " ").toLowerCase()}</span>
           ) : null}
           <span className="rounded bg-muted px-2 py-1">{c.corroboration_count} reporters</span>
           {c.people_affected ? <span className="rounded bg-muted px-2 py-1">~{c.people_affected} people affected</span> : null}
@@ -122,7 +122,7 @@ export default async function IndustryChallengePage({ params }: { params: Promis
                     <Link href={`/artifacts/${a.id}`} className="text-sm font-semibold underline-offset-4 hover:underline">
                       {a.title}
                     </Link>
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}>
+                    <span className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200" : "bg-amber-500/15 text-amber-800 dark:text-amber-200"}`}>
                       {a.licence === "CC_BY" ? "CC-BY" : "restricted"}
                     </span>
                   </div>

@@ -141,8 +141,8 @@ export function ResetPanel() {
 
   return (
     <section className="rounded-lg border-2 border-amber-400/40 bg-amber-500/15 p-5">
-      <h2 className="text-xl font-bold text-amber-200">Reset the demo state</h2>
-      <p className="mt-1 text-sm text-amber-200">
+      <h2 className="text-xl font-bold text-amber-800 dark:text-amber-200">Reset the demo state</h2>
+      <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
         Puts the clock back to zero, clears every escalation flag and re-opens an SLA deadline on every
         non-terminal challenge. The ledger is deliberately untouched: it is append-only, and a reset
         that erased it would be exactly the thing we say cannot happen.

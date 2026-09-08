@@ -175,7 +175,7 @@ export function CapabilityCard(props: CapabilityCardProps) {
           {pending ? "Saving…" : "Save"}
         </Button>
         {dirty ? (
-          <p className="text-xs text-amber-200">
+          <p className="text-xs text-amber-800 dark:text-amber-200">
             Unsaved. Changing capacity or tags changes what Milan routes here from the next run.
           </p>
         ) : null}

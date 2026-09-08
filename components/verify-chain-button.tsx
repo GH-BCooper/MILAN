@@ -59,7 +59,7 @@ export function VerifyChainButton() {
       </div>
 
       {error ? (
-        <p className="mt-3 rounded-md border border-red-400/40 bg-red-500/15 p-3 text-sm text-red-200" role="status">
+        <p className="mt-3 rounded-md border border-red-400/40 bg-red-500/15 p-3 text-sm text-red-800 dark:text-red-200" role="status">
           The verifier could not be reached: {error}
         </p>
       ) : null}
@@ -69,10 +69,10 @@ export function VerifyChainButton() {
           role="status"
           className={`mt-3 rounded-md border p-4 ${result.ok ? "border-emerald-400/40 bg-emerald-500/15" : "border-red-400/40 bg-red-500/15"}`}
         >
-          <p className={`text-base font-bold ${result.ok ? "text-emerald-200" : "text-red-200"}`}>
+          <p className={`text-base font-bold ${result.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`}>
             {result.ok ? "Chain intact" : `Chain broken at entry ${result.brokenAtSeq}`}
           </p>
-          <p className={`mt-1 text-sm ${result.ok ? "text-emerald-200" : "text-red-200"}`}>
+          <p className={`mt-1 text-sm ${result.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`}>
             {result.ok
               ? `${result.checked} entries checked, from genesis to entry ${result.headSeq}. Every prev_hash matches the entry before it and every entry_hash matches its own fields.`
               : result.reason}

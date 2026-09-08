@@ -210,9 +210,9 @@ export default async function AiRunsPage({
                     <span
                       className={`rounded px-1.5 py-0.5 text-xs font-semibold ${
                         row.fallbackLevel === 2
-                          ? "bg-amber-500/15 text-amber-200"
+                          ? "bg-amber-500/15 text-amber-800 dark:text-amber-200"
                           : row.fallbackLevel === 1
-                            ? "bg-sky-500/15 text-sky-200"
+                            ? "bg-sky-500/15 text-sky-800 dark:text-sky-200"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >

@@ -180,7 +180,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       </div>
 
       {silentDays !== null && silentDays >= 20 ? (
-        <p className="mt-4 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
+        <p className="mt-4 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
           No recorded activity for {silentDays} days. At 30 this project is flagged at risk, and at
           45 the challenge is offered to another team. Adding or completing a milestone resets it.
         </p>
@@ -266,7 +266,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
                     {a.title}
                   </Link>
                   <span
-                    className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-200" : "bg-amber-500/15 text-amber-200"}`}
+                    className={`rounded px-2 py-0.5 text-[11px] font-semibold ${a.licence === "CC_BY" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200" : "bg-amber-500/15 text-amber-800 dark:text-amber-200"}`}
                   >
                     {a.licence === "CC_BY" ? "CC-BY" : "restricted"}
                   </span>

@@ -152,7 +152,12 @@ export function PipelineTrace({
           if (phase === "running" && mine.status === "waiting") {
             return { ...current, [key]: { ...mine, status: "running" } };
           }
-          return current;
+          // This stage is already caught up to `latest` — move on and check
+          // the next one. (A bare `return current` here, instead of
+          // `continue`, used to exit the whole loop the moment the first
+          // stage settled, so P0 was the only card that ever ticked over
+          // without a page reload.)
+          continue;
         }
         return current;
       });
@@ -289,7 +294,7 @@ export function PipelineTrace({
       </div>
 
       {error ? (
-        <p role="status" className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
+        <p role="status" className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
           {error}
         </p>
       ) : null}
@@ -374,7 +379,7 @@ function StageCard({
               {stageKey}
             </span>
             {degraded ? (
-              <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+              <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
                 fallback: rules
               </span>
             ) : null}
@@ -439,9 +444,9 @@ function StatusIcon({ status }: { status: StageStatus }) {
     case "running":
       return <Loader2 className={`${base} animate-spin text-primary`} aria-label="Running" />;
     case "done":
-      return <Check className={`${base} text-emerald-200`} aria-label="Done" />;
+      return <Check className={`${base} text-emerald-800 dark:text-emerald-200`} aria-label="Done" />;
     case "degraded":
-      return <AlertTriangle className={`${base} text-amber-300`} aria-label="Degraded to the rule fallback" />;
+      return <AlertTriangle className={`${base} text-amber-800 dark:text-amber-300`} aria-label="Degraded to the rule fallback" />;
     case "skipped":
       return <MinusCircle className={`${base} text-muted-foreground`} aria-label="Skipped" />;
     default:
@@ -478,7 +483,7 @@ function S5Panel({ result }: { result: unknown }) {
   return (
     <div className="space-y-2">
       {data.gated ? (
-        <p className="rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
+        <p className="rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
           Severity is at or above 0.70, so nothing has been sent yet. A District Collector confirms
           or overrides this shortlist before any institution is contacted, and every override is
           recorded with a written reason.

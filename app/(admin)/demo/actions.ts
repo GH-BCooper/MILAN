@@ -387,6 +387,9 @@ export async function resetDemoState(): Promise<DemoResult> {
       `Clock back to zero. ${report.statusesRestored} challenge status(es) restored from ` +
       `${report.usedSeedCsv ? "seed-data/challenges.csv" : "their current values (the CSV was not readable)"}, ` +
       `${report.flagsCleared} row(s) had their escalation and impact flags cleared, ` +
+      `${report.routesCleared} spent route(s), ${report.creditEdgesCleared} claim-side credit ` +
+      `edge(s) and ${report.interestsCleared} industry interest(s) rolled back so the next ` +
+      `run-through starts blind (projects stay: the ledger references them), ` +
       `${report.deadlinesCancelled} open deadline(s) cancelled and ${report.deadlinesOpened} re-opened. ` +
       `Invariant 1: ${report.orphansRemaining} orphan(s). ` +
       `The ledger is untouched — it is append-only, and a reset that erased it would be exactly the ` +

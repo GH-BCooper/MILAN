@@ -187,18 +187,18 @@ export default async function GovHome() {
         {/* The two things a Collector opens this page for. */}
         <section className="grid gap-3 sm:grid-cols-3">
           <Link href="/gov/gate" className="rounded-lg border border-amber-400/40 bg-amber-500/15 p-4 transition hover:border-amber-400/40">
-            <p className="text-3xl font-bold tabular-nums text-amber-200">{gateCount}</p>
-            <p className="mt-1 text-sm font-semibold text-amber-200">Waiting for your decision</p>
-            <p className="mt-1 text-xs text-amber-200">
+            <p className="text-3xl font-bold tabular-nums text-amber-800 dark:text-amber-200">{gateCount}</p>
+            <p className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-200">Waiting for your decision</p>
+            <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
               Severity at or above 0.70. Nothing has been sent to any institution and nothing will be
               until you confirm it. Open the human gate →
             </p>
           </Link>
 
           <Link href="/gov/sla" className="rounded-lg border border-red-400/40 bg-red-500/15 p-4 transition hover:border-red-400/40">
-            <p className="text-3xl font-bold tabular-nums text-red-200">{scalar("breached")}</p>
-            <p className="mt-1 text-sm font-semibold text-red-200">SLA breaches</p>
-            <p className="mt-1 text-xs text-red-200">
+            <p className="text-3xl font-bold tabular-nums text-red-800 dark:text-red-200">{scalar("breached")}</p>
+            <p className="mt-1 text-sm font-semibold text-red-800 dark:text-red-200">SLA breaches</p>
+            <p className="mt-1 text-xs text-red-800 dark:text-red-200">
               Challenges nobody claimed inside twenty-one days. Full history and per-institution
               performance →
             </p>
@@ -248,7 +248,7 @@ export default async function GovHome() {
                 <tbody>
                   {breaches.map((b) => (
                     <tr key={`${b.tracking_id}-${b.kind}`} className="border-b border-border/60">
-                      <td className="py-2 pr-3 text-lg font-bold tabular-nums text-red-200">{b.days_overdue}</td>
+                      <td className="py-2 pr-3 text-lg font-bold tabular-nums text-red-800 dark:text-red-200">{b.days_overdue}</td>
                       <td className="py-2 pr-3">
                         <Link href={`/c/${b.tracking_id}`} className="font-medium underline-offset-4 hover:underline">
                           {b.title}
@@ -293,7 +293,7 @@ export default async function GovHome() {
             page opens its own breakdown.
           </p>
           {emergency.on && emergency.hazard ? (
-            <p className="mb-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-200">
+            <p className="mb-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-800 dark:text-red-200">
               Emergency mode is on, pinned to {emergency.hazard.replace(/_/g, " ").toLowerCase()}. Markers are
               re-ordered by a display surge of up to ×1.25 for {emergency.hazard.replace(/_/g, " ").toLowerCase()}
               -linked challenges, and their SLA clocks run at half speed. No stored priority score changed —{" "}

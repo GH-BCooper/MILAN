@@ -33,6 +33,10 @@ const ALLOWED_CONTEXT = [
   /HUMAN:/,
 ];
 
+/** The moderation blocklist has to *contain* the junk strings it rejects, so the
+ *  one file whose job is naming placeholder text cannot itself be an offence. */
+const EXEMPT_FILES = ["lib/moderation/blocklist.ts"];
+
 const DATA_ROOTS = ["seed-data"];
 const ROOTS = ["seed-data", "app", "components", "lib", "packages"];
 const offences: string[] = [];
@@ -62,6 +66,7 @@ for (const root of ROOTS) {
   }
   for (const file of files) {
     const rel = relative(process.cwd(), file);
+    if (EXEMPT_FILES.includes(rel)) continue;
     readFileSync(file, "utf8")
       .split(/\r?\n/)
       .forEach((line, i) => {

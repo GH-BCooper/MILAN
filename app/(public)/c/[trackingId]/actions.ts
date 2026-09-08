@@ -49,12 +49,23 @@ export async function corroborateAction(raw: unknown): Promise<CorroborateResult
     clientIp(headerList) ?? headerList.get("user-agent")?.slice(0, 64) ?? "anonymous";
 
   const [challenge] = await db
-    .select({ id: challenges.id, lat: challenges.lat, lng: challenges.lng })
+    .select({ id: challenges.id, lat: challenges.lat, lng: challenges.lng, reporterId: challenges.reporterId })
     .from(challenges)
     .where(eq(challenges.trackingId, parsed.data.trackingId.toUpperCase()))
     .limit(1);
 
   if (!challenge) return { ok: false, error: "That report could not be found." };
+
+  // "This happens to me too" credits a SECOND person independently reporting
+  // the same problem (CLAUDE.md invariant 9: duplicates are signal, both
+  // reporters are credited on MERGED). The original reporter confirming their
+  // own report is not a second signal — it is the same signal counted twice,
+  // which would let one account inflate its own priority score. An anonymous
+  // report (reporterId null) has nobody to compare against, so this only
+  // fires for a signed-in user confirming a report that is their own.
+  if (user && challenge.reporterId && user.id === challenge.reporterId) {
+    return { ok: false, error: "You reported this yourself — corroboration is for confirming someone else's report." };
+  }
 
   try {
     const count = await db.transaction(async (tx) => {

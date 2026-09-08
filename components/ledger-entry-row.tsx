@@ -98,7 +98,7 @@ export function LedgerEntryRow({ entry }: { entry: EntryView }) {
               }}
             />
             {fileHash ? (
-              <p className={`mt-2 break-all font-mono text-xs ${fileHash === entry.contentHash ? "text-emerald-200" : "text-red-200"}`}>
+              <p className={`mt-2 break-all font-mono text-xs ${fileHash === entry.contentHash ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`}>
                 {fileName}: {fileHash}
                 <span className="block font-sans font-semibold">
                   {fileHash === entry.contentHash ? "Match — this is the file this entry commits to." : "No match against this entry's content hash."}

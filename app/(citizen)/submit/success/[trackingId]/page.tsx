@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 
 import { CopyButton } from "@/components/copy-button";
 import { PipelineTrace } from "@/components/pipeline-trace";
-import { SiteHeader } from "@/components/site-header";
 import { projectTrace } from "@/lib/ai/trace-projection";
 import { db } from "@/lib/db";
 import { challenges } from "@/lib/db/schema";
@@ -68,9 +67,8 @@ export default async function SubmitSuccessPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
-        <p className="text-sm font-semibold uppercase tracking-widest text-emerald-200">
+        <p className="text-sm font-semibold uppercase tracking-widest text-emerald-800 dark:text-emerald-200">
           Report received
         </p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight">

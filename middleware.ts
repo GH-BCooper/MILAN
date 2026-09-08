@@ -21,7 +21,6 @@ const PROTECTED_PREFIXES = [
   "/gov",
   "/admin",
   "/demo",
-  "/submit",
   "/submit-question",
   "/profile",
 ];
@@ -36,6 +35,13 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith("/me/verify/")) {
     return NextResponse.next();
   }
+
+  // /submit is deliberately NOT in the list above. Reporting needs no account —
+  // the challenge page, the corroborate button and the discussion panel all say
+  // so in as many words, `submitReportAction` records `reporter_id = null` for
+  // an unsigned report, and the whole point is that the person standing next to
+  // the cracked embankment does not first have to make an account. Abuse is held
+  // off by per-IP rate limiting in the action, not by a login wall.
 
   if (!PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
@@ -60,8 +66,6 @@ export const config = {
     "/gov/:path*",
     "/admin/:path*",
     "/demo/:path*",
-    "/submit",
-    "/submit/:path*",
     "/submit-question",
     "/profile",
   ],

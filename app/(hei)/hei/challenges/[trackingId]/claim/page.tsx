@@ -96,7 +96,7 @@ export default async function ClaimPage({
           </span>
         ) : null}
         {offer.hazard && offer.hazard !== "NONE" ? (
-          <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+          <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
             {offer.hazard.replaceAll("_", " ")}
           </span>
         ) : null}

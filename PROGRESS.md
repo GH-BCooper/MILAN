@@ -1178,3 +1178,110 @@ over Twilio when configured (email over Resend as before).
 1. Run the seeded demo accounts through the new header nav and /admin/challenges
    override to confirm the ledger append + audit row land.
 2. Decide whether to collect DOB at registration (item 11) — needs a migration.
+
+## Full-application audit pass — completed 2026-09-08 14:40
+
+### Status
+Every route in the app was crawled signed-out and as each seeded role, every
+`verify:*` script was run, and the test suite, linter, typechecker and
+production build were taken green. Six real defects were found and fixed. The
+headline ones: the discussion panel had no table behind it and the district
+dashboard was a blank page, both because two migrations had been silently
+skipped for weeks; and `/submit` demanded a login, which contradicted the copy
+on three screens and the submit action's own anonymous path.
+
+### Defects found and fixed
+- [x] **Two migrations stranded, never applied.** `0012_challenge_comments` and
+      `0013_shiny_molly_hayes` were generated out of order, so drizzle-kit's
+      "newer than the last applied row" filter skipped both permanently and
+      `pnpm db:migrate` reported success while doing nothing. Consequences:
+      `challenge_comments` did not exist (the discussion panel was dead and 5
+      tests failed against the live DB), and `districts` was missing all five
+      JDIP 4.1 columns, so `/gov/district/[code]` threw and rendered blank.
+      Fixed by re-stamping both entries after the journal tip and making both
+      SQL files idempotent, so the repair works on a fresh database too.
+- [x] **Invariant 1 was broken — three challenges had silently died.**
+      `/submit-question` (the university/industry route) inserted a challenge in
+      SUBMITTED with no `sla_deadlines` row at all. Added the intake clock to
+      match the citizen path; backfilled the three orphans. Orphans now 0.
+- [x] **`/submit` required an account.** Middleware and `requireUser()` blocked
+      anonymous reporting, against the copy on the challenge page, the
+      corroborate button and the discussion panel ("Reporting and confirming
+      need no account"), against `submitReportAction`'s `reporter_id = null`
+      branch, and against `verify:demo`. Removed the wall. Verified end to end:
+      an anonymous report now files with a tracking id, an open SLA clock, a
+      chained ledger entry and an "Anonymous reporter" credit edge.
+- [x] **`/bounties` printed `0.15 × NaN` on every card.** The score breakdown
+      read `t.value`; the stored term names that field `normalised`. Also now
+      uses the term's human `label` instead of de-camel-casing its key.
+- [x] **`?denied=role` was a silent redirect.** `requireRole()` bounces a
+      wrong-role visitor to `/?denied=role` and nothing read the flag, so the
+      user landed on the home page with no idea why. The landing page now says
+      it plainly.
+- [x] **92 status chips were invisible in light mode.** Badges, pills and inline
+      notices across 35 files carried only `text-<colour>-200` on a
+      `bg-<colour>-500/15` tint — fine in dark, pale-on-pale in light. Applied
+      the `text-X-800 dark:text-X-200` pairing `status-badge.tsx` already used.
+- [x] `verify:seedguard` false positive on `lib/moderation/blocklist.ts`, the
+      one file whose job is to contain the strings it rejects. Now exempt.
+
+### Files created or changed
+- `lib/db/migrations/` — `meta/_journal.json` re-ordered; `0012_challenge_comments.sql`
+  and `0013_shiny_molly_hayes.sql` made idempotent.
+- `app/(public)/submit-question/actions.ts` — opens the SUBMITTED SLA clock.
+- `middleware.ts`, `app/(citizen)/submit/page.tsx`, `app/(citizen)/submit/schema.ts`
+  — anonymous reporting restored, with the reasoning written down in middleware.
+- `app/(public)/bounties/page.tsx` — NaN fix + real term labels.
+- `app/(landing)/page.tsx` — the wrong-role notice.
+- `app/**`, `components/**` (35 files) — light-mode tone on every tinted chip.
+- `scripts/district-enrichment.mts` (new, `pnpm seed:districts`) — re-runnable
+  backfill for the JDIP 4.1 columns a migration cannot populate.
+- `scripts/verify-seed-guard.mts` — blocklist exemption.
+- `app/(citizen)/submit/actions.ts` — removed a TODO that `appendEntry()` had
+  already implemented (the chain link is done, inside the caller's transaction).
+
+### Database
+- Migrations applied: `0012_challenge_comments`, `0013_shiny_molly_hayes`.
+- `challenge_comments` created; `districts` gained division, population,
+  internet_penetration, tribal_population_pct, disaster_vulnerability.
+- 24/24 districts enriched from `seed-data/districts-enrichment.csv`.
+- 3 orphaned challenges given their intake clock (`pnpm sla:backfill`).
+
+### Verification evidence
+- `pnpm build` ✓ · `pnpm typecheck` ✓ · `pnpm lint` ✓ · `pnpm test` 131/131 ✓
+- `verify:demo` 13/13 · `verify:provenance` 15/15 · `verify:sla` 0 orphans ·
+  `verify:perf` 6/6 within budget · `verify:clock`, `verify:emergency`,
+  `verify:trust`, `verify:triage` 9/9, `verify:seedguard` all pass.
+- `/api/ledger/verify` → ok, 543 entries checked, head seq 2531, no break.
+- All 35 public/role routes return 200 with real content; role gating holds
+  (HEI→/admin denied, INDUSTRY→/hei denied, ADMIN→/gov denied as designed).
+
+### Known issues — NOT fixed, need a human decision
+- **The hero voice-note record is in the wrong language.** `seed-data/voice-note.transcript.txt`
+  is authored in Hindi and says "Attach to: the challenge titled 'Crack
+  spreading along the South Koel embankment near Basia'", but that row in
+  `seed-data/challenges.csv` has the **English** translation as `body_original`
+  with `body_lang=en`. So `verify:framing` fails "the transcript is in the
+  speaker's own language", and the bilingual side-by-side (invariant 6) — one of
+  the strongest things to show a judge — has nothing to show on the hero record.
+  The fix is to move the Hindi paragraph from the transcript file into that
+  row's `body_original` and set `body_lang=hi`. Left alone because CLAUDE.md §6
+  rule 7 forbids modifying `seed-data/`.
+- `verify:framing` also fails "the original was not replaced by the
+  translation" on JH-2026-SIM-0005 — a live report whose author chose Hindi and
+  then typed English. Real user data, not a defect.
+- `verify:impact` fails "the confirmation SMS is in the mock inbox" only
+  because TWILIO_* are configured in `.env.local`, so the message goes out over
+  Twilio and the mock inbox stays empty. Expected.
+- `verify:hei`, `verify:industry` and `verify:gov` are not idempotent: they
+  fail on a second run because the first run claimed the challenge / consumed
+  the gate. They pass on fresh state (`verify:industry` 21/21 confirmed).
+- `verify:pipeline` "three distinct institutions were shortlisted" fails when
+  its synthetic challenge scores under `ROUTING.minPriorityToRoute` (85 of 100)
+  and parks. The pipeline itself is healthy — confirmed on a live run.
+
+### Start here next phase
+1. Decide the hero voice-note language question above; it is the single
+   highest-value remaining item for the demo.
+2. Make `verify:hei` / `verify:industry` / `verify:gov` re-runnable so the
+   whole `verify:*` suite can be a single CI gate.

@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { and, desc, eq, lt } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { SeverityChip } from "@/components/severity-chip";
 import { ROUTING } from "@/lib/ai/routing";
 import { db } from "@/lib/db";
@@ -44,7 +42,6 @@ export default async function FlaggedReportsPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Flagged reports</h1>
         <p className="mt-1 text-sm text-muted-foreground">

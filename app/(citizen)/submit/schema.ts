@@ -68,9 +68,11 @@ export const SubmitSchema = z.object({
   successCriteria: z.string().trim().max(1000).nullable().default(null),
   framingApprovedByCitizen: z.boolean().default(false),
 
-  // Step 6 — the citizen is already signed in to reach /submit, so their name
-  // is already known server-side. The client sends only a yes/no; the server
-  // never trusts a client-supplied name string (see actions.ts).
+  // Step 6 — when the citizen is signed in, their name is already known
+  // server-side; the client sends only a yes/no and the server never trusts a
+  // client-supplied name string (see actions.ts). Reporting needs no account,
+  // so signed out this flag has nothing to attach and the report is filed with
+  // reporter_id = null.
   includeReporterName: z.boolean().default(true),
 });
 

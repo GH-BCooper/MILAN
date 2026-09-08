@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,7 +40,6 @@ export default async function TrackPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-md px-4 py-10 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Track a report</h1>
         <p className="mt-1 text-sm text-muted-foreground" lang="hi">

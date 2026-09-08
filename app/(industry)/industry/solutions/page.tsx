@@ -167,7 +167,7 @@ export default async function IndustrySolutions({
                   <UnconfirmedTag />
                 ) : null}
                 {r.impact_confirmed ? (
-                  <span className={`rounded px-2 py-1 font-medium ${r.impact_partial ? "bg-amber-500/15 text-amber-200" : "bg-emerald-500/15 text-emerald-200"}`}>
+                  <span className={`rounded px-2 py-1 font-medium ${r.impact_partial ? "bg-amber-500/15 text-amber-800 dark:text-amber-200" : "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200"}`}>
                     {r.impact_partial ? "citizen says partly fixed" : "confirmed fixed by the citizen"}
                   </span>
                 ) : null}

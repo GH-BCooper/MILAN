@@ -133,7 +133,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
         </button>
 
         {state ? (
-          <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
+          <p className={`text-sm ${state.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`} role="status">
             {state.message}
             {state.ok && state.artifactId ? (
               <>
@@ -157,7 +157,7 @@ export function PublishForm({ projectId, canMarkPublished }: { projectId: string
             Mark the challenge as SOLUTION_PUBLISHED
           </button>
           {mark ? (
-            <p className={`mt-2 text-sm ${mark.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
+            <p className={`mt-2 text-sm ${mark.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`} role="status">
               {mark.message}
             </p>
           ) : null}
@@ -216,7 +216,7 @@ export function AccessRequests({ requests }: { requests: AccessRequestView[] }) 
                   if (form) (form.elements.namedItem("decision") as HTMLInputElement).value = "DENY";
                 }}
                 disabled={pending}
-                className="inline-flex h-11 items-center rounded-md border border-red-400/40 px-4 text-sm font-semibold text-red-200 disabled:opacity-50"
+                className="inline-flex h-11 items-center rounded-md border border-red-400/40 px-4 text-sm font-semibold text-red-800 dark:text-red-200 disabled:opacity-50"
               >
                 Decline
               </button>
@@ -226,7 +226,7 @@ export function AccessRequests({ requests }: { requests: AccessRequestView[] }) 
       ))}
       <input type="hidden" name="decision" defaultValue="GRANT" />
       {state ? (
-        <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
+        <p className={`text-sm ${state.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`} role="status">
           {state.message}
         </p>
       ) : null}

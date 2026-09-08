@@ -33,6 +33,7 @@ const PORTALS = [
       "Describe a problem in Hindi or English, get a tracking ID in seconds, and confirm when it is actually fixed. A verified account keeps every report attached to you.",
     points: ["Bilingual submission", "Email + phone verified", "You confirm the outcome"],
     accent: "from-[var(--grad-3)] to-[var(--grad-2)]",
+    actions: [{ href: "/submit", label: "Report a problem" }],
   },
   {
     href: "/portals/universities",
@@ -44,6 +45,10 @@ const PORTALS = [
       "200,000 Indian students invent a fake final-year project every year. Claim a routed, verified challenge instead — matched to your declared capability.",
     points: ["Routed inbox", "Capability matching", "Project workspace + artifacts", "Credit ledger"],
     accent: "from-[var(--grad-1)] to-[var(--grad-2)]",
+    actions: [
+      { href: "/hei/challenge-bank", label: "Claim a project" },
+      { href: "/hei", label: "Dashboard" },
+    ],
   },
   {
     href: "/portals/industry",
@@ -55,6 +60,10 @@ const PORTALS = [
       "Discover challenges by district and hazard, register interest, fund a bounty, and export a CSR report where every claimed outcome is citizen-confirmed or visibly grey.",
     points: ["Discovery filters", "Interest → response thread", "Bounty funding", "CSR export"],
     accent: "from-[var(--grad-4)] to-[var(--grad-1)]",
+    actions: [
+      { href: "/industry/solutions", label: "Browse solutions" },
+      { href: "/industry/csr", label: "My interests" },
+    ],
   },
 ] as const;
 
@@ -153,7 +162,16 @@ const FAQS = [
   },
 ] as const;
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string }>;
+}) {
+  /* `requireRole()` bounces a wrong-role visitor here with ?denied=role. Without
+     this notice the redirect is silent — a government user who clicks an /admin
+     link simply finds themselves back on the home page with no idea why, which
+     reads as a broken link rather than a refusal. */
+  const { denied } = await searchParams;
   /* Real numbers only — CLAUDE.md forbids manufactured metrics. One round
      trip, same pattern as /stats: this connection pool does not tolerate
      concurrent raw queries. */
@@ -170,6 +188,18 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
+        {denied === "role" ? (
+          <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
+            <p
+              role="status"
+              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+            >
+              <span className="font-semibold">That page belongs to a different role.</span> Your
+              account does not have access to it, so Milan brought you here instead. If you think
+              this is wrong, the platform administrator can check your role on your profile.
+            </p>
+          </div>
+        ) : null}
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section className="relative mx-auto w-full max-w-6xl px-4 pb-6 pt-10 sm:px-6 sm:pt-16">
           <div
@@ -272,11 +302,10 @@ export default async function LandingPage() {
           </p>
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {PORTALS.map(({ href, icon: Icon, name, nameHi, tagline, body, points, accent }) => (
-              <Link
+            {PORTALS.map(({ href, icon: Icon, name, nameHi, tagline, body, points, accent, actions }) => (
+              <div
                 key={href}
-                href={href}
-                className="milan-glass group relative flex flex-col overflow-hidden rounded-2xl p-6 transition-all hover:-translate-y-1 hover:border-[var(--grad-2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="milan-glass group relative flex flex-col overflow-hidden rounded-2xl p-6 transition-all hover:-translate-y-1 hover:border-[var(--grad-2)]"
               >
                 <span aria-hidden className="milan-hairline absolute inset-x-0 top-0 h-px opacity-70" />
                 <span
@@ -305,14 +334,23 @@ export default async function LandingPage() {
                   ))}
                 </ul>
 
-                <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold milan-gradient-text">
-                  Enter portal
-                  <ArrowRight
-                    aria-hidden
-                    className="size-4 text-[var(--grad-3)] transition-transform group-hover:translate-x-1"
-                  />
-                </span>
-              </Link>
+                {/* Item 10: one dedicated button per action this role actually
+                    takes, not a single generic "enter portal" door. */}
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {actions.map(({ href: actionHref, label }, i) => (
+                    <Button key={actionHref} asChild size="sm" variant={i === 0 ? "default" : "outline"}>
+                      <Link href={actionHref}>{label}</Link>
+                    </Button>
+                  ))}
+                </div>
+                <Link
+                  href={href}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Learn more about this portal
+                  <ArrowRight aria-hidden className="size-3.5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
             ))}
           </div>
         </section>

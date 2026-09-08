@@ -33,6 +33,9 @@ interface SeedRow {
 
 export interface DemoResetReport {
   statusesRestored: number;
+  routesCleared: number;
+  creditEdgesCleared: number;
+  interestsCleared: number;
   flagsCleared: number;
   deadlinesCancelled: number;
   deadlinesOpened: number;
@@ -97,7 +100,64 @@ export async function resetToSeedState(): Promise<DemoResetReport> {
     RETURNING 1 AS n
   `)) as unknown as Array<{ n: number }>;
 
-  // 3. Cancel every open deadline — cancelled, never deleted, so the rehearsal
+  /**
+   * 3. Roll back the work a rehearsal created, for any challenge the CSV has
+   *    just put back to a pre-claim status.
+   *
+   *    Statuses alone are not the demo's state. A run routes the hero challenge
+   *    to three institutions, BIT Sindri claims it, a project and its team are
+   *    created and the credit chain gains TEAM_MEMBER / MENTOR / FUNDER edges.
+   *    Restoring `status` to SUBMITTED and stopping there leaves all of that
+   *    behind, so the second rehearsal opens on a "SUBMITTED" challenge whose
+   *    routes are already spent, whose claim page says "not available", and
+   *    whose public credit chain already names the student team — the ending,
+   *    on screen, before the demo begins. It also gives credit for work that,
+   *    in the restored world, nobody has done yet.
+   *
+   *    The cut is by status: routes belong to ROUTED and later, and claim-side
+   *    credit to CLAIMED and later. ORIGINATOR and CORROBORATOR
+   *    edges are never touched — they come from intake and from a merge, not
+   *    from a claim, and erasing them would break the one promise the credit
+   *    chain makes. The ledger is untouched here as everywhere else: it still
+   *    carries every rehearsal, which is the honest outcome.
+   */
+  const PRE_ROUTED = sql`('SUBMITTED','TRIAGED','CLASSIFIED','CLUSTERED','PRIORITISED','VERIFIED')`;
+  const PRE_CLAIMED = sql`('SUBMITTED','TRIAGED','CLASSIFIED','CLUSTERED','PRIORITISED','VERIFIED','ROUTED')`;
+
+  const routesCleared = (await db.execute<{ n: number }>(sql`
+    DELETE FROM routes r USING challenges c
+    WHERE r.challenge_id = c.id AND c.status::text IN ${PRE_ROUTED}
+    RETURNING 1 AS n
+  `)) as unknown as Array<{ n: number }>;
+
+  /**
+   * `projects` is deliberately NOT deleted, and cannot be.
+   *
+   * `ledger_entries.project_id` has a foreign key to it, so dropping the row
+   * would either break that reference or force a cascade into the ledger — and
+   * the ledger is the one table this reset must never touch. A project pinned by
+   * a ledger entry is the chain doing its job: the rehearsal happened, and the
+   * evidence that it happened does not get to disappear because we would like a
+   * tidier stage. The project is unlinked from the demo instead — its routes and
+   * its claim-side credit are cleared, so the challenge presents as unclaimed —
+   * and the row itself stays, pinned, exactly as the record says it must.
+   */
+
+  const creditEdgesCleared = (await db.execute<{ n: number }>(sql`
+    DELETE FROM credit_edges e USING challenges c
+    WHERE e.challenge_id = c.id
+      AND c.status::text IN ${PRE_CLAIMED}
+      AND e.relation::text NOT IN ('ORIGINATOR','CORROBORATOR')
+    RETURNING 1 AS n
+  `)) as unknown as Array<{ n: number }>;
+
+  const interestsCleared = (await db.execute<{ n: number }>(sql`
+    DELETE FROM industry_interests i USING challenges c
+    WHERE i.challenge_id = c.id AND c.status::text IN ${PRE_CLAIMED}
+    RETURNING 1 AS n
+  `)) as unknown as Array<{ n: number }>;
+
+  // 4. Cancel every open deadline — cancelled, never deleted, so the rehearsal
   //    is still visible on /gov/sla afterwards.
   const cancelled = (await db.execute<{ n: number }>(sql`
     UPDATE sla_deadlines SET cancelled_at = ${atIso}::timestamptz
@@ -105,7 +165,7 @@ export async function resetToSeedState(): Promise<DemoResetReport> {
     RETURNING 1 AS n
   `)) as unknown as Array<{ n: number }>;
 
-  // 4. Re-open the clocks, through the same table the CI invariant checks.
+  // 5. Re-open the clocks, through the same table the CI invariant checks.
   const open = (await db.execute<{ id: string; status: string }>(sql`
     SELECT id, status::text AS status FROM challenges
     WHERE status NOT IN ('CLOSED','MERGED','FORWARDED_EXTERNAL','WITHDRAWN','REJECTED_UNSAFE')
@@ -128,6 +188,9 @@ export async function resetToSeedState(): Promise<DemoResetReport> {
 
   return {
     statusesRestored,
+    routesCleared: routesCleared.length,
+    creditEdgesCleared: creditEdgesCleared.length,
+    interestsCleared: interestsCleared.length,
     flagsCleared: flags.length,
     deadlinesCancelled: cancelled.length,
     deadlinesOpened: rows.length,

@@ -45,7 +45,9 @@
     "verify:seedguard": "tsx --conditions=react-server scripts/verify-seed-guard.mts",
     "verify:perf": "tsx --conditions=react-server scripts/verify-perf.mts",
     "verify:phase3": "tsx --conditions=react-server scripts/verify-phase3.mts",
-    "backup": "node scripts/backup.mjs backups/phase3-demo.sql"
+    "backup": "node scripts/backup.mjs backups/phase3-demo.sql",
+    "seed:districts": "tsx --conditions=react-server scripts/district-enrichment.mts",
+    "fix:hero-transcript": "tsx --conditions=react-server scripts/fix-hero-transcript.mts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
