@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { execRaw } from "@/lib/db/raw";
 import { impactCounts } from "@/lib/impact/counter";
 
-import { LandingFooter, LandingHeader, StepList } from "./landing-chrome";
+import { LandingFooter, StepList } from "./landing-chrome";
 
 /** The three doors. Each one leads to a portal overview page, which in turn
  *  routes into that role's real dashboard. Citizens get the shallow door on
@@ -185,8 +185,6 @@ export default async function LandingPage({
 
   return (
     <>
-      <LandingHeader />
-
       <main className="flex-1">
         {denied === "role" ? (
           <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">

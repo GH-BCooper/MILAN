@@ -25,6 +25,21 @@ const PROTECTED_PREFIXES = [
   "/profile",
 ];
 
+/**
+ * Pass the request through, stamping the pathname where the root layout can
+ * read it. A server component cannot see the URL it renders for, and the
+ * single navbar (components/site-chrome.tsx) needs to know whether this is
+ * the landing site or the app — so middleware, which sees every page request,
+ * says so on `x-pathname`. Auth behaviour is untouched: this header is chrome
+ * metadata, and the widened matcher below only changes *which requests pass
+ * through here*, never who gets redirected.
+ */
+function pass(request: NextRequest): NextResponse {
+  const headers = new Headers(request.headers);
+  headers.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers } });
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -33,7 +48,7 @@ export function middleware(request: NextRequest) {
   // (lib/verify/token.ts), not a session, and is emailed/texted to citizens who
   // may never have created an account. It must not be swept into "/me".
   if (pathname.startsWith("/me/verify/")) {
-    return NextResponse.next();
+    return pass(request);
   }
 
   // /submit is deliberately NOT in the list above. Reporting needs no account —
@@ -44,7 +59,7 @@ export function middleware(request: NextRequest) {
   // off by per-IP rate limiting in the action, not by a login wall.
 
   if (!PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
+    return pass(request);
   }
 
   const cookie = getSessionCookie(request);
@@ -55,18 +70,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return pass(request);
 }
 
 export const config = {
   matcher: [
-    "/me/:path*",
-    "/hei/:path*",
-    "/industry/:path*",
-    "/gov/:path*",
-    "/admin/:path*",
-    "/demo/:path*",
-    "/submit-question",
-    "/profile",
+    // Every page, so the chrome header is stamped wherever a layout renders.
+    // API routes, Next internals and files with extensions never render one.
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
   ],
 };

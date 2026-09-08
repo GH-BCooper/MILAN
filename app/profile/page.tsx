@@ -8,7 +8,6 @@ import { eq } from "drizzle-orm";
 
 import { RoleBadge } from "@/components/role-badge";
 import { RoleShell } from "@/components/role-shell";
-import { SiteHeader } from "@/components/site-header";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { organization, user as userTable, userProfiles } from "@/lib/db/schema";
@@ -67,12 +66,8 @@ export default async function ProfilePage() {
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("");
 
-  // /profile sits outside the route groups, so it brings its own header —
-  // every grouped page gets it from its group layout instead.
   return (
-    <>
-      <SiteHeader />
-      <RoleShell title="Your profile" subtitle="What Milan holds for your account, and what has been verified.">
+    <RoleShell title="Your profile" subtitle="What Milan holds for your account, and what has been verified.">
       <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
         <div className="milan-glass rounded-xl p-5">
           <div className="flex items-center gap-4">
@@ -119,7 +114,6 @@ export default async function ProfilePage() {
         </p>
         <DeleteAccountForm />
       </section>
-      </RoleShell>
-    </>
+    </RoleShell>
   );
 }

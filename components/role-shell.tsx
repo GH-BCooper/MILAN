@@ -1,6 +1,6 @@
 /** The chrome every signed-in role area shares. The top navbar itself lives in
- *  the route-group layouts (every group renders <SiteHeader />), so this shell
- *  must NOT render it too — that doubled the navbar on every page that uses it.
+ *  <SiteChrome /> in the root layout, once for the whole app — this shell
+ *  must never render a header of its own.
  */
 export function RoleShell({
   title,

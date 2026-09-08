@@ -51,6 +51,28 @@ for (const [path, label] of ROUTES) {
   record("/me redirects when signed out", res.status === 307, `HTTP ${res.status}`);
 }
 
+/* One navbar per page, of the right kind: the landing site gets the portal
+ * switcher, every app page gets the role-aware navbar. Flight data repeats
+ * props inside <script> tags, so the count runs on the DOM with scripts
+ * stripped. */
+console.log(`\nSingle navbar\n${"-".repeat(70)}`);
+for (const [path, wantPrimary, wantPortals] of [
+  ["/", 0, 1],
+  ["/portals/citizens", 0, 1],
+  ["/login", 1, 0],
+  ["/challenges", 1, 0],
+]) {
+  const html = await (await fetch(`${BASE}${path}`)).text();
+  const dom = html.replace(/<script[\s\S]*?<\/script>/g, "");
+  const primary = dom.split('aria-label="Primary"').length - 1;
+  const portals = dom.split('aria-label="Portals"').length - 1;
+  record(
+    `${path} renders one navbar`,
+    primary === wantPrimary && portals === wantPortals,
+    `Primary×${primary} Portals×${portals}`,
+  );
+}
+
 console.log(`\nPage content\n${"-".repeat(70)}`);
 
 /* Invariant 6: the citizen's original text renders on the challenge page. */

@@ -131,9 +131,10 @@ export function PortalShell({
   secondary?: { href: string; label: string };
   children: React.ReactNode;
 }) {
+  // No header here: the root layout's <SiteChrome /> renders the landing
+  // header for /portals/* once for the whole app.
   return (
     <>
-      <LandingHeader />
       <main className="flex-1">
         <section className="mx-auto w-full max-w-6xl px-4 pb-8 pt-10 sm:px-6 sm:pt-14">
           <div className="milan-rise">
