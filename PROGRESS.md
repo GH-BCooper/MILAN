@@ -1468,3 +1468,12 @@ Steps 0–14 of `docs/qualification-checklist.csv`, ending with the full
 - Follow-up (not done): audit other time-deciding write paths for the same
   missing sync (claim-window checks read `clockNow()` via pages/actions that
   do not sync either).
+
+## verify:phase3 — 9/9 on the fixed build (2026-09-09, session closeout)
+- Full meta green on a pristine reseed: 3.1 clock, 3.2 SLA, 3.3 gov (ladder
+  shield held), 3.4/3.5 provenance, 3.6 impact (forced clock sync held),
+  3.7 industry, 3.8 demo, 3.9 perf + seedguard. No 429s (65s pacing held).
+- v2 rules-chain qualification is COMPLETE. Everything runnable offline is
+  green; the remainder needs network (Supabase Storage, live AI providers),
+  credentials with admin scope (CI secrets), or a human (Hindi review,
+  voice-listen, phone test, basemap, merge).
