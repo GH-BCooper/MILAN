@@ -100,23 +100,11 @@ export const domainEnum = pgEnum("domain", [
   "WATER",
   "SANITATION",
   "ENVIRONMENT",
+  "ENERGY",
   "LIVELIHOODS",
   "ACCESSIBILITY",
   "URBAN_INFRA",
   "PUBLIC_SERVICE",
-]);
-
-/** NDMA hazard classes. The linkage is what makes an item a Disaster Management
- *  item rather than a public-works item, and it is a weighted term in the score. */
-export const hazardEnum = pgEnum("hazard", [
-  "FLOOD",
-  "DROUGHT",
-  "LANDSLIDE",
-  "HEATWAVE",
-  "MINING_SUBSIDENCE",
-  "EPIDEMIC",
-  "FOREST_FIRE",
-  "NONE",
 ]);
 
 export const licenceEnum = pgEnum("licence", ["CC_BY", "RESTRICTED"]);
@@ -175,7 +163,8 @@ export const districts = pgTable("districts", {
   nameHi: text("name_hi"),
   lat: numeric("lat", { precision: 9, scale: 6 }),
   lng: numeric("lng", { precision: 9, scale: 6 }),
-  /** 0.00–1.00. A weighted term in the priority score (Phase 2). */
+  /** 0.00–1.00. The equity term in the priority score: an identical problem
+   *  in a more vulnerable block outranks one in a better-served block. */
   vulnerabilityIndex: numeric("vulnerability_index", { precision: 3, scale: 2 }),
   /* Task 4.9 — district reference data (JDIP Part 4.1). Populated from
    * seed-data/districts-enrichment.csv by the seeder; nullable so existing
@@ -191,9 +180,6 @@ export const districts = pgTable("districts", {
   /** Percent (0–100) Scheduled Tribe population — the Adivasi belt is the
    *  platform's core constituency and the Hindi/Santali localisation case. */
   tribalPopulationPct: numeric("tribal_population_pct", { precision: 4, scale: 1 }),
-  /** Per-hazard 0–1 vulnerability map: `{ "FLOOD": 0.8, "DROUGHT": 0.4 }`.
-   *  jsonb because the hazard enum is the universe, not a fixed column set. */
-  disasterVulnerability: jsonb("disaster_vulnerability"),
 });
 
 export const blocks = pgTable(
@@ -345,8 +331,6 @@ export const challenges = pgTable(
 
     // Phase 2 (S1/S3). Null until the pipeline runs.
     domain: domainEnum("domain"),
-    hazard: hazardEnum("hazard"),
-    hazardStrength: numeric("hazard_strength", { precision: 3, scale: 2 }),
     severity: numeric("severity", { precision: 3, scale: 2 }),
     priorityScore: numeric("priority_score", { precision: 6, scale: 3 }),
     /** Every term, its weight and its value — this is what makes the number clickable. */
@@ -412,7 +396,6 @@ export const challenges = pgTable(
     index("challenges_district_idx").on(t.districtCode),
     index("challenges_block_idx").on(t.blockCode),
     index("challenges_domain_idx").on(t.domain),
-    index("challenges_hazard_idx").on(t.hazard),
     index("challenges_cluster_idx").on(t.clusterId),
     index("challenges_search_idx").using("gin", t.searchTsv),
     index("challenges_title_trgm_idx").using("gin", sql`${t.title} gin_trgm_ops`),
@@ -871,12 +854,6 @@ export const auditLog = pgTable(
 export const demoState = pgTable("demo_state", {
   id: integer("id").primaryKey().default(1),
   clockOffsetDays: integer("clock_offset_days").notNull().default(0),
-    emergencyMode: boolean("emergency_mode").notNull().default(false),
-    /** Which hazard the emergency is pinned to. Filters display, drives the
-     *  surge re-rank and compresses the pinned hazard's SLA clocks to
-     *  EMERGENCY_TIME_SCALE (reversibly — see /gov/emergency). Never a stored
-     *  priority score. */
-    emergencyHazard: text("emergency_hazard"),
     /**
      * When lib/credit/trust-writers last decayed everyone's trust toward the
      * baseline. Stored here (not computed from "now") so a cron run that fires
@@ -996,7 +973,6 @@ export type BugReportType = (typeof bugReportTypeEnum.enumValues)[number];
 export type Role = (typeof roleEnum.enumValues)[number];
 export type OrgVerificationStatus = (typeof orgVerificationStatusEnum.enumValues)[number];
 export type Domain = (typeof domainEnum.enumValues)[number];
-export type Hazard = (typeof hazardEnum.enumValues)[number];
 export type SlaKind = (typeof slaKindEnum.enumValues)[number];
 export type LedgerKind = (typeof ledgerKindEnum.enumValues)[number];
 export type Licence = (typeof licenceEnum.enumValues)[number];

@@ -5,7 +5,7 @@ import { FeatureGrid, PortalShell, StepList } from "../../landing-chrome";
 export const metadata: Metadata = {
   title: "Industry portal",
   description:
-    "Discover verified, hazard-linked civic demand by district, fund bounties, and export a CSR report where every claimed outcome is citizen-confirmed or visibly grey.",
+    "Discover verified civic demand by district, fund bounties, and export a CSR report where every claimed outcome is citizen-confirmed or visibly grey.",
 };
 
 export default function IndustryPortalPage() {
@@ -14,7 +14,7 @@ export default function IndustryPortalPage() {
       eyebrow="For industry & CSR · उद्योग के लिए"
       title="CSR against verified demand."
       titleHi="सत्यापित ज़रूरत पर सीएसआर व्यय"
-      lede="Every challenge here was reported by a named citizen, corroborated, linked to an NDMA hazard and scored by deterministic code you can read. Fund the ones that match your mandate, follow the work through to an outcome, and export a report in which an unconfirmed claim is never allowed to look confirmed."
+      lede="Every challenge here was reported by a named citizen, corroborated, and scored by deterministic code you can read. Fund the ones that match your mandate, follow the work through to an outcome, and export a report in which an unconfirmed claim is never allowed to look confirmed."
       primary={{ href: "/industry/discover", label: "Discover challenges" }}
       secondary={{ href: "/industry/csr", label: "See a CSR export" }}
     >
@@ -24,7 +24,7 @@ export default function IndustryPortalPage() {
           {
             title: "Filter to your mandate",
             body:
-              "By district, NDMA hazard, priority band, state and corroboration count. Every filter maps to a column you can inspect — no opaque relevance ranking.",
+              "By district, domain, priority band, state and corroboration count. Every filter maps to a column you can inspect — no opaque relevance ranking.",
           },
           {
             title: "Register interest",
@@ -52,7 +52,7 @@ export default function IndustryPortalPage() {
             href: "/industry/discover",
             title: "Discovery",
             tag: "Dashboard",
-            body: "Filter verified challenges by district, hazard, priority band and corroborations.",
+            body: "Filter verified challenges by district, domain, priority band and corroborations.",
           },
           {
             href: "/industry/csr",
@@ -73,7 +73,7 @@ export default function IndustryPortalPage() {
           {
             href: "/stats",
             title: "State statistics",
-            body: "District coverage, hazard mix and confirmed impact for board-level reporting.",
+            body: "District coverage, domain mix and confirmed impact for board-level reporting.",
           },
           {
             href: "/ledger",

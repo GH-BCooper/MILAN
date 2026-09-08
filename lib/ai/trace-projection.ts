@@ -23,7 +23,8 @@ import { desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { decideS1 } from "@/lib/ai/triage";
-import { decideS2, normaliseS2 } from "@/lib/ai/stages/s2";
+import type { S2Output } from "@/lib/ai/schemas";
+import { decideS2 } from "@/lib/ai/stages/s2";
 import { S3_THRESHOLDS } from "@/lib/ai/stages/s3";
 import { ROUTING } from "@/lib/ai/routing";
 import { clockNow } from "@/lib/clock";
@@ -194,14 +195,14 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
   let S2: TraceStage = { status: "waiting" };
   if (s2) {
     const raw = outputOf(s2);
-    const value = raw ? normaliseS2(raw as Parameters<typeof normaliseS2>[0]) : null;
+    const value = raw ? (raw as S2Output) : null;
     let decisionText: string | null = null;
     if (value) {
       const decision = decideS2(value);
       decisionText =
         decision.kind === "HUMAN_QUEUE"
           ? `Classification proposed but held for a human at /admin/triage. ${decision.why}`
-          : `${value.domain} / ${value.hazard}, severity ${value.severity.toFixed(2)}.`;
+          : `${value.domain}, severity ${value.severity.toFixed(2)}.`;
     }
     S2 = {
       status: s2.fallbackLevel === 2 ? "degraded" : "done",

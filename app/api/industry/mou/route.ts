@@ -52,7 +52,7 @@ export async function GET(request: Request) {
   const at = clockNow();
   const lines: PdfLine[] = [
     { text: "Memorandum of Understanding", size: 18, bold: true },
-    { text: "Milan - Government of Jharkhand - Disaster risk reduction", size: 10, spaceBefore: 4 },
+    { text: "Milan - Government of Jharkhand - Department of Higher & Technical Education", size: 10, spaceBefore: 4 },
     { text: `Reference: ${row.trackingId} / EOI ${row.id}`, size: 9, spaceBefore: 8 },
     { text: `Drafted ${at.toISOString().slice(0, 19).replace("T", " ")} UTC`, size: 9 },
 

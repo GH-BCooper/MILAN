@@ -1,7 +1,7 @@
 # Milan — QA Testing Playbook
 
 **Scope:** full-stack functional, UI/responsive, architectural/authorization, data-integrity and
-latency/performance testing of Milan (SIH26043 — Jharkhand disaster-risk-reduction pipeline).
+latency/performance testing of Milan (SIH26043 — Jharkhand societal-challenge routing pipeline).
 
 **Audience:** a manual QA tester plus whoever runs the automated scripts. No code changes are
 required to run this plan — it is a walkthrough that produces evidence.
@@ -82,7 +82,7 @@ pnpm ai:smoke      # provider-chain smoke with AI_PROVIDER_CHAIN=rules for offli
 | **Citizen** | Register + OTP, submit a problem, upload/ blur a photo, choose district/pin, approve framing, track it, confirm/dispute an implementation | Frustration, data loss, photos, privacy (EXIF/blur), weird input, no account needed vs needs account |
 | **University (HEI)** | Declare capability, read inbox, claim a challenge, form team, add milestones, publish artifact, accept/decline industry interest | Wrong-org isolation, capacity, claim expiry, artifact access control |
 | **Industry** | Discover challenges, filter, express interest, respond to EOI, generate MoU, export CSR report | Where does money flow, who sees unconfirmed impact, restricted artifact metadata |
-| **Government (DC)** | Gate high-severity challenges, verify in field, view SLA/breaches, toggle emergency mode | District scope, gate release, clock compression/restore |
+| **Government (DC)** | Gate high-severity challenges, verify in field, view SLA/breaches, export the district CSV | District scope, gate release, export scope |
 | **Admin** | Triage low-confidence AI, override routing, verify org proofs, manage challenge state, watch AI runs, demo console | Role wildcard safety, reason-gating on destructive moves, superuser overreach |
 | **Public / anonymous** | Landing, `/challenges`, `/track`, `/stats`, `/ledger`, `/bounties`, `/artifact` | What is public vs gated, what looks rounded vs what is real |
 
@@ -125,7 +125,7 @@ IDs are **C-##** (citizen), **H-##** (university), **I-##** (industry), **G-##**
 | H-02 | Org proof gate | New HEI registration, not yet approved | `/hei` redirects to `/verify-account/pending`; can still browse public routes |
 | H-03 | Home summary | `/hei` as HOD | Four numbers (inbox, soonest deadline, capacity, active projects) each link somewhere useful |
 | H-04 | Inbox | `/hei/inbox` | Only items routed to this org; sorted by soonest deadline; shows rank, reason, breakdown |
-| H-05 | Challenge bank filters | `/hei/challenge-bank?domain=X&hazard=Y` | Filters are server-side; "Claim it" only appears when offered |
+| H-05 | Challenge bank filters | `/hei/challenge-bank?domain=X&district=Y` | Filters are server-side; "Claim it" only appears when offered |
 | H-06 | Claim page — the offer | `/hei/challenges/<tid>/claim` | Shows citizen's original words side-by-side, routing reason, priority breakdown, claim window countdown |
 | H-07 | Claim not offered | Try a challenge not routed to this org | "Not available to claim" with an explanation |
 | H-08 | Claim form validation | Empty team member name/email, zero/negative capacity, no mentor | Server rejects; no partial project row |
@@ -144,7 +144,7 @@ IDs are **C-##** (citizen), **H-##** (university), **I-##** (industry), **G-##**
 | ID | Test | Steps | Expected |
 |---|---|---|---|
 | I-01 | Org proof gate | New industry account pending | `/industry/discover` redirects to pending verification |
-| I-02 | Discovery filters | `/industry/discover` filter district/domain/hazard/solvability | Result set matches every applied filter; Clear blank |
+| I-02 | Discovery filters | `/industry/discover` filter district/domain/solvability | Result set matches every applied filter; Clear blank |
 | I-03 | Restricted metadata | Open a challenge with RESTRICTED artifact | Only title/problem/abstract visible; file requires request; "restricted (metadata only)" visible |
 | I-04 | Express interest | `/industry/challenges/<tid>` → Express interest, <20 chars message | Reject short; valid creates EOI row + notifies project lead and org |
 | I-05 | Duplicate interests | Submit same interest twice | Decide by observation: should either dedupe or explicitly allow duplicates; record outcome |
@@ -166,8 +166,6 @@ IDs are **C-##** (citizen), **H-##** (university), **I-##** (industry), **G-##**
 | G-05 | Gate override | Override with missing reason | Must reject; mandatory written reason goes to `training_corrections` |
 | G-06 | Field verification | `/gov/verification`, endorse a report | `official_endorsed=true`, score changes by 0.06 term, ledger entry written |
 | G-07 | SLA board | `/gov/sla` | Breaches at top, most overdue first; open deadlines shown; released-undelivered projects visible |
-| G-08 | Emergency toggle | `/gov/emergency` on for flood | Banner statewide; map/list re-sort with ×1.25 label; open flood clocks compress to half time |
-| G-09 | Emergency OFF | Turn off | Original due dates restored exactly; nothing stored has been rewritten; audit log with counts |
 | G-10 | Impact counter | DC dashboard | Reads only `CITIZEN_VERIFIED`; unconfirmed stays grey |
 
 ### 3.5 Admin perspective
@@ -251,7 +249,7 @@ These are the highest-value bugs. Run them even when the happy path is green.
 - **X-C3** Rate limit: >5/hr; bypass by IP spoofing proxy headers? Note any bypass.
 - **X-C4** Media: oversized file, wrong MIME, image bomb (many megapixels), deleted storage object,
   `facesBlurred` flag tampered via API.
-- **X-C5** Empty / invalid search params: `?district=XXX`, `?hazard=BOGUS`, `?status=BOGUS`,
+- **X-C5** Empty / invalid search params: `?district=XXX`, `?domain=BOGUS`, `?status=BOGUS`,
   `?band=BOGUS`, `?severity=BOGUS` → should filter to empty or ignore, never 500.
 - **X-C6** Closed / terminal states: admin override to CLOSED/MERGED; verify no orphan deadline and
   no illegal edge in `/admin/challenges`.
@@ -379,7 +377,6 @@ pnpm build && pnpm typecheck && pnpm lint
 pnpm vitest run                 # 113 tests; invariant.test.ts must return 0 orphans
 pnpm verify:clock
 pnpm verify:sla
-pnpm verify:emergency
 pnpm verify:trust
 pnpm verify:gov
 pnpm verify:provenance

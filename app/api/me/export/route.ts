@@ -52,7 +52,7 @@ export async function GET() {
   const at = clockNow();
   const lines: PdfLine[] = [
     { text: "Milan - permanent credit record", size: 18, bold: true },
-    { text: "Government of Jharkhand - disaster risk reduction", size: 10, spaceBefore: 4 },
+    { text: "Government of Jharkhand - Department of Higher & Technical Education", size: 10, spaceBefore: 4 },
     { text: user.fullName, size: 14, bold: true, spaceBefore: 14 },
     { text: `Public record: ${host}/credit/${user.id}`, size: 9 },
     { text: `Generated ${at.toISOString().slice(0, 19).replace("T", " ")} UTC`, size: 9 },

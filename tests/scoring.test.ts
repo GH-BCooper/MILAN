@@ -20,8 +20,6 @@ import {
 
 const MAXIMAL: ScoringInput = {
   severity: 1,
-  hazard: "FLOOD",
-  hazardStrength: 1,
   peopleAffected: 100_000,
   blockVulnerability: 1,
   corroborationCount: 50,
@@ -31,8 +29,6 @@ const MAXIMAL: ScoringInput = {
 
 const MINIMAL: ScoringInput = {
   severity: 0.01,
-  hazard: "NONE",
-  hazardStrength: 0,
   peopleAffected: 1,
   blockVulnerability: 0,
   corroborationCount: 1,
@@ -42,7 +38,7 @@ const MINIMAL: ScoringInput = {
 
 describe("weights", () => {
   it("sum to exactly 1.00", () => {
-    // Floating point: 0.22+0.20+0.15+0.15+0.12+0.10+0.06 does not land on 1
+    // Floating point: 0.28+0.20+0.18+0.14+0.12+0.08 does not land on 1
     // exactly in binary, so assert to a tolerance far tighter than any weight.
     expect(weightsSum()).toBeCloseTo(1, 10);
   });
@@ -52,12 +48,13 @@ describe("weights", () => {
     expect(TERM_ORDER.slice().sort()).toEqual(Object.keys(WEIGHTS).sort());
   });
 
-  it("give hazard linkage the second-highest weight", () => {
-    // This is a Disaster Management PS. If hazard ever stops being second, that
-    // was a decision someone should have argued for out loud.
+  it("rank severity first across the six v2.0.0 terms", () => {
+    // v2.0.0 removed the hazard-linkage term: the PS categorises by thematic
+    // domain, not by hazard class. If the ranking ever changes, that was a
+    // decision someone should have argued for out loud.
+    expect(TERM_ORDER).toHaveLength(6);
     const ranked = TERM_ORDER.slice().sort((a, b) => WEIGHTS[b] - WEIGHTS[a]);
     expect(ranked[0]).toBe("severity");
-    expect(ranked[1]).toBe("hazard");
   });
 });
 
@@ -86,8 +83,6 @@ describe("computePriority", () => {
   it("returns every term with a contribution that reconstructs the total", () => {
     const result = computePriority({
       severity: 0.62,
-      hazard: "DROUGHT",
-      hazardStrength: 0.71,
       peopleAffected: 550,
       blockVulnerability: 0.48,
       corroborationCount: 7,
@@ -108,31 +103,20 @@ describe("computePriority", () => {
     }
   });
 
-  it("scores hazard at exactly zero when the hazard is NONE", () => {
-    const result = computePriority({ ...MAXIMAL, hazard: "NONE", hazardStrength: 0.9 });
-    const hazardTerm = result.terms.find((t) => t.key === "hazard");
-    expect(hazardTerm?.normalised).toBe(0);
-    expect(hazardTerm?.contribution).toBe(0);
-  });
-
   it("keeps a severe village problem above a mild town problem", () => {
     // The equity property, asserted rather than asserted-in-a-comment.
-    // 50 people, severe, hazard-linked, recurring, in a vulnerable block.
+    // 50 people, severe, recurring, in a vulnerable block.
     const village = computePriority({
       severity: 0.85,
-      hazard: "FLOOD",
-      hazardStrength: 0.9,
       peopleAffected: 50,
       blockVulnerability: 0.7,
       corroborationCount: 4,
       recurrence: "yearly",
       officialEndorsed: false,
     });
-    // 5,000 people, mild, no hazard linkage, one-off.
+    // 5,000 people, mild, one-off.
     const town = computePriority({
       severity: 0.3,
-      hazard: "NONE",
-      hazardStrength: 0,
       peopleAffected: 5_000,
       blockVulnerability: 0.4,
       corroborationCount: 20,
@@ -146,17 +130,15 @@ describe("computePriority", () => {
     const base: ScoringInput = { ...MINIMAL, corroborationCount: 5 };
     const brigaded: ScoringInput = { ...MINIMAL, corroborationCount: 5_000 };
     const gain = computePriority(brigaded).total - computePriority(base).total;
-    // The whole corroboration term is worth 12 points; 1,000x the reports
+    // The whole corroboration term is worth 14 points; 1,000x the reports
     // cannot buy more than what is left of it.
     expect(gain).toBeLessThanOrEqual(WEIGHTS.corroborations * 100);
-    expect(gain).toBeLessThan(11);
+    expect(gain).toBeLessThan(13);
   });
 
   it("treats missing inputs as zero rather than throwing", () => {
     const result = computePriority({
       severity: null,
-      hazard: null,
-      hazardStrength: null,
       peopleAffected: null,
       blockVulnerability: null,
       corroborationCount: null,
@@ -200,7 +182,7 @@ describe("normalisers", () => {
   });
 });
 
-describe("v1.1.0 — trust-weighted corroborations", () => {
+describe("trust-weighted corroborations (introduced v1.1.0, kept in v2.0.0)", () => {
   it("changes nothing when trust is unknown", () => {
     const before = computePriority({ ...MINIMAL, corroborationCount: 9 });
     const after = computePriority({ ...MINIMAL, corroborationCount: 9, corroborationTrust: null });
@@ -217,7 +199,7 @@ describe("v1.1.0 — trust-weighted corroborations", () => {
     expect(term.rawValue).toContain("×2.00 = 8.0 weighted");
   });
 
-  it("still bounds the whole term at 12 points however far trust is pushed", () => {
+  it("still bounds the whole term at 14 points however far trust is pushed", () => {
     const base = computePriority({ ...MINIMAL, corroborationCount: 5 });
     const maxed = computePriority({ ...MINIMAL, corroborationCount: 5_000, corroborationTrust: 1 });
     expect(maxed.total - base.total).toBeLessThanOrEqual(WEIGHTS.corroborations * 100);

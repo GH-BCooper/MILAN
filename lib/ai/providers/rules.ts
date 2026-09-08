@@ -16,9 +16,7 @@ import { z } from "zod";
 
 import {
   CAPITAL_WORKS_TERMS,
-  DISTRICT_HAZARD_PRIOR,
   GRIEVANCE_TERMS,
-  HAZARD_TERMS,
   DOMAIN_TERMS,
   RESEARCH_TERMS,
   UNSAFE_TERMS,
@@ -44,7 +42,7 @@ import {
 import { RULES_CONFIDENCE, type StageName } from "../types";
 import { ProviderFailure, type CompleteArgs, type CompleteResult, type LLMProvider } from "./types";
 
-import type { Domain, Hazard } from "@/lib/db/schema";
+import type { Domain } from "@/lib/db/schema";
 import { elapsedMs } from "@/lib/clock";
 
 /* ------------------------------------------------------------------- text */
@@ -109,65 +107,39 @@ function ruleS2(input: S2Input): z.infer<typeof S2Schema> {
 
   const domainWin = best(tally(text, DOMAIN_TERMS, (r) => r.domain as Domain));
 
-  // Hazard: keyword evidence first, then the district's known hazard profile as
-  // a prior. The prior nudges an ambiguous report; it never outvotes a hazard
-  // the text names outright, which is why it is added rather than substituted.
-  const hazardTally = tally(text, HAZARD_TERMS, (r) => r.hazard as Hazard);
-  const prior = input.districtCode ? (DISTRICT_HAZARD_PRIOR[input.districtCode] ?? {}) : {};
-  for (const [hazard, weight] of Object.entries(prior)) {
-    const key = hazard as Hazard;
-    const current = hazardTally.get(key) ?? { score: 0, matched: [] };
-    hazardTally.set(key, {
-      score: current.score + (weight ?? 0),
-      matched: [...current.matched, `district prior ${input.districtCode}`],
-    });
-  }
-  const hazardWin = best(hazardTally);
-
   // The embedding kNN prior is available to the rule tier too: if the nearest
   // already-classified neighbours agree and the keywords do not, trust them.
   const neighbourDomain = majority(input.priors.map((p) => p.domain));
-  const neighbourHazard = majority(input.priors.map((p) => p.hazard));
 
   const domain: Domain =
     domainWin && domainWin.score >= 0.8
       ? domainWin.key
       : ((neighbourDomain as Domain | null) ?? domainWin?.key ?? "PUBLIC_SERVICE");
 
-  const hazardCandidate: Hazard =
-    hazardWin && hazardWin.score >= 0.7
-      ? hazardWin.key
-      : ((neighbourHazard as Hazard | null) ?? hazardWin?.key ?? "NONE");
-
-  const hazardScore = hazardWin?.key === hazardCandidate ? (hazardWin?.score ?? 0) : 0.4;
-  const hazard: Hazard = hazardScore >= 0.5 ? hazardCandidate : "NONE";
-  const hazardStrength = hazard === "NONE" ? 0 : clamp(hazardScore / 2);
-
   const capitalWorks = CAPITAL_WORKS_TERMS.some((t) => hits(text, t));
 
   return {
     domain,
-    hazard,
-    hazard_strength: round2(hazardStrength),
-    severity: round2(ruleSeverity(input, hazardStrength)),
-    solvability: capitalWorks ? "CAPITAL_WORKS" : hazard === "NONE" ? "POLICY" : "ENGINEERING",
+    severity: round2(ruleSeverity(input)),
+    // The rule tier cannot judge what kind of answer a problem needs, so it
+    // claims only the one it can see (a tender-shaped ask) and defaults to
+    // RESEARCH — a human at /admin/triage refines it either way.
+    solvability: capitalWorks ? "CAPITAL_WORKS" : "RESEARCH",
     capital_works: capitalWorks,
     confidence: RULES_CONFIDENCE,
-    rationale:
-      `Rule tier: domain from ${domainWin?.matched.slice(0, 3).join(", ") || "kNN neighbours"}; ` +
-      `hazard from ${hazardWin?.matched.slice(0, 3).join(", ") || "district profile"}.`,
+    rationale: `Rule tier: domain from ${domainWin?.matched.slice(0, 3).join(", ") || "kNN neighbours"}.`,
   };
 }
 
 /**
- * Severity without a model: what the citizen told us, plus the hazard linkage.
+ * Severity without a model: what the citizen told us.
  *
  * Deliberately conservative. It sits just below the 0.7 human gate for an
- * ordinary report and crosses it only when a strong hazard, a large affected
- * population and a recurring problem all coincide -- so degrading to rules
- * cannot flood /gov/gate, and cannot quietly route something serious either.
+ * ordinary report and crosses it only when a large affected population and a
+ * constant problem coincide -- so degrading to rules cannot flood /gov/gate,
+ * and cannot quietly route something serious either.
  */
-function ruleSeverity(input: S2Input, hazardStrength: number): number {
+function ruleSeverity(input: S2Input): number {
   const people = input.peopleAffected ?? 0;
   const peopleTerm = people <= 0 ? 0 : Math.log1p(people) / Math.log1p(100_000);
   const recurrenceTerm =
@@ -178,7 +150,7 @@ function ruleSeverity(input: S2Input, hazardStrength: number): number {
         : input.recurrence === "seasonal"
           ? 0.6
           : 0.25;
-  return clamp(0.3 + 0.3 * hazardStrength + 0.2 * peopleTerm + 0.2 * recurrenceTerm - 0.15);
+  return clamp(0.35 + 0.25 * peopleTerm + 0.25 * recurrenceTerm - 0.1);
 }
 
 /* --------------------------------------------------------------------- S3 */

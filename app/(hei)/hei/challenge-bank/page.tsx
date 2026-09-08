@@ -23,20 +23,15 @@ export const metadata = { title: "Challenge bank" };
 export default async function ChallengeBank({
   searchParams,
 }: {
-  searchParams: Promise<{ domain?: string; hazard?: string }>;
+  searchParams: Promise<{ domain?: string }>;
 }) {
   await requireRole("HEI_MEMBER");
   const filters = await searchParams;
 
   const all = await challengeBank();
-  const items = all.filter(
-    (i) =>
-      (!filters.domain || i.domain === filters.domain) &&
-      (!filters.hazard || i.hazard === filters.hazard),
-  );
+  const items = all.filter((i) => !filters.domain || i.domain === filters.domain);
 
   const domains = [...new Set(all.map((i) => i.domain).filter(Boolean))].sort() as string[];
-  const hazards = [...new Set(all.map((i) => i.hazard).filter((h) => h && h !== "NONE"))].sort() as string[];
 
   return (
     <RoleShell
@@ -50,28 +45,20 @@ export default async function ChallengeBank({
         <p className="mt-1 text-sm text-accent-foreground">
           Around 200,000 engineering students in India invent a final-year project every year,
           because nobody hands them a real one. These are real. They have a location, a named
-          reporter, a hazard linkage and a priority score you can check the arithmetic of — and
+          reporter, a thematic domain and a priority score you can check the arithmetic of — and
           when a team finishes, the person who reported it is the one who confirms whether it
           actually worked. That is a project a student can defend in a viva and put on a CV.
         </p>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <FilterChip label="Everything" href="/hei/challenge-bank" active={!filters.domain && !filters.hazard} />
+        <FilterChip label="Everything" href="/hei/challenge-bank" active={!filters.domain} />
         {domains.map((d) => (
           <FilterChip
             key={d}
             label={d.replaceAll("_", " ").toLowerCase()}
             href={`/hei/challenge-bank?domain=${encodeURIComponent(d)}`}
             active={filters.domain === d}
-          />
-        ))}
-        {hazards.map((h) => (
-          <FilterChip
-            key={h}
-            label={h.replaceAll("_", " ").toLowerCase()}
-            href={`/hei/challenge-bank?hazard=${encodeURIComponent(h)}`}
-            active={filters.hazard === h}
           />
         ))}
       </div>
@@ -113,11 +100,6 @@ export default async function ChallengeBank({
                 {item.domain ? (
                   <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs">
                     {item.domain.replaceAll("_", " ").toLowerCase()}
-                  </span>
-                ) : null}
-                {item.hazard && item.hazard !== "NONE" ? (
-                  <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-800 dark:text-amber-200">
-                    {item.hazard.replaceAll("_", " ").toLowerCase()}
                   </span>
                 ) : null}
                 <span className="text-xs text-muted-foreground">

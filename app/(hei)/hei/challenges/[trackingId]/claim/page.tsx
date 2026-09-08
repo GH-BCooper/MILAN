@@ -95,11 +95,6 @@ export default async function ClaimPage({
             {offer.domain.replaceAll("_", " ")}
           </span>
         ) : null}
-        {offer.hazard && offer.hazard !== "NONE" ? (
-          <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
-            {offer.hazard.replaceAll("_", " ")}
-          </span>
-        ) : null}
         <span className="text-xs text-muted-foreground">
           {offer.corroborationCount} report{offer.corroborationCount === 1 ? "" : "s"}
         </span>

@@ -7,7 +7,7 @@
  *   pnpm pipeline:replay JH-2026-GUM-0001 --from S1
  *   pnpm pipeline:run --all --fresh         ignore the AI cache (spends tokens)
  *
- * Prints one row per challenge: tracking ID, domain, hazard, severity,
+ * Prints one row per challenge: tracking ID, domain, severity,
  * confidence and fallback level, which is the table PHASE_2_BUILD.md Task 2.2
  * asks to see.
  */
@@ -83,7 +83,6 @@ interface Row {
   tracking: string;
   status: string;
   domain: string;
-  hazard: string;
   severity: string;
   s1: string;
   s2: string;
@@ -121,7 +120,6 @@ for (const target of targets) {
   const [fresh] = await db
     .select({
       domain: challenges.domain,
-      hazard: challenges.hazard,
       severity: challenges.severity,
       status: challenges.status,
     })
@@ -135,7 +133,6 @@ for (const target of targets) {
     tracking: target.trackingId,
     status: fresh?.status ?? finalStatus,
     domain: fresh?.domain ?? "-",
-    hazard: fresh?.hazard ?? "-",
     severity: fresh?.severity ?? "-",
     s1: s1?.confidence?.toFixed(2) ?? "-",
     s2: s2?.confidence?.toFixed(2) ?? "-",
@@ -146,7 +143,7 @@ for (const target of targets) {
   if (!verbose) {
     const last = rows[rows.length - 1];
     process.stdout.write(
-      `  ${last.tracking}  ${last.status.padEnd(20)} ${last.domain}/${last.hazard} sev=${last.severity} (${last.ms}ms)\n`,
+      `  ${last.tracking}  ${last.status.padEnd(20)} ${last.domain} sev=${last.severity} (${last.ms}ms)\n`,
     );
     if (s1?.note && /Forwarded|Rejected|held for a human|Held for a human/i.test(s1.note)) {
       process.stdout.write(`      S1: ${s1.note}\n`);
@@ -167,12 +164,11 @@ for (const target of targets) {
 
 /* ------------------------------------------------------------- the report */
 
-const headers: Array<keyof Row> = ["tracking", "status", "domain", "hazard", "severity", "s1", "s2", "fb", "ms"];
+const headers: Array<keyof Row> = ["tracking", "status", "domain", "severity", "s1", "s2", "fb", "ms"];
 const labels: Record<keyof Row, string> = {
   tracking: "TRACKING ID",
   status: "STATUS",
   domain: "DOMAIN",
-  hazard: "HAZARD",
   severity: "SEV",
   s1: "S1 CONF",
   s2: "S2 CONF",

@@ -82,7 +82,7 @@ describe("candidate queries without pgvector (the 4.2 failure mode)", () => {
     expect(Array.isArray(priors)).toBe(true);
     for (const p of priors) {
       expect(typeof p.domain).toBe("string");
-      expect(typeof p.hazard).toBe("string");
+      expect(typeof p.title).toBe("string");
       expect(p.similarity).toBeGreaterThanOrEqual(-1);
       expect(p.similarity).toBeLessThanOrEqual(1);
     }

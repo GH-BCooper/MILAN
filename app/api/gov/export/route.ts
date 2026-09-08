@@ -1,10 +1,10 @@
 /**
- * The district disaster management plan export.
+ * The district review export.
  *
  * One click, one CSV, scoped server-side to the officer's own district — the
  * `district` query parameter is checked against the session, not trusted. The
- * columns are chosen so the file can be pasted into a DDMP annexure as it
- * stands: hazard linkage, priority with its terms, who it went to, and the
+ * columns are chosen so the file reads as a review annexure as it stands:
+ * thematic domain, priority with its scoring version, who it went to, and the
  * confirmed/unconfirmed split spelled out in words rather than implied.
  */
 import { sql } from "drizzle-orm";
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const rows = await execRaw<Record<string, unknown>>(sql`
     SELECT c.tracking_id, c.title, c.status::text AS status,
            c.district_code, c.block_code,
-           c.domain::text AS domain, c.hazard::text AS ndma_hazard, c.hazard_strength,
+           c.domain::text AS domain,
            c.severity, c.priority_score, c.scoring_version,
            c.people_affected, c.corroboration_count, c.recurrence,
            c.official_endorsed, c.capital_works, c.solvability,
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
   const headers =
     rows.length > 0
       ? Object.keys(rows[0])
-      : ["tracking_id", "title", "status", "district_code", "domain", "ndma_hazard", "priority_score", "impact_status"];
+      : ["tracking_id", "title", "status", "district_code", "domain", "priority_score", "impact_status"];
 
   const body = [
     headers.join(","),
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
   return new Response(body, {
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="milan-ddmp-${asked}-${stamp}.csv"`,
+      "content-disposition": `attachment; filename="milan-district-${asked}-${stamp}.csv"`,
     },
   });
 }

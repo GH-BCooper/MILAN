@@ -1285,3 +1285,36 @@ on three screens and the submit action's own anonymous path.
    highest-value remaining item for the demo.
 2. Make `verify:hei` / `verify:industry` / `verify:gov` re-runnable so the
    whole `verify:*` suite can be a single CI gate.
+
+---
+
+## Smart Education re-theme — completed 2026-09-09
+
+### Status
+PS 26043 moved from Disaster Management to Smart Education (Dept. of Higher & Technical
+Education, NEP 2020 community-engaged learning). The NDMA hazard taxonomy is gone from the
+product: no `hazard`/`hazard_strength` reads anywhere in `app/`, `lib/`, `components/`,
+`packages/`, `scripts/`, `seed/` or `seed-data/` (only intentional historical notes and three
+real lab names in `capabilities.csv` remain). Eleven thematic domains incl. ENERGY; scoring
+v2.0.0 (six terms, no hazard linkage); `/gov/emergency`, SLA compression and the surge re-rank
+deleted; gov export is a district review CSV; all portals, the landing page, bounties, CSR/MoU
+exports and the verify scripts re-themed; `challenges.csv` is 30 rows (10 Hindi + 1 Santali),
+`capabilities.csv` 51 rows with routing-aware coverage of the new seeds.
+
+### Verification
+`pnpm typecheck`, `pnpm lint` clean. `pnpm vitest run`: 87 passed; 5 files need a live
+DATABASE_URL (not available in the sandbox). `pnpm build` passes with dummy env (all routes
+dynamic as designed). Operational docs (`Pipeline_WorkFlow`, runbook, setup, QA playbook +
+CSV, Hindi sheet, README, CLAUDE.md, BACKLOG) updated; PHASE_* and earlier PROGRESS sections
+left as history.
+
+### Start here next phase
+1. Run the `verify:*` suite against a seeded database — especially `verify:industry` (discover
+   copy assertions changed), `verify:gov` (export filename/columns changed) and
+   `verify:phase2` (scoring-term names changed).
+2. Migration `0014_smart_education_retheme` drops `hazard`/`hazard_strength`, the `hazard`
+   enum, `disaster_vulnerability` and the `demo_state` emergency columns, and adds ENERGY to
+   `domain` — but it has never been applied to a live database. Run `migrate` + `seed` on a
+   fresh DB before the demo.
+3. The Hindi review sheet's three new Hindi reports (school, power, solar) still need a native
+   reviewer pass.

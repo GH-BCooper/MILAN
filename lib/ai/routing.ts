@@ -15,7 +15,7 @@
 import { keywordSetFor } from "./gazetteer";
 import type { S5ReasonInput } from "./schemas";
 
-import type { Domain, Hazard } from "@/lib/db/schema";
+import type { Domain } from "@/lib/db/schema";
 
 /** Great-circle distance in km. Used by the distance term and by S3's
  *  corroboration weighting; the earth is not flat and a village 200 km away is
@@ -42,7 +42,7 @@ export const MATCH_VERSION = "1.0.0";
 export const MATCH_WEIGHTS = {
   /** cosine(challenge embedding, capability embedding). */
   semantic: 0.45,
-  /** Jaccard of the lab's tags against the challenge's domain + hazard keywords. */
+  /** Jaccard of the lab's tags against the challenge's domain keywords. */
   tagOverlap: 0.2,
   /** exp(-km/250) over the haversine distance to the institution. */
   distance: 0.15,
@@ -122,7 +122,6 @@ export interface Match {
 export interface ScoreContext {
   embedding: number[];
   domain: Domain | null;
-  hazard: Hazard | null;
   lat: number | null;
   lng: number | null;
   /** orgId -> { delivered, total } for the challenge's domain. */
@@ -138,7 +137,7 @@ export function matchScore(capability: CapabilityRow, ctx: ScoreContext): Match 
       : 0;
 
   /* tag overlap ---------------------------------------------------------- */
-  const wanted = new Set(keywordSetFor(ctx.domain, ctx.hazard));
+  const wanted = new Set(keywordSetFor(ctx.domain));
   const has = new Set(capability.specialisationTags.map((t) => t.toLowerCase().trim()));
   const shared = [...wanted].filter((t) => has.has(t));
   const union = new Set([...wanted, ...has]).size;

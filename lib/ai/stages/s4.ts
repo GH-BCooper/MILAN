@@ -22,7 +22,7 @@ import { blocks, challenges, districts } from "@/lib/db/schema";
 import { computePriority, type ScoreResult, type ScoringInput } from "@/packages/scoring";
 
 /**
- * Gather the seven inputs.
+ * Gather the six inputs.
  *
  * Block vulnerability falls back to the district index: `seed-data/districts.csv`
  * carries one index per district, and a block inherits it (PROGRESS.md, Phase 1
@@ -32,8 +32,6 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
   const [row] = await db
     .select({
       severity: challenges.severity,
-      hazard: challenges.hazard,
-      hazardStrength: challenges.hazardStrength,
       peopleAffected: challenges.peopleAffected,
       corroborationCount: challenges.corroborationCount,
       recurrence: challenges.recurrence,
@@ -63,8 +61,6 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
 
   return {
     severity: row.severity === null ? null : Number(row.severity),
-    hazard: row.hazard,
-    hazardStrength: row.hazardStrength === null ? null : Number(row.hazardStrength),
     peopleAffected: row.peopleAffected,
     blockVulnerability: vulnerability === null ? null : Number(vulnerability),
     corroborationCount: row.corroborationCount,

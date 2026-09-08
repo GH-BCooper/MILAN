@@ -86,7 +86,7 @@ export function LandingFooter() {
       <div className="mx-auto w-full max-w-6xl px-4 py-8 text-sm text-muted-foreground sm:px-6">
         <p>
           Smart India Hackathon 2026 · Problem statement SIH26043 · Government of Jharkhand ·
-          Theme: Disaster Management. The impact counter moves only on a citizen-confirmed
+          Theme: Smart Education. The impact counter moves only on a citizen-confirmed
           outcome; unconfirmed claims render grey everywhere, including CSR exports.
         </p>
         <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1">

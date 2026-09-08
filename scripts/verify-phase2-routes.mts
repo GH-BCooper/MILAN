@@ -104,7 +104,7 @@ if (challenge) {
   );
   record(
     "every scoring term is named on it",
-    ["Severity", "Hazard linkage", "People affected", "Corroborations"].every((t) => html.includes(t)),
+    ["Severity", "Block vulnerability", "People affected", "Corroborations"].every((t) => html.includes(t)),
   );
   record(
     "the caption states the claim",

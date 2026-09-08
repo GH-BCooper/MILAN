@@ -38,7 +38,7 @@ import { getObject } from "@/lib/media/storage";
 import { embed } from "./providers/embed";
 import { transcribe, translate } from "./stages/p0";
 import { decideS1, handoffContract, runS1 } from "./stages/s1";
-import { decideS2, knnPrior, normaliseS2, runS2 } from "./stages/s2";
+import { decideS2, knnPrior, runS2 } from "./stages/s2";
 import type { S2Input } from "./schemas";
 import {
   S3_THRESHOLDS,
@@ -75,9 +75,9 @@ export type PipelineStage = (typeof PIPELINE_STAGES)[number];
 export const STAGE_LABELS: Record<PipelineStage, { title: string; blurb: string }> = {
   P0: { title: "Language", blurb: "Translate into an English working copy. The original is kept." },
   S1: { title: "Safety and triage", blurb: "Is it safe? Is it a grievance someone already owes an answer for?" },
-  S2: { title: "Domain and hazard", blurb: "What kind of problem, which NDMA hazard, how severe." },
+  S2: { title: "Domain and severity", blurb: "Which thematic domain, how severe, what kind of answer it needs." },
   S3: { title: "Duplicates", blurb: "Has anyone else reported this? Duplicates are joined, never discarded." },
-  S4: { title: "Priority score", blurb: "Seven weighted terms. No model call. Every number is shown." },
+  S4: { title: "Priority score", blurb: "Six weighted terms. No model call. Every number is shown." },
   S5: { title: "Routing", blurb: "Matched to university departments, with a written reason." },
 };
 
@@ -136,7 +136,7 @@ interface Ctx {
   /**
    * S5's ranking and its three reason sentences are computed while S3 clusters.
    *
-   * Routing depends on S2 (domain, hazard, severity) and the embedding, and on
+   * Routing depends on S2 (domain, severity) and the embedding, and on
    * nothing S3 or S4 produce — S4's priority score is not an input to the match
    * score at all. Waiting for them put four seconds of model latency at the very
    * end of the run, which is where a judge is watching hardest.
@@ -440,7 +440,7 @@ function startS2(ctx: Ctx): void {
   ctx.s2Promise.catch(() => undefined);
 }
 
-/** S2 — domain, hazard, severity. Uses the embedding kNN prior. */
+/** S2 — domain, severity, solvability. Uses the embedding kNN prior. */
 async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
   const c = ctx.challenge;
 
@@ -448,15 +448,15 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
   const run = await ctx.s2Promise!;
   const priors = ctx.s2Priors;
 
-  const value = normaliseS2(run.value);
+  const value = run.value;
   const decision = decideS2(value);
 
   /**
    * A rule-tier answer never overwrites an existing classification.
    *
    * The gazetteer is a keyword matcher reporting 0.45 confidence. When it runs
-   * because both providers were rate-limited, replacing a domain and hazard a
-   * person authored with a keyword guess makes the data worse, not better --
+   * because both providers were rate-limited, replacing a domain a person
+   * authored with a keyword guess makes the data worse, not better --
    * and it would do it silently, on every challenge, in exactly the conditions
    * where nobody is watching.
    *
@@ -466,7 +466,7 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
    * a level-2 answer on a challenge that had no classification at all, because
    * a weak label beats none.
    */
-  const alreadyClassified = c.domain !== null && c.hazard !== null;
+  const alreadyClassified = c.domain !== null && c.severity !== null;
   const keepExisting = run.meta.fallbackLevel === 2 && alreadyClassified;
 
   if (!keepExisting) {
@@ -474,8 +474,6 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
       .update(challenges)
       .set({
         domain: value.domain,
-        hazard: value.hazard,
-        hazardStrength: value.hazard_strength.toFixed(2),
         severity: value.severity.toFixed(2),
         solvability: value.solvability,
         capitalWorks: value.capital_works,
@@ -486,8 +484,6 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
     ctx.challenge = {
       ...c,
       domain: value.domain,
-      hazard: value.hazard,
-      hazardStrength: value.hazard_strength.toFixed(2),
       severity: value.severity.toFixed(2),
       solvability: value.solvability,
       capitalWorks: value.capital_works,
@@ -498,11 +494,12 @@ async function stageS2(ctx: Ctx, emit: Emit): Promise<void> {
   if (keepExisting) {
     decisionText =
       `No model was reachable, so the rule tier answered and the existing classification ` +
-      `(${c.domain} / ${c.hazard}) stands unchanged. The proposal is recorded and this is at /admin/triage.`;
+      `(${c.domain}, severity ${Number(c.severity).toFixed(2)}) stands unchanged. ` +
+      `The proposal is recorded and this is at /admin/triage.`;
   } else if (decision.kind === "HUMAN_QUEUE") {
     decisionText = `Classification proposed but held for a human at /admin/triage. ${decision.why}`;
   } else {
-    decisionText = `${value.domain} / ${value.hazard}, severity ${value.severity.toFixed(2)}.`;
+    decisionText = `${value.domain}, severity ${value.severity.toFixed(2)}.`;
     await advance(ctx, "CLASSIFIED", value.rationale);
   }
 
@@ -656,7 +653,6 @@ async function stageS3(ctx: Ctx, emit: Emit): Promise<void> {
         districtCode: c.districtCode,
         children,
         domain: c.domain,
-        hazard: c.hazard,
         title: describeCluster(children, ctx.districtName ?? c.districtCode ?? "This district"),
         body:
           `${children.length} separate citizen reports across ` +
@@ -833,7 +829,6 @@ function startS5(ctx: Ctx): void {
       matchScore(capability, {
         embedding,
         domain: c.domain,
-        hazard: c.hazard,
         lat: c.lat === null ? null : Number(c.lat),
         lng: c.lng === null ? null : Number(c.lng),
         trackRecord,

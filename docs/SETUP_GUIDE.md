@@ -1,6 +1,6 @@
 # MILAN — Setup Guide (do this BEFORE Claude Code sees anything)
 
-**PS SIH26043 · Government of Jharkhand · Theme: Disaster Management · Category: Software**
+**PS SIH26043 · Government of Jharkhand · Theme: Smart Education · Category: Software**
 Project codename: **Milan**
 
 This document is for *you* (the human team), not for Claude Code. Nothing in the phase
@@ -79,15 +79,16 @@ Create the folder `seed-data/` in the repo root with these files:
 ### `seed-data/districts.csv`
 All **24 Jharkhand districts** with their blocks.
 Columns: `district_code,district_name,district_name_hi,block_code,block_name,lat,lng,vulnerability_index`
-- `vulnerability_index` is 0.0–1.0, your own judgement based on JSDMA/flood-prone/drought-prone
-  status. Write a one-line note on how you derived it — a judge will ask.
-- Source: JSDMA district disaster management plans, Census 2011 block list.
+- `vulnerability_index` is 0.0–1.0, your own judgement of relative need across blocks
+  (remoteness, tribal share, service access). Write a one-line note on how you derived
+  it — a judge will ask.
+- Source: Census 2011 block list; judgement documented in `seed-data/README.md`.
 
 ### `seed-data/districts-enrichment.csv`
 One row per district: the JDIP Part 4.1 reference columns the district pages read
-(`division`, `population`, `internet_penetration`, `tribal_population_pct`, `disaster_vulnerability` jsonb).
-Merged over `districts.csv` by `district_code`; an unknown code or a hazard key outside the enum
-fails loudly in the seed log. Provenance: Census 2011 population and tribal share, the state's five
+(`division`, `population`, `internet_penetration`, `tribal_population_pct`).
+Merged over `districts.csv` by `district_code`; an unknown code fails loudly in the seed log.
+Provenance: Census 2011 population and tribal share, the state's five
 administrative divisions, and NFHS-5-based planning estimates for internet penetration — reconcile
 against the JDIP 4.1 table when it is supplied (tracked in BACKLOG.md).
 
@@ -108,7 +109,7 @@ Columns: `hei_code,department,lab_name,specialisation_tags,faculty_name,faculty_
 
 ### `seed-data/challenges.csv`
 **20–25 real, pre-seeded challenges** written in citizen voice, spread across districts and domains.
-Columns: `district_code,block_code,title,body_original,body_lang,domain,hazard,severity_hint,people_affected,recurrence,lat,lng,reporter_name`
+Columns: `district_code,block_code,title,body_original,body_lang,domain,severity_hint,people_affected,recurrence,lat,lng,reporter_name`
 - At least 3 must be **near-duplicates of each other** so S3 clustering has something to merge on stage.
 - At least 4 must be in **Hindi** (`body_lang=hi`), and 1 in a **tribal language sample**
   (Santali/Kurukh/Ho — one line is enough, it is a demonstration not a claim of coverage).

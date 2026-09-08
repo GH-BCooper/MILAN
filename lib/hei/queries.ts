@@ -35,7 +35,6 @@ export interface InboxItem {
   status: string;
   districtName: string | null;
   domain: string | null;
-  hazard: string | null;
   severity: number | null;
   priorityScore: number | null;
   priorityBreakdown: unknown;
@@ -73,7 +72,6 @@ export async function inboxFor(orgId: string): Promise<InboxItem[]> {
       status: challenges.status,
       districtName: districts.name,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       severity: challenges.severity,
       priorityScore: challenges.priorityScore,
       priorityBreakdown: challenges.priorityBreakdown,
@@ -221,7 +219,6 @@ export interface BankItem {
   framedStatement: string | null;
   successCriteria: string | null;
   domain: string | null;
-  hazard: string | null;
   districtName: string | null;
   priorityScore: number | null;
   corroborationCount: number;
@@ -246,7 +243,6 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
       framedStatement: challenges.framedStatement,
       successCriteria: challenges.successCriteria,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       districtName: districts.name,
       priorityScore: challenges.priorityScore,
       corroborationCount: challenges.corroborationCount,
@@ -285,7 +281,6 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     framedStatement: r.framedStatement,
     successCriteria: r.successCriteria,
     domain: r.domain,
-    hazard: r.hazard,
     districtName: r.districtName,
     priorityScore: r.priorityScore === null ? null : Number(r.priorityScore),
     corroborationCount: r.corroborationCount,

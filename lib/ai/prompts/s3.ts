@@ -19,7 +19,7 @@ describe THE SAME physical problem at THE SAME place — not merely the same kin
 
 Same problem: the same embankment, the same hand pump, the same stretch of road, the same school.
 Different problems: two different wells in the same block; flooding of two different colonies;
-the same hazard affecting two separate hamlets.
+two separate hamlets reporting the same kind of complaint.
 
 Two reports can be the same problem even when they are in different languages, use different
 landmarks, or give different numbers — citizens estimate differently.

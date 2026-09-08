@@ -73,7 +73,7 @@ export async function GET(request: Request) {
     }
     for (const r of report.rows) {
       lines.push({ text: `${r.tracking_id} - ${r.challenge}`, size: 11, bold: true, spaceBefore: 12 });
-      lines.push({ text: `${r.district ?? "district not recorded"}${r.block ? `, ${r.block}` : ""} - ${r.domain ?? "unclassified"}${r.ndma_hazard ? ` - NDMA hazard: ${r.ndma_hazard}` : ""}`, size: 9 });
+      lines.push({ text: `${r.district ?? "district not recorded"}${r.block ? `, ${r.block}` : ""} - ${r.domain ?? "unclassified"}`, size: 9 });
       lines.push({ text: `Institution: ${r.institution ?? "not yet claimed"} - supported since ${r.supported_since} (${r.interest_state.toLowerCase()})`, size: 9 });
       lines.push({ text: `Artifacts: ${r.artifacts}${r.licences ? ` (${r.licences})` : ""} - reporters: ${r.reporters} - beneficiaries: ${r.beneficiaries ?? "not estimated"}`, size: 9 });
       lines.push({ text: `IMPACT: ${r.impact_status}${r.confirmed_on ? ` on ${r.confirmed_on}` : ""}`, size: 10, bold: true });
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
   }
 
   const headers = [
-    "tracking_id", "challenge", "district", "block", "ndma_hazard", "domain", "institution", "project",
+    "tracking_id", "challenge", "district", "block", "domain", "institution", "project",
     "interest_state", "supported_since", "beneficiaries", "reporters", "artifacts", "licences",
     "impact_status", "confirmed_on", "spend_committed_inr", "spend_disbursed_inr",
   ];

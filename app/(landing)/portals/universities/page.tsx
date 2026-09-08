@@ -14,7 +14,7 @@ export default function UniversityPortalPage() {
       eyebrow="For universities & HEIs · विश्वविद्यालयों के लिए"
       title="Real problems, not invented ones."
       titleHi="असली समस्याएँ, बनावटी परियोजनाएँ नहीं"
-      lede="Around 200,000 Indian students invent a fake final-year project every year because no real one was routed to them. Milan routes verified, citizen-reported, hazard-linked problems to the department whose declared capability actually matches — with a deadline, a supervisor, and a credit record nobody can erase."
+      lede="Around 200,000 Indian students invent a fake final-year project every year because no real one was routed to them. Milan routes verified, citizen-reported societal problems to the department whose declared capability actually matches — with a deadline, a supervisor, and a credit record nobody can erase."
       primary={{ href: "/hei", label: "Open the HEI dashboard" }}
       secondary={{ href: "/hei/inbox", label: "See the routed inbox" }}
     >
@@ -29,7 +29,7 @@ export default function UniversityPortalPage() {
           {
             title: "The router pushes, you do not hunt",
             body:
-              "Priority is computed by plain TypeScript from severity, corroborations, hazard linkage, district vulnerability and staleness. The top three contributing terms are shown as the routing reason.",
+              "Priority is computed by plain TypeScript from severity, scale, corroborations, recurrence and official endorsement. The top three contributing terms are shown as the routing reason.",
           },
           {
             title: "Claim it against a clock",
@@ -68,7 +68,7 @@ export default function UniversityPortalPage() {
           {
             href: "/hei/challenge-bank",
             title: "Challenge bank",
-            body: "The full open bank, filterable by hazard, district and difficulty, for course planning.",
+            body: "The full open bank, filterable by domain, district and solvability, for course planning.",
           },
           {
             href: "/hei/projects/1",
@@ -88,7 +88,7 @@ export default function UniversityPortalPage() {
           {
             href: "/challenges",
             title: "Public challenge map",
-            body: "Everything on the platform with its district, hazard linkage and current holder.",
+            body: "Everything on the platform with its district, domain and current holder.",
           },
           {
             href: "/register",

@@ -55,9 +55,9 @@ const PORTALS = [
     icon: Building2,
     name: "Industry",
     nameHi: "उद्योग",
-    tagline: "CSR spend against verified, hazard-linked demand.",
+    tagline: "CSR spend against verified demand.",
     body:
-      "Discover challenges by district and hazard, register interest, fund a bounty, and export a CSR report where every claimed outcome is citizen-confirmed or visibly grey.",
+      "Discover challenges by district and domain, register interest, fund a bounty, and export a CSR report where every claimed outcome is citizen-confirmed or visibly grey.",
     points: ["Discovery filters", "Interest → response thread", "Bounty funding", "CSR export"],
     accent: "from-[var(--grad-4)] to-[var(--grad-1)]",
     actions: [
@@ -87,9 +87,9 @@ const MECHANISMS = [
   },
   {
     icon: Landmark,
-    title: "Hazard linkage is scored, not decorative",
+    title: "Discovery is never luck",
     body:
-      "Every challenge carries an explicit NDMA hazard linkage, and that linkage is a weighted term in the priority score. Mitigation in peacetime, not response during an event.",
+      "Every problem is pushed to matched university departments by declared capability, and every state carries an SLA with automatic escalation. Nothing waits to be found.",
     href: "/challenges",
     hrefLabel: "Browse challenges",
   },
@@ -115,7 +115,7 @@ const PIPELINE_STEPS = [
   {
     title: "Classify & verify",
     body:
-      "The AI proposes a hazard linkage, a domain and a confidence. A grievance with a known fix is forwarded to CPGRAMS, with the citizen told exactly where it went.",
+      "The AI proposes a thematic domain, a severity and a confidence. A grievance with a known fix is forwarded to CPGRAMS, with the citizen told exactly where it went.",
   },
   {
     title: "Cluster, don't discard",
@@ -125,7 +125,7 @@ const PIPELINE_STEPS = [
   {
     title: "Score & route — deterministically",
     body:
-      "Plain TypeScript weighs hazard linkage, severity and corroboration into one auditable score. Severity ≥ 0.7 always waits at /gov/gate for a human, no exception.",
+      "Plain TypeScript weighs severity, scale and corroboration into one auditable score. Severity ≥ 0.7 always waits at /gov/gate for a human, no exception.",
   },
   {
     title: "Assign & clock it",
@@ -214,7 +214,7 @@ export default async function LandingPage({
                   aria-hidden
                   className="size-1.5 rounded-full bg-[var(--grad-3)] shadow-[0_0_10px_2px_var(--grad-3)]"
                 />
-                Government of Jharkhand · Disaster risk reduction
+                Government of Jharkhand · Smart Education · SIH 2026
               </span>
 
               <h1 className="mt-5 text-5xl font-bold tracking-tight sm:text-7xl">Milan</h1>
@@ -228,7 +228,9 @@ export default async function LandingPage({
               </p>
 
               <p className="mt-3 text-base leading-relaxed text-muted-foreground">
-                This is mitigation and preparedness, not response. It is not a grievance portal: a
+                Built for the Department of Higher &amp; Technical Education: community problems
+                become university research, in the NEP 2020 spirit of experiential, community-engaged
+                learning. It is not a grievance portal: a
                 complaint with a known fix belongs with CPGRAMS, and we forward it there — and tell
                 the citizen where it went. An unsolved problem belongs in a lab, with a clock on it.
               </p>
@@ -298,7 +300,7 @@ export default async function LandingPage({
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
             The same challenge appears in all three, at different depths. A citizen sees a status.
             A university sees a scoped assignment with a deadline. A firm sees verified demand with
-            a hazard linkage and a price.
+            a priority score and a price.
           </p>
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -399,7 +401,7 @@ export default async function LandingPage({
               <h2 className="text-lg font-semibold">Government &amp; district officers</h2>
               <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                 The human gate above severity 0.7, district verification queues, the SLA escalation
-                board and the emergency broadcast all sit behind a signed-in government role.
+                board all sit behind a signed-in government role.
               </p>
             </div>
             <Button asChild variant="outline" size="lg" className="shrink-0">
@@ -443,7 +445,7 @@ export default async function LandingPage({
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
               Report a problem, claim a routed assignment, or discover verified demand — every path
-              starts from the same hazard-linked, hash-chained pipeline.
+              starts from the same scored, hash-chained pipeline.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">

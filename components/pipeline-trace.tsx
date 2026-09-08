@@ -40,7 +40,7 @@ const STAGE_ORDER: readonly StageKey[] = ["P0", "S1", "S2", "S3", "S4", "S5"];
 const STAGES: Array<{ key: StageKey; title: string; blurb: string }> = [
   { key: "P0", title: "Language", blurb: "Translate into an English working copy. Your own words are kept." },
   { key: "S1", title: "Safety and triage", blurb: "Is it safe? Is it a complaint someone already owes an answer for?" },
-  { key: "S2", title: "Domain and hazard", blurb: "What kind of problem, which NDMA hazard, how severe." },
+  { key: "S2", title: "Domain and severity", blurb: "Which thematic domain, how severe, what kind of answer it needs." },
   { key: "S3", title: "Duplicates", blurb: "Has anyone else reported this? Duplicates are joined, never discarded." },
   { key: "S4", title: "Priority score", blurb: "Seven weighted terms. No AI. Every number is shown." },
   { key: "S5", title: "Routing", blurb: "Matched to university departments, with a written reason." },

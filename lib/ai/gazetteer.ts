@@ -14,7 +14,7 @@
  * misclassification is found, the fix is a term in this file or a few-shot
  * example in `lib/ai/prompts/` -- never a hard-coded challenge id.
  */
-import type { Domain, Hazard } from "@/lib/db/schema";
+import type { Domain } from "@/lib/db/schema";
 
 /* ------------------------------------------------------------------ safety */
 
@@ -243,6 +243,19 @@ export const DOMAIN_TERMS: Array<{ term: string; domain: Domain; weight: number 
   { term: "forest", domain: "ENVIRONMENT", weight: 0.5 },
   { term: "जंगल", domain: "ENVIRONMENT", weight: 0.5 },
   { term: "sal forest", domain: "ENVIRONMENT", weight: 0.8 },
+  // ENERGY
+  { term: "power cut", domain: "ENERGY", weight: 0.9 },
+  { term: "powercut", domain: "ENERGY", weight: 0.9 },
+  { term: "electricity", domain: "ENERGY", weight: 0.7 },
+  { term: "बिजली", domain: "ENERGY", weight: 0.8 },
+  { term: "solar", domain: "ENERGY", weight: 0.9 },
+  { term: "सोलर", domain: "ENERGY", weight: 0.9 },
+  { term: "transformer", domain: "ENERGY", weight: 0.8 },
+  { term: "ट्रांसफॉर्मर", domain: "ENERGY", weight: 0.8 },
+  { term: "voltage", domain: "ENERGY", weight: 0.7 },
+  { term: "micro-grid", domain: "ENERGY", weight: 0.9 },
+  { term: "microgrid", domain: "ENERGY", weight: 0.9 },
+  { term: "street light", domain: "ENERGY", weight: 0.7 },
   // LIVELIHOODS
   { term: "lac", domain: "LIVELIHOODS", weight: 0.8 },
   { term: "लाह", domain: "LIVELIHOODS", weight: 0.8 },
@@ -263,7 +276,14 @@ export const DOMAIN_TERMS: Array<{ term: string; domain: Domain; weight: number 
   { term: "आंगनबाड़ी", domain: "EDUCATION", weight: 0.7 },
   { term: "teacher", domain: "EDUCATION", weight: 0.7 },
   { term: "शिक्षक", domain: "EDUCATION", weight: 0.7 },
+  { term: "para teacher", domain: "EDUCATION", weight: 0.9 },
+  { term: "पारा शिक्षक", domain: "EDUCATION", weight: 0.9 },
   { term: "classroom", domain: "EDUCATION", weight: 0.8 },
+  { term: "dropout", domain: "EDUCATION", weight: 0.9 },
+  { term: "drop out", domain: "EDUCATION", weight: 0.8 },
+  { term: "online class", domain: "EDUCATION", weight: 0.9 },
+  { term: "textbook", domain: "EDUCATION", weight: 0.7 },
+  { term: "पाठ्यपुस्तक", domain: "EDUCATION", weight: 0.7 },
   // SANITATION
   { term: "toilet", domain: "SANITATION", weight: 0.9 },
   { term: "शौचालय", domain: "SANITATION", weight: 0.9 },
@@ -303,107 +323,6 @@ export const DOMAIN_TERMS: Array<{ term: string; domain: Domain; weight: number 
   { term: "राशन", domain: "PUBLIC_SERVICE", weight: 0.7 },
   { term: "certificate", domain: "PUBLIC_SERVICE", weight: 0.6 },
 ];
-
-/* ---------------------------------------------------------------- hazards */
-
-export const HAZARD_TERMS: Array<{ term: string; hazard: Hazard; weight: number }> = [
-  { term: "flood", hazard: "FLOOD", weight: 0.9 },
-  { term: "बाढ़", hazard: "FLOOD", weight: 0.9 },
-  { term: "embankment", hazard: "FLOOD", weight: 0.8 },
-  { term: "बांध", hazard: "FLOOD", weight: 0.7 },
-  { term: "बाँध", hazard: "FLOOD", weight: 0.7 },
-  { term: "bund", hazard: "FLOOD", weight: 0.7 },
-  { term: "swollen river", hazard: "FLOOD", weight: 0.85 },
-  { term: "overflow", hazard: "FLOOD", weight: 0.7 },
-  { term: "erosion", hazard: "FLOOD", weight: 0.7 },
-  { term: "कटाव", hazard: "FLOOD", weight: 0.7 },
-  { term: "monsoon", hazard: "FLOOD", weight: 0.4 },
-  { term: "बरसात", hazard: "FLOOD", weight: 0.4 },
-  { term: "waterlogg", hazard: "FLOOD", weight: 0.7 },
-
-  { term: "drought", hazard: "DROUGHT", weight: 0.9 },
-  { term: "सूखा", hazard: "DROUGHT", weight: 0.9 },
-  { term: "dried up", hazard: "DROUGHT", weight: 0.8 },
-  { term: "dries", hazard: "DROUGHT", weight: 0.7 },
-  { term: "सूख", hazard: "DROUGHT", weight: 0.7 },
-  { term: "rohor", hazard: "DROUGHT", weight: 0.7 },
-  { term: "water table", hazard: "DROUGHT", weight: 0.7 },
-  { term: "no rain", hazard: "DROUGHT", weight: 0.7 },
-  { term: "rains have gone wrong", hazard: "DROUGHT", weight: 0.6 },
-
-  { term: "landslide", hazard: "LANDSLIDE", weight: 0.95 },
-  { term: "भूस्खलन", hazard: "LANDSLIDE", weight: 0.95 },
-  { term: "slips every", hazard: "LANDSLIDE", weight: 0.8 },
-  { term: "hillside", hazard: "LANDSLIDE", weight: 0.6 },
-  { term: "ghat road", hazard: "LANDSLIDE", weight: 0.7 },
-  { term: "slope", hazard: "LANDSLIDE", weight: 0.5 },
-
-  { term: "heat", hazard: "HEATWAVE", weight: 0.6 },
-  { term: "heatwave", hazard: "HEATWAVE", weight: 0.95 },
-  { term: "लू", hazard: "HEATWAVE", weight: 0.85 },
-  { term: "गर्मी", hazard: "HEATWAVE", weight: 0.5 },
-  { term: "fainting", hazard: "HEATWAVE", weight: 0.7 },
-  { term: "बेहोश", hazard: "HEATWAVE", weight: 0.6 },
-  { term: "दोपहर", hazard: "HEATWAVE", weight: 0.3 },
-
-  { term: "subsidence", hazard: "MINING_SUBSIDENCE", weight: 0.95 },
-  { term: "धंस", hazard: "MINING_SUBSIDENCE", weight: 0.85 },
-  { term: "open cast", hazard: "MINING_SUBSIDENCE", weight: 0.7 },
-  { term: "opencast", hazard: "MINING_SUBSIDENCE", weight: 0.7 },
-  { term: "underground fire", hazard: "MINING_SUBSIDENCE", weight: 0.9 },
-  { term: "धुआँ", hazard: "MINING_SUBSIDENCE", weight: 0.5 },
-  { term: "abandoned pit", hazard: "MINING_SUBSIDENCE", weight: 0.8 },
-
-  { term: "epidemic", hazard: "EPIDEMIC", weight: 0.9 },
-  { term: "outbreak", hazard: "EPIDEMIC", weight: 0.85 },
-  { term: "loose motion", hazard: "EPIDEMIC", weight: 0.75 },
-  { term: "diarrho", hazard: "EPIDEMIC", weight: 0.8 },
-  { term: "दस्त", hazard: "EPIDEMIC", weight: 0.7 },
-  { term: "cholera", hazard: "EPIDEMIC", weight: 0.95 },
-  { term: "open defecation", hazard: "EPIDEMIC", weight: 0.6 },
-  { term: "महामारी", hazard: "EPIDEMIC", weight: 0.9 },
-
-  { term: "forest fire", hazard: "FOREST_FIRE", weight: 0.95 },
-  { term: "वनाग्नि", hazard: "FOREST_FIRE", weight: 0.95 },
-  { term: "sal forest", hazard: "FOREST_FIRE", weight: 0.4 },
-  { term: "fires in the", hazard: "FOREST_FIRE", weight: 0.8 },
-  { term: "आग", hazard: "FOREST_FIRE", weight: 0.4 },
-];
-
-/**
- * The block hazard profile, keyed by district.
- *
- * This is prior knowledge, not evidence: it nudges an ambiguous report toward
- * the hazard that district actually lives with, and never overrides a hazard
- * the text names outright. Derived from the JSDMA district disaster management
- * plans that `seed-data/districts.csv` also carries the vulnerability index from.
- */
-export const DISTRICT_HAZARD_PRIOR: Record<string, Partial<Record<Hazard, number>>> = {
-  SAH: { FLOOD: 0.35 },
-  GUM: { FLOOD: 0.25, DROUGHT: 0.15 },
-  SIM: { FLOOD: 0.2 },
-  SKH: { FLOOD: 0.25 },
-  RAN: { FLOOD: 0.15, HEATWAVE: 0.1 },
-  BOK: { FLOOD: 0.15, MINING_SUBSIDENCE: 0.15 },
-  DHN: { MINING_SUBSIDENCE: 0.4 },
-  RAM: { MINING_SUBSIDENCE: 0.3 },
-  HAZ: { MINING_SUBSIDENCE: 0.2, DROUGHT: 0.1 },
-  CHA: { MINING_SUBSIDENCE: 0.15 },
-  ESB: { MINING_SUBSIDENCE: 0.15 },
-  WSB: { MINING_SUBSIDENCE: 0.2, FOREST_FIRE: 0.1 },
-  PAL: { DROUGHT: 0.35, HEATWAVE: 0.25 },
-  GAR: { DROUGHT: 0.35, HEATWAVE: 0.2 },
-  LAT: { LANDSLIDE: 0.3, FOREST_FIRE: 0.2 },
-  KHU: { DROUGHT: 0.2, FOREST_FIRE: 0.1 },
-  GOD: { EPIDEMIC: 0.2, DROUGHT: 0.15 },
-  DUM: { DROUGHT: 0.25 },
-  PAK: { EPIDEMIC: 0.15, FLOOD: 0.15 },
-  DEO: { DROUGHT: 0.15 },
-  JAM: { DROUGHT: 0.15 },
-  GIR: { DROUGHT: 0.15, MINING_SUBSIDENCE: 0.1 },
-  KOD: { DROUGHT: 0.2 },
-  LOH: { LANDSLIDE: 0.2, DROUGHT: 0.15 },
-};
 
 /* -------------------------------------------------------------- solvability */
 
@@ -464,16 +383,12 @@ export function best<K extends string>(
   return winner;
 }
 
-/** The domain and hazard keywords a challenge implies, for S5's tag overlap. */
-export function keywordSetFor(domain: Domain | null, hazard: Hazard | null): string[] {
+/** The domain keywords a challenge implies, for S5's tag overlap with lab tags. */
+export function keywordSetFor(domain: Domain | null): string[] {
   const set = new Set<string>();
   if (domain) {
     set.add(domain.toLowerCase().replaceAll("_", "-"));
     for (const extra of DOMAIN_TAG_EXPANSION[domain] ?? []) set.add(extra);
-  }
-  if (hazard && hazard !== "NONE") {
-    set.add(hazard.toLowerCase().replaceAll("_", "-"));
-    for (const extra of HAZARD_TAG_EXPANSION[hazard] ?? []) set.add(extra);
   }
   return [...set];
 }
@@ -484,21 +399,11 @@ export const DOMAIN_TAG_EXPANSION: Record<Domain, string[]> = {
   HEALTHCARE: ["health", "public-health", "epidemiology", "water-quality", "biomedical"],
   AGRICULTURE: ["agriculture", "agronomy", "crop", "soil", "horticulture", "farm"],
   ENVIRONMENT: ["environment", "environmental", "pollution", "air-quality", "mining", "ecology"],
+  ENERGY: ["energy", "solar", "power", "electrification", "renewable", "micro-grid", "electrical"],
   LIVELIHOODS: ["livelihood", "rural-development", "forestry", "ntfp", "entrepreneurship"],
   EDUCATION: ["education", "pedagogy", "school", "e-learning"],
   SANITATION: ["sanitation", "wastewater", "solid-waste", "wash"],
   ACCESSIBILITY: ["transport", "roads", "bridge", "structural", "civil", "connectivity"],
   URBAN_INFRA: ["urban", "drainage", "storm-water", "planning", "civil", "structural"],
   PUBLIC_SERVICE: ["governance", "public-policy", "service-delivery", "information-systems"],
-};
-
-export const HAZARD_TAG_EXPANSION: Record<Hazard, string[]> = {
-  FLOOD: ["flood", "flood-resilience", "embankment", "hydraulics", "river-training", "drainage"],
-  DROUGHT: ["drought", "groundwater", "water-harvesting", "watershed", "irrigation"],
-  LANDSLIDE: ["landslide", "slope-stability", "geotechnical", "soil-mechanics"],
-  HEATWAVE: ["heat", "heat-stress", "thermal-comfort", "occupational-health"],
-  MINING_SUBSIDENCE: ["mining", "subsidence", "rock-mechanics", "geotechnical", "mine-closure"],
-  EPIDEMIC: ["epidemiology", "water-quality", "public-health", "disease-surveillance"],
-  FOREST_FIRE: ["forest-fire", "forestry", "remote-sensing", "fire"],
-  NONE: [],
 };
