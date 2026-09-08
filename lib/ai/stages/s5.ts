@@ -432,17 +432,25 @@ export async function releaseGate(args: {
 
   const { canTransition, transition } = await import("@/lib/db/stateMachine");
 
-  if (canTransition(before.status, "ROUTED")) {
-    await db.transaction(async (tx) => {
-      await transition(tx, {
-        challengeId: args.challengeId,
-        to: "ROUTED",
-        actorId: args.actorId ?? null,
-        reason: args.reason ?? "Released by a district officer after the human gate.",
-        meta: { by: "gov-gate" },
-      });
-    });
+  // The gate releases VERIFIED -> ROUTED and nothing else. An earlier version
+  // skipped the transition it could not make and notified anyway, which left
+  // offers nobody could claim — the exact failure this function was separated
+  // to prevent. Refuse loudly instead of half-releasing silently.
+  if (!canTransition(before.status, "ROUTED")) {
+    throw new Error(
+      `releaseGate needs a VERIFIED challenge (found ${before.status} on ${args.trackingId}): ` +
+        `walk the intake ladder to VERIFIED first, then release.`,
+    );
   }
+  await db.transaction(async (tx) => {
+    await transition(tx, {
+      challengeId: args.challengeId,
+      to: "ROUTED",
+      actorId: args.actorId ?? null,
+      reason: args.reason ?? "Released by a district officer after the human gate.",
+      meta: { by: "gov-gate" },
+    });
+  });
 
   const notified = await releaseNotifications(args.challengeId, args.trackingId);
 

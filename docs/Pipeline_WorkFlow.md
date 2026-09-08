@@ -432,7 +432,7 @@ signed-in people who corroborated, centred on the 0.50 baseline so an unknown
 crowd counts exactly as it did in v1.0.0 — no retrospective inflation. Advances
 to `PRIORITISED`.
 
-**The routing bar:** a score below 85/100 does **not** route to any institution
+**The routing bar:** a score below 55/100 does **not** route to any institution
 — it is `PARKED` instead (with the full breakdown still shown, at `/flagged`, as
 the answer to "why didn't this route"), and re-enters routing automatically at
 its annual review, or sooner if new corroborations or facts lift it.

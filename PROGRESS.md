@@ -1318,3 +1318,127 @@ left as history.
    fresh DB before the demo.
 3. The Hindi review sheet's three new Hindi reports (school, power, solar) still need a native
    reviewer pass.
+
+## v2-rules qualification — in progress 2026-09-09
+
+Fresh checkout, local Postgres, `AI_PROVIDER_CHAIN=rules`. Clean reseed
+(`seed --reset → seed:ai → seed:states`), prod build, migration 0014 applied.
+
+### Results so far
+- **`verify:gov` 20/20.** `verify:phase2` 23/23 after teaching the role-guard
+  loops that a streamed Next redirect is a 200 shell + `NEXT_REDIRECT` digest +
+  `denied=role` (not a 307) — `scripts/verify-phase2-routes.mts`,
+  `scripts/verify-roles.mjs`.
+- **`verify:hei` 27/27** after two fixes (below).
+
+### Real bug found and fixed: `releaseGate` half-released
+`lib/ai/stages/s5.ts` skipped the VERIFIED→ROUTED transition it could not make
+and notified anyway, leaving offers nobody could claim. It now throws on
+anything but VERIFIED. The demo console "gate" beat walks the intake ladder
+first (its `walkTo` PATHS extended with the SUBMITTED→VERIFIED ladder), and
+`verify-hei.mts` walks its target to VERIFIED before releasing.
+
+### Harness determinism fix in `verify:hei`
+The claim now goes on the HOD's first Civil capability *with declared
+capacity* (ordered by lab name). Capacity is a soft routing signal, so the
+rules-tier hero matches BIT Sindri's zero-capacity Hydraulics lab; the claim
+form lets the HOD field the team from any department with slots, and the
+harness does what the product tells the user to do.
+
+### `verify:pipeline` 9/9
+Harness fixture fix: the fixed report scored 54.384 under scoring v2.0.0,
+just under the routing gate (55) — the gate is correctly calibrated (22/30
+seeds route), the fixture was weak. The report now describes a
+community-scale supply with bucket `1000+` → 57.464, three-org shortlist.
+Rules severity is text-blind by design (people + recurrence formula), so the
+bucket, not the wording, moves the score; new wording keeps `school` dominant
+so the domain stays EDUCATION.
+
+### `verify:framing` 9/10 — one known human-task FAIL
+Everything passes except "a voice note is attached": `seed-data/voice-note.mp3`
+is 0 bytes (BACKLOG 2.2 — a human recording task). Deliberately left failing:
+synthesising audio would fake human evidence. Revisit after the recording lands.
+
+### `verify:triage` 9/9
+Clean: queue populated (50), reason floor enforced, 6 accepts → training data +
+audit log, reviewed items leave the queue.
+
+### `verify:clock` passed
+`clock_now()` and `clockNow()` agree at every offset.
+
+### `verify:sla` passed
+Walks ESB-0001 through +7/+14/+21/+45d; nothing fires (correct — the earliest
+open deadline is +47d out), invariant orphans 0.
+
+### `verify:trust` passed
+All checks passed (21s).
+
+### `verify:provenance` 15/15
+Ledger chain verifies (262 entries), RESTRICTED download flow + access log,
+citation/BibTeX. (`[storage] upload failed` lines are expected sandbox noise:
+no S3, the asserted fallback path is exercised.)
+
+### `verify:impact` 9/9
+Yes/Partly/No confirmation paths, counter discipline, /stats gap rendering.
+
+### `verify:industry` 22/22
+Discover filters, EOI thread, MoU PDF hashed into the ledger, FUNDER credit
+edge, CSR CSV/PDF with confirmed/unconfirmed kept separate (incl. the
+must-not-sum warnings). Writes `backups/milan-csr-export.pdf` (cleanup later).
+
+### `verify:demo` 13/13
+All beats pass; several exercised honest fallback paths because earlier suites
+had already moved the hero (CLAIMED→IMPLEMENTED→CITIZEN_VERIFIED→CLOSED), and
+the run ends with the demo reset (clock to zero, 15 statuses restored). The
+scripted six-minute path itself needs a fresh seed — re-run after reseed if the
+runbook must be shown green end-to-end.
+
+### `verify:seedguard` passed
+No placeholder strings in seed-data, app, components, lib, packages.
+
+### `verify:perf` 6/6
+All six routes within the 2000ms budget (worst 79ms).
+
+### `verify:phase3` meta: 8/9, then two meta-harness fixes (9/9 run handed to the user)
+- First runs failed on 429s: the meta spawned 9 children back-to-back and their
+  pooled auth calls blew the 100/60s Better Auth window (the rules tier runs
+  each child in seconds). `scripts/verify-phase3.mts` now paces children with
+  65s gaps — each child lands in its own window.
+- Then `3.3 gov` failed on a REAL suite interaction: `verify:sla` (3.2) runs
+  first, fast-forwards the shared clock +45d and the GLOBAL reaper consumes
+  GUM-0002's WIDEN/OPEN_ALL/BREACH rungs (due +7/+14d), leaving gov with "no
+  Gumla challenge on the routing ladder". Fix in `seed/states.mts` block 1b:
+  the ladder target's open deadlines shift +120d (spacing intact) — beyond
+  sla's +45d and the demo's +21d reach, while gov time-travels to each rung's
+  own due date. Proven: `verify:gov` 20/20 run AFTER clock+sla on a fresh seed.
+- Full 9/9 meta re-run not completed in-session (two runs stopped for being
+  slow); the user runs it via `docs/qualification-checklist.csv` step 14.
+
+### Phase-1 `.mjs` checks
+- `verify-roles.mjs` 16/16 after updating two stale assertions to the
+  established refusal contracts (proven no-leak by direct probe): citizen→/gov
+  is a streamed 200 + NEXT_REDIRECT + denied=role; GUM→DHN page is the calm
+  200 panel "That district is not yours" with no district data (verify-gov
+  G-01 contract).
+- `verify-routes.mjs` 19/19 after updating two stale copy assertions:
+  "scored by the same published function" (re-theme) and the "Originator"
+  label (was the stored key "ORIGINATOR").
+- `verify-schema.mjs` informational only ✓ (domain(11) incl. ENERGY,
+  ledger append-only trigger present).
+- `verify-submit.mjs` ENVIRONMENT-BLOCKED here: the photo leg needs reachable
+  object storage and the sandbox has no network route (Supabase TLS fails,
+  curl exit 35; no docker for MinIO). The user runs it where storage is
+  reachable (checklist step 7 notes the prerequisite).
+
+### Handoff to the user (2026-09-09)
+- `scripts/reseed-local.sh` (executable): migrate → seed --reset → seed:ai →
+  seed:states with local-PG env, confirmation prompt, `RESEED_YES=1` bypass.
+- `docs/qualification-checklist.csv`: steps 0–14, one reseed for the
+  standalone suites + a second reseed before the phase3 meta (suites consume
+  state), with expected scores and the two known exceptions (framing
+  voice-note human task; submit needs storage).
+- `backups/milan-csr-export.*` restored (verify artefacts, not committed).
+
+### Still to run (by the user, via the checklist)
+Steps 0–14 of `docs/qualification-checklist.csv`, ending with the full
+`verify:phase3` 9/9 on a pristine reseed.

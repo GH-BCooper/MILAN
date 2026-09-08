@@ -110,6 +110,11 @@ const Scenario = z.object({ beat: z.string().min(2).max(40), trackingId: z.strin
  */
 async function walkTo(challengeId: string, from: ChallengeStatus, to: ChallengeStatus, actorId: string, projectId: string | null): Promise<ChallengeStatus> {
   const PATHS: Partial<Record<ChallengeStatus, ChallengeStatus[]>> = {
+    SUBMITTED: ["TRIAGED", "CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED"],
+    TRIAGED: ["CLASSIFIED", "CLUSTERED", "PRIORITISED", "VERIFIED"],
+    CLASSIFIED: ["CLUSTERED", "PRIORITISED", "VERIFIED"],
+    CLUSTERED: ["PRIORITISED", "VERIFIED"],
+    PRIORITISED: ["VERIFIED"],
     CLAIMED: ["PROPOSAL_APPROVED", "IN_RESEARCH", "SOLUTION_PUBLISHED"],
     PROPOSAL_APPROVED: ["IN_RESEARCH", "SOLUTION_PUBLISHED"],
     IN_RESEARCH: ["SOLUTION_PUBLISHED"],
@@ -279,8 +284,14 @@ export async function runScenario(_prev: DemoResult | null, form: FormData): Pro
 
     case "gate": {
       const { releaseGate } = await import("@/lib/ai/stages/s5");
-      if (hero.status !== "PRIORITISED" && hero.status !== "VERIFIED") {
-        return done(`${hero.trackingId} is already past the gate (${hero.status}). Nothing to release — idempotent by design.`);
+      // The one-click beat does the whole human part: walk the intake ladder
+      // to VERIFIED one legal edge at a time (accepting the triage holds the
+      // way a reviewer would), then release through the real gate function.
+      // releaseGate throws on anything but VERIFIED rather than half-release,
+      // so a hero that will not walk is reported, not silently notified.
+      const walked = await walkTo(hero.id, hero.status, "VERIFIED", user.id, project?.id ?? null);
+      if (walked !== "VERIFIED") {
+        return done(`${hero.trackingId} is already past the gate (${walked}). Nothing to release — idempotent by design.`);
       }
       const released = await releaseGate({
         challengeId: hero.id,

@@ -119,10 +119,20 @@ console.log(`\nGate checks\n${"-".repeat(60)}`);
 {
   const res = await get("/gov", sessions.CITIZEN);
   const loc = res.headers.get("location") ?? "";
+  // Same streamed-redirect contract as check 6 below: a guard that throws
+  // redirect() after the layout streamed answers 200 with the shell plus a
+  // client-side redirect, not a 30x. The browser still lands refused.
+  let refused = (res.status === 307 || res.status === 303) && loc.includes("denied=role");
+  let detail = `${res.status} -> ${loc || "(no location)"}`;
+  if (!refused && res.status === 200) {
+    const html = await res.text();
+    refused = html.includes("NEXT_REDIRECT") && html.includes("denied=role");
+    detail = refused ? `200 carrying a streamed redirect to /?denied=role` : `200 WITH PAGE CONTENT on /gov`;
+  }
   record(
     "CITIZEN is redirected away from /gov by the server-side guard",
-    (res.status === 307 || res.status === 303) && loc.includes("denied=role"),
-    `${res.status} -> ${loc || "(no location)"}`,
+    refused,
+    detail,
   );
 }
 
@@ -141,10 +151,16 @@ console.log(`\nGate checks\n${"-".repeat(60)}`);
       is cosmetic and is tidied up when /gov gets its own error.tsx. */
 {
   const res = await get("/gov/district/DHN", sessions.GOVERNMENT);
+  const html = res.status === 200 ? await res.text() : "";
+  // The refusal renders as a calm panel (verify-gov G-01 contract): the scope
+  // decision is made server-side, so the page itself says no — 200 with the
+  // refusal text and none of the district's data.
+  const refused =
+    res.status === 200 && /That district is not yours/.test(html) && !/district in numbers/.test(html);
   record(
     "GOVERNMENT(GUM) cannot open the Dhanbad-scoped page",
-    res.status !== 200,
-    `HTTP ${res.status} (200 would mean the district guard failed)`,
+    refused,
+    refused ? `HTTP 200 calm refusal panel (no district data)` : `HTTP ${res.status} — guard output unexpected`,
   );
 }
 
@@ -167,11 +183,17 @@ for (const [role, path] of [
 ]) {
   const res = await get(path, sessions[role]);
   const loc = res.headers.get("location") ?? "";
-  record(
-    `${role} is refused ${path}`,
-    res.status !== 200 && loc.includes("denied=role"),
-    `HTTP ${res.status} -> ${loc || "(no location)"}`,
-  );
+  // A guard that throws redirect() after the layout streamed answers 200 with
+  // the shell plus a client-side redirect (NEXT_REDIRECT digest) instead of a
+  // 30x — the browser still lands refused, so that passes too.
+  let refused = res.status !== 200 && loc.includes("denied=role");
+  let detail = `HTTP ${res.status} -> ${loc || "(no location)"}`;
+  if (!refused && res.status === 200) {
+    const html = await res.text();
+    refused = html.includes("NEXT_REDIRECT") && html.includes("denied=role");
+    detail = refused ? `HTTP 200 carrying a streamed redirect to /?denied=role` : `HTTP 200 WITH PAGE CONTENT on ${path}`;
+  }
+  record(`${role} is refused ${path}`, refused, detail);
 }
 
 /* Clean up the throwaway accounts. They have no ledger rows, so they can go. */

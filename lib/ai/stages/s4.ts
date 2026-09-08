@@ -6,7 +6,7 @@
  * row is written for it, and the whole computation is a call into
  * `packages/scoring`, which is pure.
  *
- * All this module does is read the seven inputs, hand them to the pure
+ * All this module does is read the six inputs, hand them to the pure
  * function, and write the total plus the full breakdown back. The breakdown is
  * stored, not recomputed on render, so the number a citizen saw last month can
  * still be explained even after the weights change — the row carries the

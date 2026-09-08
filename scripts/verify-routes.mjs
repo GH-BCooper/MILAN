@@ -63,10 +63,11 @@ console.log(`\nPage content\n${"-".repeat(70)}`);
     html.includes("English working copy") && !/show original/i.test(html),
   );
   record(
-    "the priority panel says it is scored in the AI pipeline",
-    html.includes("Scored in the AI pipeline"),
+    "the priority panel says every challenge is scored by the same published function",
+    html.includes("scored by the same published function"),
   );
-  record("the credit chain shows the originator", html.includes("ORIGINATOR"));
+  // The chain renders relation labels ("Originator"), not the stored keys.
+  record("the credit chain shows the originator", html.includes("Originator"));
 }
 
 /* Invariant 7: the impact counter reads CITIZEN_VERIFIED and nothing else. */

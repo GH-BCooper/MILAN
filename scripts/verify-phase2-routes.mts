@@ -85,10 +85,21 @@ for (const [path, cookie, who, label] of [
   ["/admin/triage", hod, "an HEI member", "is refused the triage queue"],
 ] as const) {
   const response = await fetch(`${BASE}${path}`, { redirect: "manual", headers: { cookie } });
-  // The guard redirects rather than 200s. Either a redirect or a 403 is a pass;
-  // a 200 means somebody can read a page that is not theirs.
-  const refused = response.status !== 200;
-  record(`${who} ${label}`, refused, `HTTP ${response.status} on ${path}`);
+  // The guard redirects rather than 200s. Either a redirect or a 403 is a pass.
+  // A guard that throws redirect() after the layout streamed answers 200 with
+  // the shell plus a client-side redirect (meta refresh + NEXT_REDIRECT digest
+  // to /?denied=role) — the browser still lands refused with no data shown, so
+  // that is a pass too. Only a 200 WITH page content is a real failure.
+  let refused = response.status !== 200;
+  let detail = `HTTP ${response.status} on ${path}`;
+  if (!refused) {
+    const html = await response.text();
+    refused = html.includes("NEXT_REDIRECT") && html.includes("denied=role");
+    detail = refused
+      ? `HTTP 200 carrying a streamed redirect to /?denied=role on ${path}`
+      : `HTTP 200 WITH PAGE CONTENT on ${path}`;
+  }
+  record(`${who} ${label}`, refused, detail);
 }
 
 /* ------------------------------------------------- the content that matters */

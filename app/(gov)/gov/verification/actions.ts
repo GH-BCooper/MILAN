@@ -3,7 +3,7 @@
 /**
  * Field verification by a block officer.
  *
- * `official_endorsed` is a 0.06 term in the priority score. That is small on
+ * `official_endorsed` is a 0.08 term in the priority score. That is small on
  * purpose — an official's signature should nudge a queue, never own it — but it
  * is real, so the page shows the score before and after and this action is what
  * moves it. The recomputation goes through S4, which is the same pure scoring
@@ -93,7 +93,7 @@ export async function endorseChallenge(_prev: VerifyResult | null, form: FormDat
     });
   });
 
-  // Rescore through the one scoring path. official_endorsed is worth 0.06.
+  // Rescore through the one scoring path. official_endorsed is worth 0.08.
   const { runS4 } = await import("@/lib/ai/stages/s4");
   const rescored = await runS4(c.id);
   const after = rescored?.score.total ?? before;
@@ -103,7 +103,7 @@ export async function endorseChallenge(_prev: VerifyResult | null, form: FormDat
 
   return {
     ok: true,
-    message: `Verified in the field. Priority moved from ${before?.toFixed(3) ?? "unscored"} to ${after?.toFixed(3) ?? "unscored"} — the official endorsement term is 0.06 of the total, and the whole breakdown is public.`,
+    message: `Verified in the field. Priority moved from ${before?.toFixed(3) ?? "unscored"} to ${after?.toFixed(3) ?? "unscored"} — the official endorsement term is 0.08 of the total, and the whole breakdown is public.`,
     before,
     after,
   };

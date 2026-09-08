@@ -145,6 +145,36 @@ const gated = offers.length > 0 && offers.every((o) => o.notified_at === null);
  * writing `notified_at` by hand keeps the verification on the real code path.
  */
 if (gated) {
+  // The gate releases VERIFIED -> ROUTED and nothing else (releaseGate throws
+  // rather than half-release). A rules-tier presync leaves the hero at
+  // TRIAGED, so walk the intake ladder first — the same legal edges a human
+  // reviewer would cross, with the harness as the actor.
+  const { db } = await import("@/lib/db");
+  const { transition } = await import("@/lib/db/stateMachine");
+  const { clockNow } = await import("@/lib/clock");
+  const LADDER = [
+    ["SUBMITTED", "TRIAGED", "Intake triage accepted by the verification harness."],
+    ["TRIAGED", "CLASSIFIED", "S2 proposal accepted by the verification harness."],
+    ["CLASSIFIED", "CLUSTERED", "Deduplication checked by the verification harness."],
+    ["CLUSTERED", "PRIORITISED", "Priority recorded; awaiting the human gate."],
+    ["PRIORITISED", "VERIFIED", "Confirmed at the human gate (verification harness)."],
+  ] as const;
+  let current = String((await sql`select status::text as s from challenges where id = ${challenge.id}`)[0]?.s ?? "");
+  for (const [from, to, reason] of LADDER) {
+    if (current === from) {
+      await db.transaction(async (tx) => {
+        await transition(tx, {
+          challengeId: challenge.id as string,
+          to: to as never,
+          actorId: null,
+          lastActivityAt: clockNow(),
+          reason,
+          meta: { by: "verify-hei" },
+        });
+      });
+      current = to;
+    }
+  }
   const { releaseGate } = await import("../lib/ai/stages/s5");
   const released = await releaseGate({
     challengeId: challenge.id as string,
@@ -215,10 +245,16 @@ if (alreadyClaimed) {
 
 /* --------------------------------------------------------------- claim it */
 
+// The offer names a matching lab, but the claim fields the team from whichever
+// of the HOD's departments has slots open — capacity is a soft routing signal,
+// so the matched lab can be a zero-capacity one (the rules-tier hero matches
+// BIT Sindri's Hydraulics lab at 0). A real HOD picks a department with slots;
+// the harness does the same, deterministically.
 const [capability] = await sql`
   select c.id, c.department, c.declared_capacity
-  from routes r join capabilities c on c.id = r.capability_id
-  where r.challenge_id = ${challenge.id} and r.org_id = ${org.id} limit 1`;
+  from capabilities c
+  where c.org_id = ${org.id} and c.department = 'Civil Engineering' and c.declared_capacity > 0
+  order by c.lab_name limit 1`;
 
 if (!alreadyClaimed) console.log("\n  Claiming as the HOD, over HTTP, with the session cookie…");
 const claimResponse = alreadyClaimed

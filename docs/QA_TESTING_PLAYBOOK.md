@@ -164,7 +164,7 @@ IDs are **C-##** (citizen), **H-##** (university), **I-##** (industry), **G-##**
 | G-03 | Human gate | High-severity (≥0.70) challenge in PRIORITISED | `/gov/gate` shows it; `notified_at` is null; no notification sent before confirm |
 | G-04 | Gate release | Confirm the gate | Routes release; institutions notified; audit log entry |
 | G-05 | Gate override | Override with missing reason | Must reject; mandatory written reason goes to `training_corrections` |
-| G-06 | Field verification | `/gov/verification`, endorse a report | `official_endorsed=true`, score changes by 0.06 term, ledger entry written |
+| G-06 | Field verification | `/gov/verification`, endorse a report | `official_endorsed=true`, score changes by 0.08 term, ledger entry written |
 | G-07 | SLA board | `/gov/sla` | Breaches at top, most overdue first; open deadlines shown; released-undelivered projects visible |
 | G-10 | Impact counter | DC dashboard | Reads only `CITIZEN_VERIFIED`; unconfirmed stays grey |
 

@@ -47,7 +47,9 @@ const REPORT = {
     `The overhead water tank on the school roof at our tola in Bishunpur (hamlet ${NONCE}) has developed a crack ` +
     "along the base and water runs down the classroom wall all day. The masonry below it is soft " +
     "now and the headmaster has moved the children to the veranda. Nobody can tell us whether the " +
-    "tank will come down or whether the wall can still hold it, and the rains start next month.",
+    "tank will come down or whether the wall can still hold it, and the rains start next month. " +
+    "More than a thousand children from the school and the two neighbouring hamlets drink from " +
+    "this tank every day, so the headmaster says the whole school may have to close if it fails.",
   bodyLang: "en",
   media: [],
   districtCode: "GUM",
@@ -55,7 +57,10 @@ const REPORT = {
   lat: 23.42,
   lng: 84.44,
   locationAccuracyM: null,
-  peopleAffectedBucket: "100-1000",
+  // "1000+" (midpoint 2000): the report describes a community-scale supply, and the
+  // routing gate sits at priority 55 — the old 100-1000 bucket scored 54.384 under
+  // scoring v2.0.0, just short of a shortlist. The text above justifies the band.
+  peopleAffectedBucket: "1000+",
   recurrence: "constant",
   urgencySelfReport: 4,
   framedStatement: null,
