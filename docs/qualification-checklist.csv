@@ -1,5 +1,5 @@
 step,suite,command,needs,expected,pacing_or_notes,actual,notes
-0,environment (once per shell),export DATABASE_URL=postgresql://milan@localhost:54322/milan DIRECT_URL=postgresql://milan@localhost:54322/milan AI_PROVIDER_CHAIN=rules,a new shell,vars set — dotenv in the scripts never overrides exported vars,repeat in every shell you run steps from,,
+0,environment (once per shell),"export DATABASE_URL=<same DB you reseed in step 1> DIRECT_URL=<same DB — or your session-pooler string> AI_PROVIDER_CHAIN=rules",a new shell,vars set — dotenv in the scripts never overrides exported vars. Omit the DB vars to use .env.local instead (Supabase per SETUP_GUIDE),repeat in every shell you run steps from,,
 1,fresh reseed,./scripts/reseed-local.sh,local postgres on port 54322,"9-status board: SUBMITTED×16 ROUTED×4 CITIZEN_VERIFIED×3 FORWARDED_EXTERNAL×2 BOUNTY_LISTED×1 SOLUTION_PUBLISHED×1 IN_RESEARCH×1 CLOSED×1 TRIAGED×1",~10 seconds on the rules tier,,
 2,app server,./scripts/reseed-local.sh && pnpm build && pnpm start -H 0.0.0.0 -p 3000,step 1,Ready on :3000 — bind 0.0.0.0 for previews,keep it running for every step below,,
 3,phase2 routes + guards,node_modules/.bin/tsx --conditions=react-server scripts/verify-phase2-routes.mts,server,23/23,if you see 429 wait 70s and retry the step,,
