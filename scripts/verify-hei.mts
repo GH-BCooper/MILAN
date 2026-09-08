@@ -408,6 +408,25 @@ for (const [label, path] of [
   record(`/hei ${label} loads`, response.ok, `${response.status} ${path}`);
 }
 
+/* -------------------------------------------- the navbar renders exactly once */
+
+// Flight data repeats component props inside <script> tags, so the count runs
+// on the DOM with scripts stripped: one Primary nav, zero portal navs.
+for (const [label, path] of [
+  ["dashboard", "/hei"],
+  ["challenge bank", "/hei/challenge-bank"],
+] as const) {
+  const html = await (await authed(path)).text();
+  const dom = html.replace(/<script[\s\S]*?<\/script>/g, "");
+  const primary = dom.split('aria-label="Primary"').length - 1;
+  const portals = dom.split('aria-label="Portals"').length - 1;
+  record(
+    `signed in, the ${label} page renders one navbar`,
+    primary === 1 && portals === 0,
+    `Primary×${primary} Portals×${portals}`,
+  );
+}
+
 /* ----------------------------------------------- open claim, no offer needed */
 
 // A released challenge nobody routed to BIT Sindri — on the fresh seed this
@@ -536,17 +555,17 @@ record(
   doubleResult.ok ? "UNEXPECTEDLY ACCEPTED" : doubleResult.error,
 );
 
-/* ------------------------------------------------- the gate still holds */
+/* ------------------------------------------ the triage floor still holds */
 
 const [gateHeld] = await sql`
   select tracking_id, status from challenges
-  where status in ('SUBMITTED', 'TRIAGED', 'CLASSIFIED', 'CLUSTERED', 'PRIORITISED', 'VERIFIED', 'NEEDS_MORE_INFO')
+  where status in ('SUBMITTED', 'NEEDS_MORE_INFO')
   order by tracking_id limit 1`;
 if (!gateHeld) {
   record(
-    "a gate-held challenge refuses claiming",
+    "an untriaged challenge refuses claiming",
     true,
-    "no gate-held challenge on this seed — nothing to prove",
+    "no untriaged challenge on this seed — nothing to prove",
   );
 } else {
   const gateResponse = await fetch(`${BASE}/api/hei/claim`, {
@@ -571,8 +590,8 @@ if (!gateHeld) {
   });
   const gateResult = (await gateResponse.json()) as { ok: boolean; error?: string };
   record(
-    "a gate-held challenge refuses claiming",
-    !gateResult.ok && String(gateResult.error ?? "").includes("waiting to be released"),
+    "an untriaged challenge refuses claiming",
+    !gateResult.ok && String(gateResult.error ?? "").includes("being checked for safety"),
     `${gateHeld.tracking_id} (${gateHeld.status}): ${gateResult.ok ? "UNEXPECTEDLY ACCEPTED" : gateResult.error}`,
   );
 }

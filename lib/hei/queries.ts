@@ -13,7 +13,7 @@ import {
   projects,
   routes,
 } from "@/lib/db/schema";
-import { TERMINAL_STATES } from "@/lib/db/stateMachine";
+import { OPEN_CLAIMABLE_STATES, TERMINAL_STATES } from "@/lib/db/stateMachine";
 
 /**
  * Everything the university workspace reads.
@@ -270,8 +270,8 @@ export interface BankItem {
  * This is the adoption argument. 200,000 Indian students invent a fake
  * final-year project every year; this list is the alternative, and it is
  * deliberately open to any signed-in HEI member rather than gated behind a
- * routing offer — claiming is open past the human gate, so a department that
- * was not in the top three claims exactly the same way.
+ * routing offer — anything safety triage has cleared is claimable, so a
+ * department that was not in the top three claims exactly the same way.
  */
 export async function challengeBank(limit = 60): Promise<BankItem[]> {
   const rows = await db
@@ -291,16 +291,18 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     .leftJoin(districts, eq(districts.code, challenges.districtCode))
     .where(
       and(
-        inArray(challenges.status, ["PRIORITISED", "VERIFIED", "ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"]),
+        inArray(challenges.status, OPEN_CLAIMABLE_STATES),
         isNull(challenges.parentId),
       ),
     )
-    .orderBy(desc(challenges.priorityScore))
+    // Scored first (highest priority on top), then unscored by newest. Plain
+    // DESC would float the unscored rows — Postgres sorts NULLs first.
+    .orderBy(sql`${challenges.priorityScore} DESC NULLS LAST, ${challenges.createdAt} DESC`)
     .limit(limit);
 
   // Claimability is a property of the challenge's state now, not of who was
-  // routed an offer: any institution can claim anything past the human gate.
-  // No per-row offer lookup needed.
+  // routed an offer: any institution can claim anything safety triage has
+  // cleared. No per-row offer lookup needed.
   return rows.map((r) => ({
     trackingId: r.trackingId,
     title: r.title,

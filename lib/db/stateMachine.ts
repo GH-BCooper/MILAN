@@ -45,13 +45,19 @@ export const TRANSITIONS: Record<ChallengeStatus, ChallengeStatus[]> = {
   SUBMITTED: ["TRIAGED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
   // The citizen answered the follow-up, or withdrew.
   NEEDS_MORE_INFO: ["TRIAGED", "SUBMITTED", "WITHDRAWN", "PARKED"],
-  TRIAGED: ["CLASSIFIED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
+  // Open claiming: any institution can take anything safety triage has
+  // cleared (TRIAGED and everything downstream of it), routed an offer or
+  // not. The five CLAIMED edges below are the pull path; the router's offers
+  // are the push path. SUBMITTED and NEEDS_MORE_INFO have no CLAIMED edge on
+  // purpose: nothing can be claimed before the S1 safety check. PARKED stays
+  // terminal (re-entry is by annual review, not by edge).
+  TRIAGED: ["CLASSIFIED", "CLAIMED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
   // Duplicates are signal: clustering can merge this into a parent instead.
-  CLASSIFIED: ["CLUSTERED", "MERGED", "NEEDS_MORE_INFO", "WITHDRAWN"],
-  CLUSTERED: ["PRIORITISED", "MERGED", "WITHDRAWN"],
+  CLASSIFIED: ["CLUSTERED", "CLAIMED", "MERGED", "NEEDS_MORE_INFO", "WITHDRAWN"],
+  CLUSTERED: ["PRIORITISED", "CLAIMED", "MERGED", "WITHDRAWN"],
   // severity >= 0.7 waits at /gov/gate for a human before it can be VERIFIED.
-  PRIORITISED: ["VERIFIED", "PARKED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "WITHDRAWN"],
-  VERIFIED: ["ROUTED", "PARKED", "BOUNTY_LISTED", "WITHDRAWN"],
+  PRIORITISED: ["VERIFIED", "CLAIMED", "PARKED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "WITHDRAWN"],
+  VERIFIED: ["ROUTED", "CLAIMED", "PARKED", "BOUNTY_LISTED", "WITHDRAWN"],
   // Nobody claimed it inside the window: widen, then open to all, then escalate.
   ROUTED: ["CLAIMED", "UNCLAIMED_ESCALATED", "PARKED", "WITHDRAWN"],
   UNCLAIMED_ESCALATED: ["ROUTED", "CLAIMED", "BOUNTY_LISTED", "PARKED", "WITHDRAWN"],
@@ -98,6 +104,27 @@ export const TERMINAL_STATES = [
 ] as const satisfies readonly ChallengeStatus[];
 
 export type TerminalState = (typeof TERMINAL_STATES)[number];
+
+/**
+ * States an HEI team can open-claim: everything safety triage has cleared
+ * plus the routed/escalated/bounty/fork states, which triage cleared earlier.
+ * Single source of truth for the claim action, the claim page, the challenge
+ * bank query and the bank's Claim buttons — they must never disagree.
+ */
+export const OPEN_CLAIMABLE_STATES: ChallengeStatus[] = [
+  "TRIAGED",
+  "CLASSIFIED",
+  "CLUSTERED",
+  "PRIORITISED",
+  "VERIFIED",
+  "ROUTED",
+  "UNCLAIMED_ESCALATED",
+  "BOUNTY_LISTED",
+  "FORKED",
+];
+
+/** States still inside safety triage: present but not yet claimable. */
+export const UNTRIAGED_STATES: ChallengeStatus[] = ["SUBMITTED", "NEEDS_MORE_INFO"];
 
 export function isTerminal(status: ChallengeStatus): status is TerminalState {
   return (TERMINAL_STATES as readonly ChallengeStatus[]).includes(status);

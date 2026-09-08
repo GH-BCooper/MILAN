@@ -21,6 +21,7 @@ import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
+import { OPEN_CLAIMABLE_STATES } from "@/lib/db/stateMachine";
 import { capabilitiesFor, challengeForClaim, offerFor } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 import { ClaimForm } from "./claim-form";
@@ -49,11 +50,13 @@ export default async function ClaimPage({
     capabilitiesFor(user.orgId),
   ]);
 
-  // Open claiming: no routed offer is fine when the challenge itself is past
-  // the human gate. The panel below is now only for work that genuinely cannot
-  // be taken — still gate-held, or already claimed and gone.
+  // Open claiming: no routed offer is fine when the challenge itself is in a
+  // claimable state (safety triage cleared it). The panel below is now only
+  // for work that genuinely cannot be taken — still untriaged, or already
+  // claimed and gone.
   const openlyClaimable =
-    challenge !== null && ["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"].includes(challenge.status);
+    challenge !== null &&
+    (OPEN_CLAIMABLE_STATES as readonly string[]).includes(challenge.status);
 
   if (!offer && !openlyClaimable) {
     return (
@@ -64,8 +67,8 @@ export default async function ClaimPage({
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Either another institution has already claimed it, the claim window has closed, or it
-            is still waiting for a District Collector to release it. Nothing is lost — the public
-            page shows exactly where it stands.
+            is still being checked for safety — problems become claimable the moment triage clears
+            them. Nothing is lost — the public page shows exactly where it stands.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
@@ -145,7 +148,7 @@ export default async function ClaimPage({
         <section className="mt-6 milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Open claim</h2>
           <p className="mt-1 text-sm">
-            This problem was released past the human gate, so any institution can take it — not
+            Any institution can take any problem once safety triage has cleared it — not
             just the three the router shortlisted. The first team with declared capacity and a
             university email takes it; claiming closes every open offer on it.
           </p>

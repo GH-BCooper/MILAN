@@ -27,7 +27,7 @@ import { z } from "zod";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { transition } from "@/lib/db/stateMachine";
+import { OPEN_CLAIMABLE_STATES, UNTRIAGED_STATES, transition } from "@/lib/db/stateMachine";
 import { appendEntry } from "@/lib/ledger/append";
 import {
   capabilities,
@@ -80,12 +80,11 @@ export async function claimChallengeAction(raw: unknown): Promise<ClaimResult> {
 }
 
 /**
- * Open claiming: any institution can claim anything past the human gate —
- * routed an offer or not. The gate itself (PRIORITISED/VERIFIED and everything
- * before it) still holds: a department cannot take work a District Collector
- * has not released.
+ * Open claiming: any institution can claim anything safety triage has cleared
+ * (OPEN_CLAIMABLE_STATES) — routed an offer or not. The router's offers are
+ * the push path; this is the pull path. The only states that hold are the
+ * untriaged ones: nothing can be claimed before the S1 safety check.
  */
-const CLAIMABLE_STATUSES = ["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"] as const;
 
 /** Freemail domains a claimant's own account email may not come from. */
 const FREEMAIL_DOMAINS = new Set([
@@ -175,23 +174,15 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
   // claims alike. Without this gate an offer row on an unreleased challenge
   // would die later in transition() with an IllegalTransitionError instead of
   // a sentence a professor can act on.
-  if (!(CLAIMABLE_STATUSES as readonly string[]).includes(challenge.status)) {
-    // The gate-held list is explicit; every other non-claimable state —
-    // already claimed, merged away, parked, withdrawn, rejected — is past the
-    // point where a team can take it, and says so.
-    const gateHeld = [
-      "SUBMITTED",
-      "TRIAGED",
-      "CLASSIFIED",
-      "CLUSTERED",
-      "PRIORITISED",
-      "VERIFIED",
-      "NEEDS_MORE_INFO",
-    ].includes(challenge.status);
+  if (!OPEN_CLAIMABLE_STATES.includes(challenge.status)) {
+    // The untriaged list is explicit; every other non-claimable state —
+    // already claimed, in research, merged away, parked, withdrawn, rejected —
+    // is past the point where a team can take it, and says so.
+    const untriaged = (UNTRIAGED_STATES as readonly string[]).includes(challenge.status);
     return {
       ok: false,
-      error: gateHeld
-        ? "This challenge is still waiting to be released by a district officer. Nothing below the human gate can be claimed."
+      error: untriaged
+        ? "This challenge is still being checked for safety — it becomes claimable the moment triage clears it. Nothing can be claimed before that check."
         : "This challenge has already been claimed — it is past the point where a team can take it.",
     };
   }

@@ -7,14 +7,15 @@
  * problem a real person in Jharkhand reported with their name on it.
  *
  * Deliberately open to any signed-in HEI member rather than gated behind a
- * routing offer: claiming is open past the human gate, so a department that
- * was not in the top three claims exactly the same way.
+ * routing offer: anything safety triage has cleared is claimable, so a
+ * department that was not in the top three claims exactly the same way.
  */
 import Link from "next/link";
 
 import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
+import { OPEN_CLAIMABLE_STATES } from "@/lib/db/stateMachine";
 import { challengeBank } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 
@@ -37,7 +38,7 @@ export default async function ChallengeBank({
   return (
     <RoleShell
       title="Real final-year projects"
-      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, scored and ready for a team.`}
+      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, cleared by triage and ready for a team.`}
     >
       <div className="milan-glass rounded-xl bg-accent p-4">
         <p className="text-sm font-medium text-accent-foreground">
@@ -46,9 +47,9 @@ export default async function ChallengeBank({
         <p className="mt-1 text-sm text-accent-foreground">
           Around 200,000 engineering students in India invent a final-year project every year,
           because nobody hands them a real one. These are real. They have a location, a named
-          reporter, a thematic domain and a priority score you can check the arithmetic of — and
-          when a team finishes, the person who reported it is the one who confirms whether it
-          actually worked. That is a project a student can defend in a viva and put on a CV.
+          reporter and a thematic domain — most with a priority score you can check the arithmetic
+          of — and when a team finishes, the person who reported it is the one who confirms whether
+          it actually worked. That is a project a student can defend in a viva and put on a CV.
         </p>
       </div>
 
@@ -116,7 +117,7 @@ export default async function ChallengeBank({
                 >
                   Read the full report
                 </Link>
-                {["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"].includes(item.status) ? (
+                {OPEN_CLAIMABLE_STATES.includes(item.status as ChallengeStatus) ? (
                   <Link
                     href={`/hei/challenges/${item.trackingId}/claim`}
                     className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -125,7 +126,7 @@ export default async function ChallengeBank({
                   </Link>
                 ) : (
                   <span className="inline-flex min-h-11 items-center text-xs text-muted-foreground">
-                    Waiting for release at the human gate — nothing below the gate can be claimed
+                    Still being checked for safety — nothing can be claimed before triage clears it
                   </span>
                 )}
               </div>
