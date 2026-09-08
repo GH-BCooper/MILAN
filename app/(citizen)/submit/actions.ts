@@ -11,6 +11,7 @@ import { challengeMedia, challenges, creditEdges, outbox } from "@/lib/db/schema
 import { nextTrackingId } from "@/lib/db/trackingId";
 import { MediaRejectedError, processImage } from "@/lib/media/upload";
 import { putObject } from "@/lib/media/storage";
+import { clientIp } from "@/lib/net/clientIp";
 import { runP1 } from "@/lib/ai/stages/p1_framing";
 import { blocks, districts, slaDeadlines } from "@/lib/db/schema";
 import { deadlinesFor } from "@/lib/sla/deadlines";
@@ -103,9 +104,9 @@ export async function proposeFramingAction(raw: unknown): Promise<FramingResult>
   }
 
   const user = await currentUser();
-  const headerList = await headers();
-  const ip =
-    headerList.get("x-forwarded-for")?.split(",")[0].trim() ?? headerList.get("x-real-ip") ?? null;
+  // Trusted-proxy model: the header is ignored unless VERCEL/TRUST_PROXY say a
+  // proxy we control wrote it (see lib/net/clientIp.ts, X-C3).
+  const ip = clientIp(await headers());
 
   // The same counter the submission itself uses. Asking for a rewrite is a
   // model call, so it is not free to anyone who wants to spend our budget.
@@ -184,8 +185,7 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
 
   const user = await currentUser();
   const headerList = await headers();
-  const ip =
-    headerList.get("x-forwarded-for")?.split(",")[0].trim() ?? headerList.get("x-real-ip") ?? null;
+  const ip = clientIp(headerList);
 
   const verdict = await checkSubmissionRate({ ip, userId: user?.id ?? null });
   if (!verdict.allowed) {

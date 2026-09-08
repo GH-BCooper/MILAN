@@ -4,7 +4,7 @@ import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 
 import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
-import { requireDistrict } from "@/lib/auth/guards";
+import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { challenges, districts, slaDeadlines } from "@/lib/db/schema";
 
@@ -25,7 +25,35 @@ export default async function DistrictPage({ params }: { params: Promise<{ code:
   const { code } = await params;
   const upper = code.toUpperCase();
 
-  await requireDistrict(upper);
+  const user = await requireUser();
+  const scoped = user.role === "ADMIN" || user.districtCode === upper;
+
+  // A refusal is a server-side decision, so it is rendered server-side: thrown
+  // through the router's error channel it surfaced as a stuck "Loading…" shell
+  // (G-01). A calm panel with no data leak is the whole page here.
+  if (!scoped) {
+    return (
+      <RoleShell title="District" subtitle={upper}>
+        <div className="milan-glass rounded-xl p-6">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Refused
+          </p>
+          <h1 className="mt-2 text-xl font-bold">That district is not yours.</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            This page is scoped to district {upper}. You are signed in for{" "}
+            {user.districtCode ?? "no district"}, so there is nothing to show here. Nothing was
+            changed.
+          </p>
+          <Link
+            href="/gov"
+            className="mt-4 inline-flex h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+          >
+            Back to your district
+          </Link>
+        </div>
+      </RoleShell>
+    );
+  }
 
   const [district] = await db.select().from(districts).where(eq(districts.code, upper)).limit(1);
   if (!district) notFound();
