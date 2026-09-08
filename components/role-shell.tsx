@@ -1,6 +1,7 @@
-import { SiteHeader } from "@/components/site-header";
-
-/** The chrome every signed-in role area shares. */
+/** The chrome every signed-in role area shares. The top navbar itself lives in
+ *  the route-group layouts (every group renders <SiteHeader />), so this shell
+ *  must NOT render it too — that doubled the navbar on every page that uses it.
+ */
 export function RoleShell({
   title,
   subtitle,
@@ -12,7 +13,6 @@ export function RoleShell({
 }) {
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <div className="milan-rise">
           <div aria-hidden className="milan-hairline mb-5 h-px w-24 rounded-full" />

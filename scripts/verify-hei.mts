@@ -408,6 +408,175 @@ for (const [label, path] of [
   record(`/hei ${label} loads`, response.ok, `${response.status} ${path}`);
 }
 
+/* ----------------------------------------------- open claim, no offer needed */
+
+// A released challenge nobody routed to BIT Sindri — on the fresh seed this
+// is RAN-0001. Found dynamically so a custom-target run still proves the path
+// on whatever is left, and re-runs find the already-proven one first instead
+// of eating a new challenge every time (an open claim writes a rank-0 route
+// row, which is how it is recognised).
+const [openDone] = await sql`
+  select c.id, c.tracking_id from challenges c
+  join routes r on r.challenge_id = c.id
+  where r.org_id = ${org.id} and r.state = 'CLAIMED' and r.rank = 0
+  order by c.tracking_id limit 1`;
+const [openCandidate] = openDone
+  ? [openDone]
+  : await sql`
+    select c.id, c.tracking_id from challenges c
+    where c.status in ('ROUTED', 'UNCLAIMED_ESCALATED', 'BOUNTY_LISTED')
+      and c.tracking_id <> ${target}
+      and not exists (
+        select 1 from routes r
+        where r.challenge_id = c.id and r.org_id = ${org.id} and r.state in ('OFFERED', 'CLAIMED')
+      )
+    order by c.tracking_id limit 1`;
+const openAlready = Boolean(openDone);
+
+if (!openCandidate) {
+  record(
+    "an open claim succeeds without a routed offer",
+    true,
+    "no released-but-unrouted challenge on this seed — nothing to prove",
+  );
+} else {
+  // Fresh read at beat time: the main claim above already spent one slot, and
+  // a real HOD picks whichever department still has room.
+  const [openCap] = await sql`
+    select id, department, declared_capacity from capabilities
+    where org_id = ${org.id} and declared_capacity > 0
+    order by declared_capacity desc limit 1`;
+  const openResponse = openAlready
+    ? null
+    : await fetch(`${BASE}/api/hei/claim`, {
+        method: "POST",
+        headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+        body: JSON.stringify({
+          trackingId: openCandidate.tracking_id,
+          capabilityId: openCap?.id,
+          title: "Open-claim proof: field survey and low-cost design study",
+          ipTrack: "OPEN",
+          members: [
+            { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+            { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+            { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+          ],
+          mentorEmail: HOD,
+          mentorName: "Head of Civil Engineering, BIT Sindri",
+          citizenRole: "Domain Informant",
+          creditCitizen: true,
+          confirmCapacity: true,
+        }),
+      });
+  if (openResponse) {
+    const openResult = (await openResponse.json()) as { ok: boolean; error?: string; message?: string };
+    record(
+      "an open claim succeeds without a routed offer",
+      openResult.ok,
+      openResult.ok ? openResult.message ?? openCandidate.tracking_id : openResult.error,
+    );
+    if (!openResult.ok) {
+      await sql.end();
+      process.exit(1);
+    }
+  } else {
+    record(
+      "an open claim succeeds without a routed offer",
+      true,
+      `${openCandidate.tracking_id} open-claimed on an earlier run`,
+    );
+  }
+
+  const [openAfter] = await sql`select status from challenges where id = ${openCandidate.id}`;
+  record(
+    "the open-claimed challenge is now CLAIMED",
+    openAfter.status === "CLAIMED",
+    `${openCandidate.tracking_id}: ${openAfter.status}`,
+  );
+  const openRoutes = await sql`
+    select r.state, r.rank, o.name as org from routes r
+    join organization o on o.id = r.org_id
+    where r.challenge_id = ${openCandidate.id} order by r.rank`;
+  record(
+    "the open claim wrote a rank-0 CLAIMED row and closed every other offer",
+    openRoutes.some((r) => r.state === "CLAIMED" && Number(r.rank) === 0) &&
+      openRoutes.every((r) => r.state !== "OFFERED"),
+    openRoutes.map((r) => `${r.org}#${r.rank}:${r.state}`).join(", "),
+  );
+}
+
+/* ------------------------------------------------- the second claim fails */
+
+// The main target is always claimed by this point, so this beat is
+// deterministic: no second project, and the refusal names the real reason.
+const doubleResponse = await fetch(`${BASE}/api/hei/claim`, {
+  method: "POST",
+  headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+  body: JSON.stringify({
+    trackingId: target,
+    capabilityId: capability?.id,
+    title: "Second-claim probe that must be refused",
+    ipTrack: "OPEN",
+    members: [
+      { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+      { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+      { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+    ],
+    mentorEmail: HOD,
+    mentorName: "Head of Civil Engineering, BIT Sindri",
+    citizenRole: "Domain Informant",
+    creditCitizen: true,
+    confirmCapacity: true,
+  }),
+});
+const doubleResult = (await doubleResponse.json()) as { ok: boolean; error?: string };
+record(
+  "a second claim on the same challenge is refused as already claimed",
+  !doubleResult.ok && String(doubleResult.error ?? "").includes("already been claimed"),
+  doubleResult.ok ? "UNEXPECTEDLY ACCEPTED" : doubleResult.error,
+);
+
+/* ------------------------------------------------- the gate still holds */
+
+const [gateHeld] = await sql`
+  select tracking_id, status from challenges
+  where status in ('SUBMITTED', 'TRIAGED', 'CLASSIFIED', 'CLUSTERED', 'PRIORITISED', 'VERIFIED', 'NEEDS_MORE_INFO')
+  order by tracking_id limit 1`;
+if (!gateHeld) {
+  record(
+    "a gate-held challenge refuses claiming",
+    true,
+    "no gate-held challenge on this seed — nothing to prove",
+  );
+} else {
+  const gateResponse = await fetch(`${BASE}/api/hei/claim`, {
+    method: "POST",
+    headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+    body: JSON.stringify({
+      trackingId: gateHeld.tracking_id,
+      capabilityId: capability?.id,
+      title: "Gate probe that must be refused",
+      ipTrack: "OPEN",
+      members: [
+        { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+        { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+        { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+      ],
+      mentorEmail: HOD,
+      mentorName: "Head of Civil Engineering, BIT Sindri",
+      citizenRole: "Domain Informant",
+      creditCitizen: true,
+      confirmCapacity: true,
+    }),
+  });
+  const gateResult = (await gateResponse.json()) as { ok: boolean; error?: string };
+  record(
+    "a gate-held challenge refuses claiming",
+    !gateResult.ok && String(gateResult.error ?? "").includes("waiting to be released"),
+    `${gateHeld.tracking_id} (${gateHeld.status}): ${gateResult.ok ? "UNEXPECTEDLY ACCEPTED" : gateResult.error}`,
+  );
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed.`);
 console.log(`Public page: ${BASE}/c/${target}`);

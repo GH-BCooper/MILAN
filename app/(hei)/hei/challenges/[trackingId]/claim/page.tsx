@@ -21,7 +21,7 @@ import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
-import { capabilitiesFor, offerFor } from "@/lib/hei/queries";
+import { capabilitiesFor, challengeForClaim, offerFor } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 import { ClaimForm } from "./claim-form";
 
@@ -43,17 +43,24 @@ export default async function ClaimPage({
   const user = await requireRole("HEI_MEMBER");
   if (!user.orgId) notFound();
 
-  const [offer, caps] = await Promise.all([
+  const [offer, challenge, caps] = await Promise.all([
     offerFor(user.orgId, trackingId),
+    challengeForClaim(trackingId),
     capabilitiesFor(user.orgId),
   ]);
 
-  if (!offer) {
+  // Open claiming: no routed offer is fine when the challenge itself is past
+  // the human gate. The panel below is now only for work that genuinely cannot
+  // be taken — still gate-held, or already claimed and gone.
+  const openlyClaimable =
+    challenge !== null && ["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"].includes(challenge.status);
+
+  if (!offer && !openlyClaimable) {
     return (
       <RoleShell title={trackingId} subtitle="Not available to claim.">
         <div className="milan-glass rounded-xl p-6">
           <p className="text-sm font-medium">
-            This challenge is not currently offered to your institution.
+            This challenge cannot be claimed right now.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Either another institution has already claimed it, the claim window has closed, or it
@@ -79,61 +86,89 @@ export default async function ClaimPage({
     );
   }
 
-  const breakdown = parseBreakdown(offer.priorityBreakdown);
+  // One view for both paths: a routed offer carries its rank, reason and window;
+  // an open claim carries the challenge on its own.
+  const view = offer ?? {
+    ...challenge!,
+    rank: 0,
+    matchScore: null,
+    reasonText: null as string | null,
+    claimWindowEndsAt: null,
+    department: null as string | null,
+    labName: null as string | null,
+    capabilityId: null as string | null,
+  };
+
+  const breakdown = parseBreakdown(view.priorityBreakdown);
   const withCapacity = caps.filter((c) => c.active);
   const serverNow = clockNow().toISOString();
 
   return (
     <RoleShell
-      title={offer.title}
-      subtitle={`${trackingId} · ${offer.districtName ?? "district not given"} · routed to you at rank ${offer.rank} of 3`}
+      title={view.title}
+      subtitle={
+        offer
+          ? `${trackingId} · ${view.districtName ?? "district not given"} · routed to you at rank ${offer.rank} of 3`
+          : `${trackingId} · ${view.districtName ?? "district not given"} · open claim — your institution was not routed an offer, and that no longer matters`
+      }
     >
       <div className="flex flex-wrap items-center gap-2">
-        <StatusBadge status={offer.status as ChallengeStatus} />
-        {offer.domain ? (
+        <StatusBadge status={view.status as ChallengeStatus} />
+        {view.domain ? (
           <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium">
-            {offer.domain.replaceAll("_", " ")}
+            {view.domain.replaceAll("_", " ")}
           </span>
         ) : null}
         <span className="text-xs text-muted-foreground">
-          {offer.corroborationCount} report{offer.corroborationCount === 1 ? "" : "s"}
+          {view.corroborationCount} report{view.corroborationCount === 1 ? "" : "s"}
         </span>
-        {offer.claimWindowEndsAt ? (
+        {view.claimWindowEndsAt ? (
           <span className="ms-auto text-sm">
-            Closes in <ClaimCountdown endsAt={offer.claimWindowEndsAt.toISOString()}
+            Closes in <ClaimCountdown endsAt={view.claimWindowEndsAt.toISOString()}
                         serverNow={serverNow} />
           </span>
         ) : null}
       </div>
 
-      <section className="mt-6 milan-glass rounded-xl p-4">
-        <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Why you</h2>
-        <p className="mt-1 text-sm">{offer.reasonText}</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {offer.department}
-          {offer.labName ? ` · ${offer.labName}` : ""}
-          {offer.matchScore !== null ? ` · match score ${offer.matchScore.toFixed(3)}` : ""} · this
-          sentence was written from the three scoring terms and nothing else.
-        </p>
-      </section>
+      {offer ? (
+        <section className="mt-6 milan-glass rounded-xl p-4">
+          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Why you</h2>
+          <p className="mt-1 text-sm">{offer.reasonText}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {offer.department}
+            {offer.labName ? ` · ${offer.labName}` : ""}
+            {offer.matchScore !== null ? ` · match score ${offer.matchScore.toFixed(3)}` : ""} · this
+            sentence was written from the three scoring terms and nothing else.
+          </p>
+        </section>
+      ) : (
+        <section className="mt-6 milan-glass rounded-xl p-4">
+          <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Open claim</h2>
+          <p className="mt-1 text-sm">
+            This problem was released past the human gate, so any institution can take it — not
+            just the three the router shortlisted. The first team with declared capacity and a
+            university email takes it; claiming closes every open offer on it.
+          </p>
+        </section>
+      )}
 
       {/* Invariant 6. The citizen's own words at the same size as our copy,
           on an internal screen as much as a public one. */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         <article className="milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
-            As it was reported {offer.bodyLang !== "en" ? `(${offer.bodyLang})` : ""}
+            As it was reported {view.bodyLang !== "en" ? `(${view.bodyLang})` : ""}
           </h2>
-          <p lang={offer.bodyLang} className="mt-2 whitespace-pre-wrap text-base leading-relaxed">
-            {offer.bodyOriginal}
+          <p lang={view.bodyLang} className="mt-2 whitespace-pre-wrap text-base leading-relaxed">
+            {view.bodyOriginal}
           </p>
         </article>
         <article className="milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">
-            {offer.framedStatement ? "The research problem" : "English working copy"}
+            {view.framedStatement ? "The research problem" : "English working copy"}
           </h2>
           <p className="mt-2 whitespace-pre-wrap text-base leading-relaxed">
-            {offer.framedStatement ?? offer.bodyEn ?? "Not translated yet."}
+            {view.framedStatement ?? view.bodyEn ?? "Not translated yet."}
           </p>
         </article>
       </section>
@@ -150,20 +185,21 @@ export default async function ClaimPage({
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Claim it</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Claiming closes the offer to the other two institutions and starts the clock. Everything
-          below is written to the permanent credit record.
+          {offer
+            ? "Claiming closes the offer to the other institutions and starts the clock. Everything below is written to the permanent credit record."
+            : "Claiming closes every open offer on this problem and starts the clock. Everything below is written to the permanent credit record."}
         </p>
         <div className="mt-4">
           <ClaimForm
             trackingId={trackingId}
-            challengeTitle={offer.title}
+            challengeTitle={view.title}
             reporterName={null}
             capabilities={withCapacity.map((c) => ({
               id: c.id,
               label: [c.department, c.labName].filter(Boolean).join(" · "),
               declaredCapacity: c.declaredCapacity,
             }))}
-            defaultCapabilityId={offer.capabilityId ?? withCapacity[0]?.id ?? ""}
+            defaultCapabilityId={view.capabilityId ?? withCapacity[0]?.id ?? ""}
             defaultMentorName={user.fullName}
             defaultMentorEmail={user.email}
           />

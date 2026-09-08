@@ -7,7 +7,8 @@
  * problem a real person in Jharkhand reported with their name on it.
  *
  * Deliberately open to any signed-in HEI member rather than gated behind a
- * routing offer: a department that was not in the top three can still ask.
+ * routing offer: claiming is open past the human gate, so a department that
+ * was not in the top three claims exactly the same way.
  */
 import Link from "next/link";
 
@@ -115,7 +116,7 @@ export default async function ChallengeBank({
                 >
                   Read the full report
                 </Link>
-                {item.offeredElsewhere ? (
+                {["ROUTED", "UNCLAIMED_ESCALATED", "BOUNTY_LISTED"].includes(item.status) ? (
                   <Link
                     href={`/hei/challenges/${item.trackingId}/claim`}
                     className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -124,7 +125,7 @@ export default async function ChallengeBank({
                   </Link>
                 ) : (
                   <span className="inline-flex min-h-11 items-center text-xs text-muted-foreground">
-                    Not currently offered — it will widen on its SLA ladder
+                    Waiting for release at the human gate — nothing below the gate can be claimed
                   </span>
                 )}
               </div>

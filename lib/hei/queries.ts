@@ -120,6 +120,45 @@ export async function offerFor(orgId: string, trackingId: string): Promise<Inbox
   return items.find((i) => i.trackingId === trackingId.toUpperCase()) ?? null;
 }
 
+/** A challenge on its own, for an open claim — no routed offer involved. */
+export interface ClaimChallenge {
+  challengeId: string;
+  trackingId: string;
+  title: string;
+  bodyOriginal: string;
+  bodyLang: string;
+  bodyEn: string | null;
+  framedStatement: string | null;
+  status: string;
+  districtName: string | null;
+  domain: string | null;
+  priorityBreakdown: unknown;
+  corroborationCount: number;
+}
+
+export async function challengeForClaim(trackingId: string): Promise<ClaimChallenge | null> {
+  const [row] = await db
+    .select({
+      challengeId: challenges.id,
+      trackingId: challenges.trackingId,
+      title: challenges.title,
+      bodyOriginal: challenges.bodyOriginal,
+      bodyLang: challenges.bodyLang,
+      bodyEn: challenges.bodyEn,
+      framedStatement: challenges.framedStatement,
+      status: challenges.status,
+      districtName: districts.name,
+      domain: challenges.domain,
+      priorityBreakdown: challenges.priorityBreakdown,
+      corroborationCount: challenges.corroborationCount,
+    })
+    .from(challenges)
+    .leftJoin(districts, eq(districts.code, challenges.districtCode))
+    .where(eq(challenges.trackingId, trackingId.toUpperCase()))
+    .limit(1);
+  return row ?? null;
+}
+
 /* ------------------------------------------------------------- the capacity */
 
 export interface CapabilityView {
@@ -223,7 +262,6 @@ export interface BankItem {
   priorityScore: number | null;
   corroborationCount: number;
   status: string;
-  offeredElsewhere: boolean;
 }
 
 /**
@@ -232,7 +270,8 @@ export interface BankItem {
  * This is the adoption argument. 200,000 Indian students invent a fake
  * final-year project every year; this list is the alternative, and it is
  * deliberately open to any signed-in HEI member rather than gated behind a
- * routing offer — a department that was not in the top three can still ask.
+ * routing offer — claiming is open past the human gate, so a department that
+ * was not in the top three claims exactly the same way.
  */
 export async function challengeBank(limit = 60): Promise<BankItem[]> {
   const rows = await db
@@ -259,22 +298,9 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     .orderBy(desc(challenges.priorityScore))
     .limit(limit);
 
-  if (rows.length === 0) return [];
-
-  const offered = await db
-    .select({ challengeId: routes.challengeId })
-    .from(routes)
-    .where(
-      and(
-        eq(routes.state, "OFFERED"),
-        inArray(
-          routes.challengeId,
-          rows.map((r) => r.id),
-        ),
-      ),
-    );
-  const offeredSet = new Set(offered.map((o) => o.challengeId));
-
+  // Claimability is a property of the challenge's state now, not of who was
+  // routed an offer: any institution can claim anything past the human gate.
+  // No per-row offer lookup needed.
   return rows.map((r) => ({
     trackingId: r.trackingId,
     title: r.title,
@@ -285,7 +311,6 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     priorityScore: r.priorityScore === null ? null : Number(r.priorityScore),
     corroborationCount: r.corroborationCount,
     status: r.status,
-    offeredElsewhere: offeredSet.has(r.id),
   }));
 }
 
