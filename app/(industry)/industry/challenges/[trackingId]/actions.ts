@@ -3,11 +3,13 @@
 /**
  * Expressing interest, and what happens when a team accepts it.
  *
- * On acceptance a FUNDER credit edge is written and the challenge moves to
- * INDUSTRY_INTEREST. The credit edge matters more than the status: a firm that
- * pays for an implementation is on the same permanent chain as the citizen who
- * reported it and the students who solved it, and none of the three can remove
- * either of the others.
+ * On acceptance a FUNDER credit edge is written. The challenge moves to
+ * INDUSTRY_INTEREST if the machine allows it; a challenge still IN_RESEARCH
+ * moves there when the solution is published instead (markPublishedAction).
+ * The credit edge matters more than the status: a firm that pays for an
+ * implementation is on the same permanent chain as the citizen who reported it
+ * and the students who solved it, and none of the three can remove either of
+ * the others.
  */
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
@@ -119,6 +121,11 @@ export async function respondToInterest(_prev: InterestState | null, form: FormD
   const at = clockNow();
   const accepted = parsed.data.decision === "ACCEPT";
 
+  /** Whether the accept actually moved the challenge, vs. recording the funder
+   *  while the challenge still has a state to pass first (IN_RESEARCH must
+   *  reach SOLUTION_PUBLISHED before INDUSTRY_INTEREST is a legal edge). */
+  let movedToInterest = false;
+
   await db.transaction(async (tx) => {
     await tx
       .update(industryInterests)
@@ -156,6 +163,7 @@ export async function respondToInterest(_prev: InterestState | null, form: FormD
           actorId: user.id,
           reason: "A funding partner was accepted by the project team.",
         });
+        movedToInterest = true;
       }
     }
   });
@@ -177,7 +185,9 @@ export async function respondToInterest(_prev: InterestState | null, form: FormD
   return {
     ok: true,
     message: accepted
-      ? "Accepted. A FUNDER credit edge is on the public chain and the challenge is now INDUSTRY_INTEREST."
+      ? movedToInterest
+        ? "Accepted. A FUNDER credit edge is on the public chain and the challenge is now INDUSTRY_INTEREST."
+        : `Accepted. A FUNDER credit edge is on the public chain. The challenge is still ${interest.status} — it will move to INDUSTRY_INTEREST when the solution is published.`
       : "Declined, and the firm has been told.",
   };
 }

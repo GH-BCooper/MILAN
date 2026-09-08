@@ -3,6 +3,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+import type { Tx } from "@/lib/db";
 import { S1_THRESHOLDS } from "@/lib/ai/stages/s1";
 import { S2_THRESHOLDS } from "@/lib/ai/stages/s2";
 import { TERMINAL_STATES } from "@/lib/db/stateMachine";
@@ -124,4 +125,47 @@ export async function triageQueue(limit = 50): Promise<TriageItem[]> {
     createdAt: r.created_at,
     floor: r.stage === "S1_TRIAGE" ? S1_THRESHOLDS.humanQueue : S2_THRESHOLDS.humanQueue,
   }));
+}
+
+/**
+ * True while the latest run of `stage` for this challenge sits below that
+ * stage's confidence floor and no human has ruled on that exact input yet.
+ *
+ * This is the same condition that puts an item in the queue. The triage action
+ * needs it too, inside its transaction: a challenge must not be walked past a
+ * stage whose proposal is still waiting for a human (A-03). Accepting the item
+ * writes the ruling first, in the same transaction, so this clears as soon as
+ * the accept itself is recorded.
+ */
+export async function hasPendingHold(
+  tx: Tx,
+  challengeId: string,
+  stage: "S1_TRIAGE" | "S2_CLASSIFY",
+): Promise<boolean> {
+  const floor = stage === "S1_TRIAGE" ? S1_THRESHOLDS.humanQueue : S2_THRESHOLDS.humanQueue;
+
+  const rows = await tx.execute<{ one: number }>(sql`
+    SELECT 1 AS one
+    FROM ai_runs r
+    WHERE r.challenge_id = ${challengeId}
+      AND r.stage = ${stage}
+      AND r.confidence < ${floor}
+      AND r.id = (
+        SELECT r2.id
+        FROM ai_runs r2
+        WHERE r2.challenge_id = r.challenge_id AND r2.stage = r.stage
+        ORDER BY r2.created_at DESC
+        LIMIT 1
+      )
+      AND NOT EXISTS (
+        SELECT 1
+        FROM training_corrections t
+        WHERE t.challenge_id = r.challenge_id
+          AND t.stage = r.stage
+          AND t.input_hash IS NOT DISTINCT FROM r.input_hash
+      )
+    LIMIT 1
+  `);
+
+  return rows.length > 0;
 }

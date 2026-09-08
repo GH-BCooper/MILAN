@@ -18,7 +18,7 @@ Password for **every** account below: `milan2026`
 ## Numbers on stage
 
 24 districts · 263 blocks · 20 organisations · 47 lab capabilities
-25 challenges · 208 corroborations · 25 ledger entries
+25 challenges · 183 corroborations · 28 ledger entries
 15 of 25 challenges sit at or above the 0.7 human-gate threshold
 Impact counter reads **2** — it increments at `CITIZEN_VERIFIED` and nowhere else
 

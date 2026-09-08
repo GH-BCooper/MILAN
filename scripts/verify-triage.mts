@@ -58,9 +58,19 @@ record(
   `${queue.length} item(s) waiting, all below their stage's confidence floor`,
 );
 
-const items = wanted
-  ? queue.filter((q) => wanted.includes(q.trackingId))
-  : queue.slice(0, 3);
+// Act on whole challenges, not arbitrary items: a challenge's S1 and S2 items
+// may both be waiting, and accepting only one of them cannot (and must not)
+// move the challenge past the other's hold. Pick up to three challenges and
+// rule on every pending item each one has.
+const selected = new Map<string, typeof queue>();
+for (const item of queue) {
+  if (wanted && !wanted.includes(item.trackingId)) continue;
+  if (!wanted && selected.size >= 3 && !selected.has(item.trackingId)) continue;
+  const list = selected.get(item.trackingId) ?? [];
+  list.push(item);
+  selected.set(item.trackingId, list);
+}
+const items = [...selected.values()].flat();
 
 if (items.length === 0) {
   record("there is something to review", false, "nothing in the queue matches");
@@ -156,10 +166,10 @@ record(
 
 const statuses = await sql`
   select tracking_id, status from challenges
-  where id = any(${items.map((i) => i.challengeId)})`;
+  where tracking_id = any(${[...selected.keys()]})`;
 record(
   "each challenge moved on",
-  statuses.every((s) => s.status !== "SUBMITTED"),
+  statuses.length === selected.size && statuses.every((s) => s.status !== "SUBMITTED"),
   statuses.map((s) => `${s.tracking_id}:${s.status}`).join(", "),
 );
 

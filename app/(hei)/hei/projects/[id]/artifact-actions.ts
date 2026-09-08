@@ -14,7 +14,15 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { accessRequests, artifacts, auditLog, challenges, projectMembers, projects } from "@/lib/db/schema";
+import {
+  accessRequests,
+  artifacts,
+  auditLog,
+  challenges,
+  industryInterests,
+  projectMembers,
+  projects,
+} from "@/lib/db/schema";
 import { appendEntry } from "@/lib/ledger/append";
 import { publishArtifact } from "@/lib/artifacts/publish";
 import { notify } from "@/lib/notify";
@@ -240,12 +248,17 @@ export async function markPublishedAction(_prev: PublishState | null, form: Form
   if (!project) return { ok: false, message: "No project." };
 
   const { transition, canTransition } = await import("@/lib/db/stateMachine");
-  const [c] = await db.select({ status: challenges.status }).from(challenges).where(eq(challenges.id, project.challengeId)).limit(1);
+  const [c] = await db
+    .select({ status: challenges.status })
+    .from(challenges)
+    .where(eq(challenges.id, project.challengeId))
+    .limit(1);
   if (!c) return { ok: false, message: "No challenge." };
   if (!canTransition(c.status, "SOLUTION_PUBLISHED")) {
     return { ok: false, message: `A challenge at ${c.status} cannot be marked published. The state machine refuses illegal edges rather than letting the data drift.` };
   }
 
+  let movedToInterest = false;
   await db.transaction(async (tx) => {
     await transition(tx, {
       challengeId: project.challengeId,
@@ -255,8 +268,39 @@ export async function markPublishedAction(_prev: PublishState | null, form: Form
       lastActivityAt: clockNow(),
       reason: "Solution artifact published.",
     });
+
+    // An EOI accepted while the challenge was IN_RESEARCH could not legally
+    // move it to INDUSTRY_INTEREST at the time (H-17). Publishing is the step
+    // that opens that edge, so an accepted funder carries it through now —
+    // the same transition the accept itself would have made.
+    const [acceptedInterest] = await tx
+      .select({ id: industryInterests.id })
+      .from(industryInterests)
+      .where(
+        and(
+          eq(industryInterests.challengeId, project.challengeId),
+          eq(industryInterests.state, "ACCEPTED"),
+        ),
+      )
+      .limit(1);
+    if (acceptedInterest && canTransition("SOLUTION_PUBLISHED", "INDUSTRY_INTEREST")) {
+      await transition(tx, {
+        challengeId: project.challengeId,
+        to: "INDUSTRY_INTEREST",
+        actorId: user.id,
+        projectId,
+        lastActivityAt: clockNow(),
+        reason: "An accepted funding partner carries the challenge into INDUSTRY_INTEREST.",
+      });
+      movedToInterest = true;
+    }
   });
 
   revalidatePath(`/hei/projects/${projectId}`);
-  return { ok: true, message: "Marked as published. The challenge is now visible to industry on /industry/discover." };
+  return {
+    ok: true,
+    message: movedToInterest
+      ? "Marked as published. An accepted funder moves the challenge straight to INDUSTRY_INTEREST — it is now visible to industry on /industry/discover."
+      : "Marked as published. The challenge is now visible to industry on /industry/discover.",
+  };
 }
