@@ -89,7 +89,6 @@ export default async function SubmitSuccessPage({
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <CopyButton value={challenge.trackingId} label="Copy tracking ID" />
-            <CopyButton value={publicPath} label="Copy link" absolute />
           </div>
         </div>
 

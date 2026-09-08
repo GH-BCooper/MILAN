@@ -68,8 +68,10 @@ export const SubmitSchema = z.object({
   successCriteria: z.string().trim().max(1000).nullable().default(null),
   framingApprovedByCitizen: z.boolean().default(false),
 
-  // Step 6
-  reporterName: z.string().trim().max(120).nullable().default(null),
+  // Step 6 — the citizen is already signed in to reach /submit, so their name
+  // is already known server-side. The client sends only a yes/no; the server
+  // never trusts a client-supplied name string (see actions.ts).
+  includeReporterName: z.boolean().default(true),
 });
 
 export type SubmitInput = z.infer<typeof SubmitSchema>;

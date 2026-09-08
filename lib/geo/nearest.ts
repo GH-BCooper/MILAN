@@ -49,6 +49,31 @@ export function nearest<T extends Centroid>(
 }
 
 /**
+ * How far past the nearest district centroid a point can be and still count
+ * as "basically inside Jharkhand" — the 4-decimal polygon simplification
+ * (see polygon.ts) can open a small gap right on a border, and a genuine
+ * border village must not be told it is out of coverage over that. Anything
+ * further out than this is a different state, or a different country, and
+ * the wizard says so rather than quietly filing it under the nearest
+ * district anyway.
+ */
+export const OUTSIDE_JHARKHAND_BUFFER_KM = 25;
+
+/**
+ * Whether a point counts as inside Milan's coverage area. A polygon hit is
+ * always inside; a polygon miss is inside only within the border buffer
+ * above — otherwise `resolvePoint`'s nearest-centroid fallback would happily
+ * assign a district to a point in, say, Kolkata or Patna.
+ */
+export function isWithinJharkhand(
+  districtCode: string | null,
+  districtDistanceKm: number | null,
+): boolean {
+  if (!districtCode) return false;
+  return districtDistanceKm === null || districtDistanceKm <= OUTSIDE_JHARKHAND_BUFFER_KM;
+}
+
+/**
  * Resolve a point to a district and, where we hold blocks for that district, a
  * block. Polygon containment decides the district; a block is only offered
  * when it belongs to the resolved district — otherwise a point near a border

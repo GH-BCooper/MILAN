@@ -36,15 +36,22 @@ export default async function SubmitPage({
 
   // One draft per browser tab unless the citizen returns to a specific draft.
   // The id only ever names a localStorage key; it is never sent to the server.
-  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : "current";
+  // Scoped by user id so a draft left behind by one account (their name, their
+  // chosen language, their half-written report) never bleeds into another
+  // account signed in later on the same shared/library device.
+  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : `current-${user.id}`;
 
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6">
+      {/* Wide enough for step 5's two-column wording review to breathe; the
+          wizard itself narrows back to a centred column for every other step
+          (see submit-wizard.tsx) so nothing else on the page gets wider by
+          accident. */}
+      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
         <SubmitWizard
           draftId={draftId}
-          defaultReporterName={user?.fullName ?? null}
+          reporterDisplayName={user?.fullName ?? null}
           districts={districtRows.map((d) => ({
             code: d.code,
             name: d.name,

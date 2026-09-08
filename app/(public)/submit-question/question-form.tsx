@@ -33,7 +33,7 @@ const TAGS = [
 
 export function QuestionForm({ defaultName }: { defaultName: string }) {
   const router = useRouter();
-  const [tag, setTag] = useState<string>(TAGS[0]);
+  const [tag, setTag] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +41,15 @@ export function QuestionForm({ defaultName }: { defaultName: string }) {
     <form
       className="max-w-xl space-y-5"
       action={async (formData) => {
+        if (!tag) {
+          setError("Pick a category before submitting.");
+          return;
+        }
         setSubmitting(true);
         setError(null);
         const result = await submitQuestionAction({
           name: formData.get("name"),
+          designation: formData.get("designation"),
           tag,
           qualification: formData.get("qualification"),
           question: formData.get("question"),
@@ -69,10 +74,21 @@ export function QuestionForm({ defaultName }: { defaultName: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="tag">Tag</Label>
-        <Select value={tag} onValueChange={setTag}>
-          <SelectTrigger id="tag" className="w-full">
-            <SelectValue />
+        <Label htmlFor="designation">Your designation</Label>
+        <p className="text-xs text-muted-foreground">
+          Your role at the institution or company, e.g. &ldquo;Assistant Professor, Civil
+          Engineering&rdquo; or &ldquo;CSR Manager&rdquo;.
+        </p>
+        <Input id="designation" name="designation" required minLength={2} maxLength={160} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="tag">
+          Category <span className="text-destructive">*</span>
+        </Label>
+        <Select value={tag} onValueChange={setTag} required>
+          <SelectTrigger id="tag" className="w-full" aria-required>
+            <SelectValue placeholder="Select a category" />
           </SelectTrigger>
           <SelectContent>
             {TAGS.map((t) => (

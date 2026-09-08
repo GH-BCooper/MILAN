@@ -26,7 +26,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 export function BugForm() {
   const formRef = useRef<HTMLFormElement>(null);
-  const [type, setType] = useState("UI_VISUAL");
+  const [type, setType] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -46,6 +46,10 @@ export function BugForm() {
       ref={formRef}
       className="space-y-5"
       action={async (formData) => {
+        if (!type) {
+          setError("Pick a type before submitting.");
+          return;
+        }
         setSubmitting(true);
         setError(null);
         formData.set("type", type);
@@ -66,10 +70,12 @@ export function BugForm() {
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="type">Type</Label>
-        <Select value={type} onValueChange={setType}>
-          <SelectTrigger id="type" className="w-full">
-            <SelectValue />
+        <Label htmlFor="type">
+          Type <span className="text-destructive">*</span>
+        </Label>
+        <Select value={type} onValueChange={setType} required>
+          <SelectTrigger id="type" className="w-full" aria-required>
+            <SelectValue placeholder="Select a type" />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(TYPE_LABEL).map(([value, label]) => (

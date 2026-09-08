@@ -36,25 +36,25 @@ export default async function CsrPage() {
     >
       <div className="space-y-8">
         <section className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-lg border-2 border-emerald-400/40 bg-emerald-500/15 p-4">
-            <p className="text-3xl font-bold tabular-nums text-emerald-200">{report.confirmed}</p>
-            <p className="mt-1 text-sm font-semibold text-emerald-200">Confirmed by the citizen</p>
-            <p className="mt-1 text-xs text-emerald-200">
+          <div className="rounded-lg border-2 border-emerald-500/40 bg-emerald-500/12 p-4">
+            <p className="text-3xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">{report.confirmed}</p>
+            <p className="mt-1 text-sm font-semibold text-emerald-800 dark:text-emerald-200">Confirmed by the citizen</p>
+            <p className="mt-1 text-xs text-emerald-800/80 dark:text-emerald-200/80">
               {report.beneficiariesConfirmed.toLocaleString("en-IN")} beneficiaries. This is the figure
               you can put in front of an auditor.
             </p>
           </div>
-          <div className="rounded-lg border border-amber-400/40 bg-amber-500/15 p-4">
-            <p className="text-3xl font-bold tabular-nums text-amber-200">{report.partial}</p>
-            <p className="mt-1 text-sm font-semibold text-amber-200">Partly confirmed</p>
-            <p className="mt-1 text-xs text-amber-200">
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/12 p-4">
+            <p className="text-3xl font-bold tabular-nums text-amber-800 dark:text-amber-200">{report.partial}</p>
+            <p className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-200">Partly confirmed</p>
+            <p className="mt-1 text-xs text-amber-800/80 dark:text-amber-200/80">
               The citizen said it was partly fixed. Reported separately, never rounded up.
             </p>
           </div>
-          <div className="rounded-lg border border-neutral-400/40 bg-neutral-500/15 p-4">
-            <p className="text-3xl font-bold tabular-nums text-neutral-300">{report.unconfirmed}</p>
-            <p className="mt-1 text-sm font-semibold text-neutral-300">Claimed, not confirmed</p>
-            <p className="mt-1 text-xs text-neutral-300">
+          <div className="rounded-lg border border-neutral-400/40 bg-neutral-500/12 p-4">
+            <p className="text-3xl font-bold tabular-nums text-neutral-700 dark:text-neutral-300">{report.unconfirmed}</p>
+            <p className="mt-1 text-sm font-semibold text-neutral-700 dark:text-neutral-300">Claimed, not confirmed</p>
+            <p className="mt-1 text-xs text-neutral-700/80 dark:text-neutral-300/80">
               {report.beneficiariesUnconfirmed.toLocaleString("en-IN")} claimed beneficiaries, deliberately
               NOT added to the figure on the left.
             </p>
@@ -98,7 +98,7 @@ export default async function CsrPage() {
                   {report.rows.map((r) => {
                     const grey = r.impact_status === "CLAIMED, NOT CONFIRMED" || r.impact_status === "NO IMPLEMENTATION CLAIMED";
                     return (
-                      <tr key={r.tracking_id} className={`border-b border-border/60 ${grey ? "text-neutral-300" : ""}`}>
+                      <tr key={r.tracking_id} className={`border-b border-border/60 ${grey ? "text-muted-foreground" : ""}`}>
                         <td className="py-2 pr-3">
                           <Link href={`/c/${r.tracking_id}`} className="underline-offset-4 hover:underline">
                             {r.challenge}
@@ -114,12 +114,12 @@ export default async function CsrPage() {
                           <span
                             className={`rounded px-2 py-0.5 font-medium ${
                               r.impact_status === "CONFIRMED BY CITIZEN"
-                                ? "bg-emerald-500/15 text-emerald-200"
+                                ? "bg-emerald-500/12 text-emerald-800 dark:text-emerald-200"
                                 : r.impact_status === "PARTLY CONFIRMED BY CITIZEN"
-                                  ? "bg-amber-500/15 text-amber-200"
+                                  ? "bg-amber-500/12 text-amber-800 dark:text-amber-200"
                                   : r.impact_status === "DISPUTED BY CITIZEN"
-                                    ? "bg-red-500/15 text-red-200"
-                                    : "bg-neutral-500/15 text-neutral-300"
+                                    ? "bg-red-500/12 text-red-800 dark:text-red-200"
+                                    : "bg-neutral-500/12 text-neutral-700 dark:text-neutral-300"
                             }`}
                           >
                             {r.impact_status.toLowerCase()}

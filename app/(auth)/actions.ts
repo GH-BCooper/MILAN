@@ -35,29 +35,22 @@ const RegisterSchema = z
       .string()
       .trim()
       .regex(/^[0-9+\- ]{6,20}$/, "Use digits only, with an optional country code."),
-    role: z.enum(["CITIZEN", "HEI_MEMBER", "INDUSTRY", "GOVERNMENT", "ADMIN"]),
+    // ADMIN is deliberately absent here: a platform administrator account is
+    // created out of band (seed data or a DB script), never through public
+    // registration — see CLAUDE.md roles list and lib/auth/guards.ts. This
+    // enum is the actual gate: even a raw POST to this action with
+    // role=ADMIN is rejected by Zod before it ever reaches the database.
+    role: z.enum(["CITIZEN", "HEI_MEMBER", "INDUSTRY", "GOVERNMENT"]),
     preferredLang: z.enum(["en", "hi"]).default("en"),
     districtCode: z.string().trim().min(1).optional().or(z.literal("")),
     orgId: z.string().trim().min(1).optional().or(z.literal("")),
     proofType: z.string().trim().min(1).optional().or(z.literal("")),
+    proofTypeOther: z.string().trim().max(160).optional().or(z.literal("")),
     designation: z.string().trim().max(160).optional().or(z.literal("")),
     idNumber: z.string().trim().max(80).optional().or(z.literal("")),
     orgEmail: z.string().trim().toLowerCase().email().optional().or(z.literal("")),
-    adminCode: z.string().optional().or(z.literal("")),
   })
   .superRefine((v, ctx) => {
-    // A platform administrator account is gated on a shared secret held by the
-    // platform owner — self-serve admin registration would defeat every guard.
-    if (
-      v.role === "ADMIN" &&
-      v.adminCode !== (process.env.ADMIN_REGISTRATION_CODE ?? "AUREON_MILAN_BKKPPR")
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["adminCode"],
-        message: "That security code is not correct.",
-      });
-    }
     const needsProof = v.role === "HEI_MEMBER" || v.role === "INDUSTRY";
     if (needsProof && !v.orgId) {
       ctx.addIssue({
@@ -71,6 +64,13 @@ const RegisterSchema = z
         code: z.ZodIssueCode.custom,
         path: ["proofType"],
         message: "Choose what you can show as proof of affiliation.",
+      });
+    }
+    if (needsProof && v.proofType === "OTHER" && !v.proofTypeOther) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["proofTypeOther"],
+        message: "Describe what you can show as proof of affiliation.",
       });
     }
     if (needsProof && !v.designation) {
@@ -101,6 +101,7 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
   }
   const input = parsed.data;
   const needsProof = input.role === "HEI_MEMBER" || input.role === "INDUSTRY";
+  const proofType = input.proofType === "OTHER" ? input.proofTypeOther || "" : input.proofType;
 
   // The proof document. Read before the account is created so a bad upload
   // fails the whole registration rather than leaving a half-verified account.
@@ -148,7 +149,7 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
         districtCode: input.districtCode || null,
         orgId: input.orgId || null,
         orgVerificationStatus: needsProof ? "PENDING" : "NOT_APPLICABLE",
-        orgProofType: needsProof ? input.proofType || null : null,
+        orgProofType: needsProof ? proofType || null : null,
         orgProofMeta: needsProof
           ? { designation: input.designation || null, idNumber: input.idNumber || null, orgEmail: input.orgEmail || null }
           : null,
@@ -171,7 +172,11 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
     if (e instanceof APIError) {
       return { error: e.body?.message ?? "That email is already registered." };
     }
-    throw e;
+    // Never let a registration failure fall through to Next.js's generic
+    // error boundary — the citizen loses every field they typed and has no
+    // idea what happened. Log it server-side and hand back a plain message.
+    console.error("registerAction failed", e);
+    return { error: "Something went wrong creating your account. Please try again." };
   }
 
   redirect("/verify-account");

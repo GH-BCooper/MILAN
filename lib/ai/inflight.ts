@@ -26,3 +26,14 @@ export function runOnce(challengeId: string, run: () => Promise<void>): boolean 
   inflight.set(challengeId, p);
   return true;
 }
+
+/**
+ * The tracked promise for a challenge's in-flight run, if any.
+ *
+ * Used to hand the run to `after()` so a serverless invocation is kept alive
+ * until the background work finishes, without making `after()` itself
+ * responsible for *starting* the run — see app/api/pipeline/run/route.ts.
+ */
+export function inflightPromise(challengeId: string): Promise<void> | undefined {
+  return inflight.get(challengeId);
+}

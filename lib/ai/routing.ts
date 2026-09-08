@@ -63,6 +63,13 @@ export const ROUTING = {
   /** At or above this severity, nothing is notified until a human at
    *  /gov/gate confirms. PHASE_2_LEARN.md section 8. */
   humanGateSeverity: 0.7,
+  /** Below this S4 priority score (out of 100), a challenge is not routed to
+   *  any institution. It is parked instead, with its full breakdown shown to
+   *  the citizen so the "why" is never a mystery — invariant 10. PARKED
+   *  already carries an automatic annual re-review, so a challenge that
+   *  clears the bar later (more corroborations, a vulnerability update)
+   *  re-enters routing on its own; nothing here is a second rejection. */
+  minPriorityToRoute: 85,
   /** The distance at which the distance term has decayed to 1/e. */
   distanceDecayKm: 250,
   /** Capacity is scaled against this many declared slots. */

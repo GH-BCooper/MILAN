@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { adminTransitionAction } from "./actions";
 
 export function ManageRow({
@@ -77,7 +78,7 @@ export function ManageRow({
             <select
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="mt-1 block h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
+              className={`mt-1 block ${nativeSelectClassName}`}
             >
               {legalTargets.map((t) => (
                 <option key={t} value={t}>

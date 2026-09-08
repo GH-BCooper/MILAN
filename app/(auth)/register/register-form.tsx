@@ -7,6 +7,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SelectWithOther } from "@/components/select-with-other";
+import { cn } from "@/lib/utils";
 import { HEI_PROOF_TYPES, INDUSTRY_PROOF_TYPES } from "@/lib/auth/proof-types";
 
 export interface Option {
@@ -15,11 +17,44 @@ export interface Option {
   orgType?: string | null;
 }
 
+// Platform administrator is deliberately not an option here — ADMIN accounts
+// are created out of band (seed data / a DB script), never through public
+// registration. app/(auth)/actions.ts's RegisterSchema enforces this
+// server-side too: it does not even accept role=ADMIN, so a raw POST that
+// tried to add it back here would still be rejected.
 const ROLES = [
-  { value: "CITIZEN", label: "Citizen" },
-  { value: "HEI_MEMBER", label: "University Relation" },
-  { value: "INDUSTRY", label: "Industry Relation" },
-  { value: "ADMIN", label: "Platform administrator" },
+  {
+    value: "CITIZEN",
+    label: "Citizen",
+    description: "Report a problem in your area and track what happens to it.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="size-5" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s-7-6.02-7-11.5A7 7 0 0 1 19 9.5C19 14.98 12 21 12 21Z" />
+        <circle cx="12" cy="9.5" r="2.25" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    value: "HEI_MEMBER",
+    label: "University Relation",
+    description: "Claim and work on research challenges routed to your institution.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="size-5" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3 2 8l10 5 10-5-10-5Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 10.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-5.5" />
+      </svg>
+    ),
+  },
+  {
+    value: "INDUSTRY",
+    label: "Industry Relation",
+    description: "Discover challenges, sponsor solutions, and manage CSR.",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="size-5" aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M6 21V9l6-4 6 4v12M10 21v-5h4v5M9 12h.01M9 15h.01M15 12h.01M15 15h.01" />
+      </svg>
+    ),
+  },
 ] as const;
 
 /** A plain <select>: it is the one control that works identically on every
@@ -51,13 +86,30 @@ function Field({
   );
 }
 
+/**
+ * React resets every uncontrolled field in a <form action={...}> once the
+ * action call completes — including when it returns a field error. Without
+ * controlled inputs here, one missing document wipes name/email/password/etc
+ * that the citizen already typed. So every field below is controlled from
+ * state, seeded once and never overwritten by the action result.
+ */
 export function RegisterForm({ districts, organisations }: { districts: Option[]; organisations: Option[] }) {
   const [state, formAction, pending] = useActionState<RegisterState, FormData>(registerAction, {});
   const [role, setRole] = useState<string>("CITIZEN");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [preferredLang, setPreferredLang] = useState("en");
+  const [districtCode, setDistrictCode] = useState("");
+  const [orgId, setOrgId] = useState("");
+  const [proofType, setProofType] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+  const [orgEmail, setOrgEmail] = useState("");
 
   const needsOrg = role === "HEI_MEMBER" || role === "INDUSTRY";
   const needsDistrict = role === "GOVERNMENT";
-  const isAdmin = role === "ADMIN";
   const fe = state.fieldErrors ?? {};
 
   const orgOptions = useMemo(() => {
@@ -78,39 +130,79 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
         </Alert>
       ) : null}
 
-      <Field id="role" label="I am a…" errors={fe.role}>
-        <select
-          id="role"
-          name="role"
-          className={selectClass}
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          {ROLES.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      {isAdmin ? (
-        <Field
-          id="adminCode"
-          label="Administrator security code"
-          hint="A platform administrator account can only be created with the code held by the platform owner."
-          errors={fe.adminCode}
-        >
-          <Input id="adminCode" name="adminCode" type="password" autoComplete="off" required className="h-11" />
-        </Field>
-      ) : null}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium leading-none">I am a…</legend>
+        {/* Native <input type="radio"> under the hood: free arrow-key
+         *  navigation within the group, free Tab stop count, free screen
+         *  reader semantics — the card is just a styled <label>, using the
+         *  same peer-checked pattern shadcn/ui components rely on elsewhere. */}
+        <div role="radiogroup" aria-label="I am a…" className="grid gap-3 sm:grid-cols-3">
+          {ROLES.map((r) => {
+            const selected = role === r.value;
+            return (
+              <label
+                key={r.value}
+                className={cn(
+                  "flex cursor-pointer flex-col items-start gap-2 rounded-xl border p-4 shadow-xs transition-colors",
+                  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+                  selected
+                    ? "border-primary bg-primary/10 ring-1 ring-primary"
+                    : "border-input bg-background hover:bg-accent/50",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value={r.value}
+                  checked={selected}
+                  onChange={() => setRole(r.value)}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-full border",
+                    selected ? "border-primary bg-primary/15 text-primary" : "border-input text-muted-foreground",
+                  )}
+                >
+                  {r.icon}
+                </span>
+                <span className="text-sm font-semibold">{r.label}</span>
+                <span className="text-xs text-muted-foreground">{r.description}</span>
+              </label>
+            );
+          })}
+        </div>
+        {fe.role?.length ? (
+          <p className="text-xs font-medium text-destructive" role="alert">
+            {fe.role.join(" ")}
+          </p>
+        ) : null}
+      </fieldset>
 
       <Field id="fullName" label="Full name" errors={fe.fullName}>
-        <Input id="fullName" name="fullName" autoComplete="name" required className="h-11" />
+        <Input
+          id="fullName"
+          name="fullName"
+          autoComplete="name"
+          required
+          className="h-11"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+        />
       </Field>
 
       <Field id="email" label="Email address" hint="A verification code is sent here before your account unlocks." errors={fe.email}>
-        <Input id="email" name="email" type="email" autoComplete="email" required className="h-11" />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          className="h-11"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
       </Field>
 
       <Field id="password" label="Password" hint="At least 8 characters." errors={fe.password}>
@@ -121,6 +213,8 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
           autoComplete="new-password"
           required
           className="h-11"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
         />
       </Field>
 
@@ -130,11 +224,27 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
         hint="Required. A verification code is sent here too — Milan uses this for status updates and to confirm outcomes."
         errors={fe.phone}
       >
-        <Input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required className="h-11" />
+        <Input
+          id="phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          required
+          className="h-11"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
       </Field>
 
       <Field id="preferredLang" label="Preferred language / पसंदीदा भाषा" errors={fe.preferredLang}>
-        <select id="preferredLang" name="preferredLang" className={selectClass} defaultValue="en">
+        <select
+          id="preferredLang"
+          name="preferredLang"
+          className={selectClass}
+          value={preferredLang}
+          onChange={(e) => setPreferredLang(e.target.value)}
+        >
           <option value="en">English</option>
           <option value="hi">हिन्दी (Hindi)</option>
         </select>
@@ -146,16 +256,15 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
         hint={needsDistrict ? "A government account can only act inside its own district." : undefined}
         errors={fe.districtCode}
       >
-        <select id="districtCode" name="districtCode" className={selectClass} defaultValue="">
-          <option value="">
-            {districts.length ? "Select a district" : "No districts seeded yet"}
-          </option>
-          {districts.map((d) => (
-            <option key={d.value} value={d.value}>
-              {d.label}
-            </option>
-          ))}
-        </select>
+        <SelectWithOther
+          name="districtCode"
+          label="District"
+          placeholder={districts.length ? "Select a district" : "No districts seeded yet"}
+          allowOther={false}
+          value={districtCode}
+          onValueChange={setDistrictCode}
+          options={districts}
+        />
       </Field>
 
       {needsOrg ? (
@@ -166,7 +275,13 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
             hint="Pick from the registered list. New institutions are onboarded by the platform team."
             errors={fe.orgId}
           >
-            <select id="orgId" name="orgId" className={selectClass} defaultValue="">
+            <select
+              id="orgId"
+              name="orgId"
+              className={selectClass}
+              value={orgId}
+              onChange={(e) => setOrgId(e.target.value)}
+            >
               <option value="">
                 {orgOptions.length ? "Select an organisation" : "No organisations seeded yet"}
               </option>
@@ -186,14 +301,15 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
             </p>
 
             <Field id="proofType" label="What can you show?" errors={fe.proofType}>
-              <select id="proofType" name="proofType" className={selectClass} defaultValue="">
-                <option value="">Select one</option>
-                {proofTypes.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <SelectWithOther
+                name="proofType"
+                label="Proof type"
+                placeholder="Select one"
+                otherPlaceholder="Describe what you can show"
+                value={proofType}
+                onValueChange={setProofType}
+                options={proofTypes.map(([value, label]) => ({ value, label }))}
+              />
             </Field>
 
             <Field
@@ -202,7 +318,14 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
               hint={role === "HEI_MEMBER" ? "e.g. Assistant Professor, Civil Engineering" : "e.g. CSR Manager"}
               errors={fe.designation}
             >
-              <Input id="designation" name="designation" required className="h-11" />
+              <Input
+                id="designation"
+                name="designation"
+                required
+                className="h-11"
+                value={designation}
+                onChange={(e) => setDesignation(e.target.value)}
+              />
             </Field>
 
             <Field
@@ -210,7 +333,13 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
               label={role === "HEI_MEMBER" ? "Employee / student ID (optional)" : "GSTIN or CIN (optional)"}
               errors={fe.idNumber}
             >
-              <Input id="idNumber" name="idNumber" className="h-11" />
+              <Input
+                id="idNumber"
+                name="idNumber"
+                className="h-11"
+                value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)}
+              />
             </Field>
 
             <Field
@@ -219,7 +348,14 @@ export function RegisterForm({ districts, organisations }: { districts: Option[]
               hint="Used to cross-check your email's domain against the organisation's website."
               errors={fe.orgEmail}
             >
-              <Input id="orgEmail" name="orgEmail" type="email" className="h-11" />
+              <Input
+                id="orgEmail"
+                name="orgEmail"
+                type="email"
+                className="h-11"
+                value={orgEmail}
+                onChange={(e) => setOrgEmail(e.target.value)}
+              />
             </Field>
 
             <Field

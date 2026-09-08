@@ -120,9 +120,7 @@ export function PipelineTrace({
   const [shown, setShown] = useState<Record<StageKey, StageState>>(() =>
     autoStart ? blankShownFrom(assured.stages) : materialise(assured.stages),
   );
-  const [phase, setPhase] = useState<"idle" | "running" | "capped" | "error">(
-    assured.complete ? "idle" : "idle",
-  );
+  const [phase, setPhase] = useState<"idle" | "running" | "capped" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
   const ticksRef = useRef(0);
@@ -162,45 +160,55 @@ export function PipelineTrace({
     return () => clearInterval(timer);
   }, [latest, phase]);
 
-  const poll = useCallback(() => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    ticksRef.current = 0;
-    pollRef.current = setInterval(async () => {
-      ticksRef.current += 1;
-      try {
-        const res = await fetch(
-          `/api/pipeline/trace?trackingId=${encodeURIComponent(trackingId)}`,
-          { cache: "no-store" },
-        );
-        if (res.ok) {
-          const projection = (await res.json()) as TraceProjection;
-          setLatest(projection);
-          if (projection.complete) {
-            if (pollRef.current) clearInterval(pollRef.current);
-            pollRef.current = null;
-            setPhase("idle");
-          }
-        } else if (res.status === 403) {
-          /* Mid-run past the fresh window, seen by a stranger: keep the last
-           * honest frame and stop. The public page has the full story. */
+  /* One trace fetch. Pulled out of the interval so it can also run immediately
+   * when polling starts — the backend pipeline can finish inside a second
+   * (rules-tier fallbacks are near-instant), and waiting a full POLL_MS for
+   * the first look would show a static "waiting" screen for work that is
+   * already done. */
+  const tick = useCallback(async () => {
+    ticksRef.current += 1;
+    try {
+      const res = await fetch(
+        `/api/pipeline/trace?trackingId=${encodeURIComponent(trackingId)}`,
+        { cache: "no-store" },
+      );
+      if (res.ok) {
+        const projection = (await res.json()) as TraceProjection;
+        setLatest(projection);
+        if (projection.complete) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setPhase("idle");
+          return;
         }
-      } catch {
-        /* A dropped poll is weather, not failure — the next tick retries. */
-      }
-      if (ticksRef.current >= MAX_TICKS && pollRef.current) {
-        clearInterval(pollRef.current);
+      } else if (res.status === 403) {
+        /* Mid-run past the fresh window, seen by a stranger: keep the last
+         * honest frame and stop. The public page has the full story. */
+        if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = null;
-        setLatest((current) => {
-          if (!current.complete) setPhase("capped");
-          else setPhase("idle");
-          return current;
-        });
+        setPhase("idle");
+        return;
       }
-    }, POLL_MS);
+    } catch {
+      /* A dropped poll is weather, not failure — the next tick retries. */
+    }
+    if (ticksRef.current >= MAX_TICKS && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+      setLatest((current) => {
+        if (!current.complete) setPhase("capped");
+        else setPhase("idle");
+        return current;
+      });
+    }
   }, [trackingId]);
+
+  const poll = useCallback(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    ticksRef.current = 0;
+    void tick();
+    pollRef.current = setInterval(() => void tick(), POLL_MS);
+  }, [tick]);
 
   const start = useCallback(
     async (isReplay: boolean) => {

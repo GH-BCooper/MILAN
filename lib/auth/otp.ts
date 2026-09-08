@@ -12,7 +12,7 @@ import "server-only";
  * Mailpit for email; the mock SMS outbox for phone, per CLAUDE.md invariant 8:
  * nothing on the demo path depends on a live SMS gateway succeeding).
  */
-import { randomInt, randomUUID, createHash, timingSafeEqual } from "node:crypto";
+import { randomInt, randomUUID, randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
@@ -21,9 +21,13 @@ import { verification } from "@/lib/db/auth-schema";
 import { notify } from "@/lib/notify";
 
 export type OtpKind = "email" | "phone";
-export type OtpPurpose = "register";
+// "reset_password" is the forgot-password flow (app/(auth)/forgot-password):
+// same code/verify mechanics, a different identifier namespace so a live
+// registration code and a live reset code for the same email never collide.
+export type OtpPurpose = "register" | "reset_password";
 
 const TTL_MS = 10 * 60 * 1000;
+const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
 
 function identifierFor(kind: OtpKind, purpose: OtpPurpose, value: string): string {
   return `otp:${purpose}:${kind}:${value.trim().toLowerCase()}`;
@@ -123,4 +127,31 @@ export async function verifyOtp(
     await db.delete(verification).where(eq(verification.identifier, identifier));
   }
   return match;
+}
+
+/**
+ * Mints a Better Auth-compatible password-reset token, but only ever called
+ * after this module's own `verifyOtp("reset_password", ...)` has already
+ * succeeded — the OTP is the gate, this token is just the handoff.
+ *
+ * Written directly into the same `verification` table Better Auth's core
+ * `/reset-password` endpoint reads via `internalAdapter.consumeVerificationValue`
+ * (identifier `reset-password:<token>`, value = user id). That lets
+ * app/(auth)/forgot-password/actions.ts finish the job with
+ * `auth.api.resetPassword({ token, newPassword })` — Better Auth's own
+ * password hashing and account update — instead of a second hand-rolled
+ * "set password" path. Reuse the platform's primitive; keep the OTP gate ours.
+ */
+export async function createResetPasswordToken(userId: string): Promise<string> {
+  const token = randomBytes(24).toString("hex");
+  const now = clockNow();
+  await db.insert(verification).values({
+    id: randomUUID(),
+    identifier: `reset-password:${token}`,
+    value: userId,
+    expiresAt: new Date(now.getTime() + RESET_TOKEN_TTL_MS),
+    createdAt: now,
+    updatedAt: now,
+  });
+  return token;
 }

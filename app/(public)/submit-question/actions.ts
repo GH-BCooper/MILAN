@@ -12,6 +12,7 @@ import { deriveTitle } from "@/app/(citizen)/submit/schema";
 
 const SubmitQuestionSchema = z.object({
   name: z.string().trim().min(2, "Enter a name.").max(120),
+  designation: z.string().trim().min(2, "Say what your role is there.").max(160),
   tag: z.enum(domainEnum.enumValues),
   qualification: z.string().trim().min(10, "Say briefly why you're placed to work on this.").max(500),
   question: z.string().trim().min(40, "Describe the question in at least 40 characters.").max(5000),
@@ -43,7 +44,7 @@ export async function submitQuestionAction(raw: unknown): Promise<SubmitQuestion
   const input = parsed.data;
   const now = clockNow();
   const title = deriveTitle(input.question);
-  const bodyOriginal = `${input.question}\n\nSubmitted by: ${input.name} (${user.role === "HEI_MEMBER" ? "university" : "industry"})\nQualification: ${input.qualification}`;
+  const bodyOriginal = `${input.question}\n\nSubmitted by: ${input.name}, ${input.designation} (${user.role === "HEI_MEMBER" ? "university" : "industry"})\nQualification: ${input.qualification}`;
 
   const trackingId = await db.transaction(async (tx) => {
     const trackingId = await nextTrackingId(tx, user.districtCode);
@@ -70,7 +71,7 @@ export async function submitQuestionAction(raw: unknown): Promise<SubmitQuestion
       challengeId: challenge.id,
       toUserId: user.id,
       relation: "ORIGINATOR",
-      declaredRole: input.name,
+      declaredRole: input.designation,
       createdAt: now,
     });
 

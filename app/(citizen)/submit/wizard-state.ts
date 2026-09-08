@@ -1,5 +1,7 @@
 "use client";
 
+import { MODERATION_MESSAGE, isBlocked } from "@/lib/moderation/blocklist";
+
 import type { PeopleBucket } from "./schema";
 
 /**
@@ -37,13 +39,19 @@ export interface WizardState {
   lng: number | null;
   locationAccuracyM: number | null;
   locationSource: "none" | "gps" | "pin" | "dropdown";
+  /** True once a pin has been placed (or GPS/dropdown resolved) somewhere
+   *  outside Jharkhand. Blocks leaving step 3 until corrected. */
+  locationOutsideCoverage: boolean;
   peopleAffectedBucket: PeopleBucket | "";
   recurrence: "one-off" | "seasonal" | "yearly" | "constant" | "";
   urgencySelfReport: number;
   framedStatement: string;
   successCriteria: string;
   framingApprovedByCitizen: boolean;
-  reporterName: string;
+  /** Step 6: whether the signed-in citizen's own account name is attached to
+   *  this report, or it is reported anonymously. There is no free-text name
+   *  field any more — the name itself comes from the session, server-side. */
+  includeReporterName: boolean;
 }
 
 export const FIRST_STEP = 1;
@@ -70,13 +78,14 @@ export const initialState: WizardState = {
   lng: null,
   locationAccuracyM: null,
   locationSource: "none",
+  locationOutsideCoverage: false,
   peopleAffectedBucket: "",
   recurrence: "",
   urgencySelfReport: 3,
   framedStatement: "",
   successCriteria: "",
   framingApprovedByCitizen: false,
-  reporterName: "",
+  includeReporterName: true,
 };
 
 export type WizardAction =
@@ -119,6 +128,9 @@ export function stepBlocker(state: WizardState, step: number): string | null {
       if (state.bodyOriginal.trim().length < 40) {
         return `Please write at least 40 characters — ${state.bodyOriginal.trim().length} so far.`;
       }
+      if (isBlocked(state.bodyOriginal)) {
+        return MODERATION_MESSAGE;
+      }
       return null;
     case 2:
       if (state.media.length > 0 && !state.consentGiven) {
@@ -126,7 +138,10 @@ export function stepBlocker(state: WizardState, step: number): string | null {
       }
       return null;
     case 3:
-      if (!state.districtCode) return "Choose the district.";
+      if (state.locationOutsideCoverage) {
+        return "This location is outside Milan's coverage area (Jharkhand only). Move the pin back inside Jharkhand, or choose a different location, to continue.";
+      }
+      if (!state.districtCode) return "Choose the district, or place a pin on the map.";
       return null;
     case 4:
       if (!state.peopleAffectedBucket) return "Choose roughly how many people are affected.";
