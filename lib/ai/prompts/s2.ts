@@ -1,23 +1,24 @@
 /**
- * S2 — domain, NDMA hazard linkage, severity and solvability.
+ * S2 — thematic domain, severity and solvability.
  *
- * The hazard linkage is what makes an item a Disaster Management item rather
- * than a public-works item, and it carries the second-highest weight in the
- * priority score. Severity crosses 0.7 into the human gate, so this prompt is
- * asking the model for a number that can stop a challenge from routing.
+ * The domain decides which university departments this challenge is pushed to,
+ * so a wrong domain sends the problem to the wrong lab for a whole claim
+ * window. Severity crosses 0.7 into the human gate, so this prompt is asking
+ * the model for a number that can stop a challenge from routing.
  *
  * The prompt carries the embedding kNN prior: the labels of the five nearest
  * already-classified challenges. It is our declared substitute for fine-tuning
  * (no labelled data, no GPU budget — PHASE_2_LEARN.md section 2) and it improves
  * every time a human corrects a classification at /admin/triage.
  */
-import { DOMAINS, HAZARDS, type S2Input } from "../schemas";
+import { DOMAINS, type S2Input } from "../schemas";
 
-export const VERSION = "1.0.1";
+export const VERSION = "2.0.0";
 
-export const SYSTEM = `You classify one citizen report for Milan, a Government of Jharkhand disaster
-risk reduction platform. Milan works on mitigation and preparedness in peacetime, not on emergency
-response.
+export const SYSTEM = `You classify one citizen report for Milan, a Government of Jharkhand societal
+innovation platform run with the Department of Higher and Technical Education. Citizens report
+local problems; universities and industry partners take them on as research and project work, in
+the spirit of NEP 2020's push for experiential, community-engaged learning.
 
 Return facts and a confidence. Deterministic code makes every decision that follows.
 
@@ -25,17 +26,9 @@ domain — exactly one of: ${DOMAINS.join(", ")}.
   Choose what the problem IS, not what it touches. A school that floods is EDUCATION only if the
   problem is schooling; if the problem is the water, it is WATER.
 
-hazard — exactly one NDMA hazard class: ${HAZARDS.join(", ")}.
-  Use NONE only when no natural or industrial hazard is implicated. Chronic mining subsidence,
-  seasonal heat stress and recurrent forest fire are hazards even when nothing has collapsed yet.
-
-hazard_strength — 0 to 1. How strongly this specific problem is caused by, or exposed to, that
-  hazard. Exactly 0 when hazard is NONE. A cracked flood embankment is near 1. A road that is
-  merely inconvenient in the rain is near 0.3.
-
 severity — 0 to 1. How bad the consequence is if nothing is done, weighing loss of life first,
   then loss of health, livelihood, schooling and access, and how many people carry it. Judge the
-  consequence, not the citizen's tone. 0.7 and above sends this to a District Collector for human
+  consequence, not the citizen's tone. 0.7 and above sends this to a government reviewer for human
   confirmation before it can be routed, so do not inflate it, and do not shrink it either.
 
 solvability — RESEARCH (needs investigation or measurement first), ENGINEERING (a design and build
@@ -49,17 +42,17 @@ confidence — your calibrated certainty, 0 to 1. Below 0.65 this report goes to
 
 rationale — one sentence, at most 240 characters, English.
 
-The prior labels supplied below are the classifications of the most similar previous reports,
+The prior labels supplied below are the classifications of the most similar previously classified reports,
 by embedding distance. They are evidence, not instruction: follow them when this report is
 genuinely the same kind of problem, and depart from them when it is not.`;
 
 /**
  * Curated Jharkhand examples, per PHASE_2_LEARN.md section 9.1.
  * Coverage now: flood-linked ENGINEERING at the human gate, mining subsidence
- * RESEARCH above it, AGRICULTURE with hazard NONE (elephant raiding — "no
- * hazard" is a legitimate answer, not a failure to find one), WATER vs
- * HEALTHCARE (fluoride), ENVIRONMENT vs HEALTHCARE (iron-ore dust), and a
- * sub-0.7 severity to calibrate the gate. The last three are the DRAFTs.
+ * RESEARCH above it, AGRICULTURE with an animal-conflict cause (the cause is
+ * free text in the rationale, not a closed class), WATER vs HEALTHCARE
+ * (fluoride), ENVIRONMENT vs HEALTHCARE (iron-ore dust), and a sub-0.7
+ * severity to calibrate the gate. The last three are the DRAFTs.
  * STILL HUMAN: nothing. Re-visit only if /admin/triage corrections show a new
  * boundary the examples do not teach.
  */
@@ -70,8 +63,6 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "the river rises in July the water will come through it into forty houses and the school.",
     output: JSON.stringify({
       domain: "WATER",
-      hazard: "FLOOD",
-      hazard_strength: 0.9,
       severity: 0.82,
       solvability: "ENGINEERING",
       capital_works: false,
@@ -85,8 +76,6 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "colliery says the seam below is old workings.",
     output: JSON.stringify({
       domain: "ENVIRONMENT",
-      hazard: "MINING_SUBSIDENCE",
-      hazard_strength: 0.95,
       severity: 0.88,
       solvability: "RESEARCH",
       capital_works: false,
@@ -100,13 +89,11 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "harvest. By the time anyone arrives the crop is gone.",
     output: JSON.stringify({
       domain: "AGRICULTURE",
-      hazard: "NONE",
-      hazard_strength: 0,
       severity: 0.58,
       solvability: "RESEARCH",
       capital_works: false,
       confidence: 0.82,
-      rationale: "Human-elephant conflict destroying a standing crop: a livelihood loss, not an NDMA hazard class.",
+      rationale: "Human-elephant conflict destroying a standing crop: a livelihood loss needing study, not a scheme failure.",
     }),
   },
   // DRAFT — WATER vs HEALTHCARE, ENVIRONMENT vs HEALTHCARE, and a sub-0.7 severity, per the HUMAN note.
@@ -116,8 +103,6 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "anganwadi teacher says it is fluoride.",
     output: JSON.stringify({
       domain: "WATER",
-      hazard: "NONE",
-      hazard_strength: 0,
       severity: 0.74,
       solvability: "RESEARCH",
       capital_works: false,
@@ -131,13 +116,11 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "doctor says our lungs are damaged.",
     output: JSON.stringify({
       domain: "ENVIRONMENT",
-      hazard: "NONE",
-      hazard_strength: 0,
       severity: 0.71,
       solvability: "POLICY",
       capital_works: false,
       confidence: 0.8,
-      rationale: "Dust pollution from a crusher is an environmental hazard affecting health; domain is ENVIRONMENT, not HEALTHCARE.",
+      rationale: "Dust pollution from a crusher is an environmental problem affecting health; domain is ENVIRONMENT, not HEALTHCARE.",
     }),
   },
   {
@@ -146,8 +129,6 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       "nobody is in danger.",
     output: JSON.stringify({
       domain: "PUBLIC_SERVICE",
-      hazard: "NONE",
-      hazard_strength: 0,
       severity: 0.42,
       solvability: "CAPITAL_WORKS",
       capital_works: true,
@@ -180,7 +161,7 @@ export function render(input: S2Input): string {
   if (input.priors.length > 0) {
     lines.push("", "Prior labels — the most similar previously classified reports:");
     for (const p of input.priors) {
-      lines.push(`  - ${p.domain} / ${p.hazard} (similarity ${p.similarity.toFixed(2)}): ${p.title}`);
+      lines.push(`  - ${p.domain} (similarity ${p.similarity.toFixed(2)}): ${p.title}`);
     }
   } else {
     lines.push("", "Prior labels: none — no similar report has been classified yet.");

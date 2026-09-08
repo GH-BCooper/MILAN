@@ -11,8 +11,14 @@
  * The cast is deliberate:
  *
  *   ROUTED ×3 ................ PAK-0001, RAN-0001, SAH-0001  (fills /hei/inbox)
+ *   ROUTED ×1 ................ GUM-0002 (verify:gov's ladder target — a Gumla
+ *                              challenge must be sitting ROUTED with unfired
+ *                              WIDEN/OPEN_ALL/BREACH deadlines; its rungs are
+ *                              shielded +120d so verify:sla's +45d walk and the
+ *                              demo's +21d fast-forward cannot consume them —
+ *                              verify:gov jumps to each rung's own due date)
  *   IN_RESEARCH ×1 ........... GUM-0003                     (fills /hei projects)
- *   SOLUTION_PUBLISHED ×1 .... DUM-0001 (+ industry interest, fills /industry/discover)
+ *   SOLUTION_PUBLISHED ×1 .... DHN-0001 (+ industry interest, fills /industry/discover)
  *   CITIZEN_VERIFIED ×1 ...... GOD-0001 (via IMPLEMENTED + confirm; moves /stats;
  *                              carries the Foundation EOI so /industry/csr holds a
  *                              CONFIRMED BY CITIZEN row)
@@ -20,8 +26,8 @@
  *
  * Everything downstream of a claim claims as the seeded BIT Sindri HOD, the
  * institution the pipeline actually shortlisted. The hero challenge
- * (JH-2026-GUM-0001) and the pre-synced trace fodder (GUM-0002, GUM-0005) are
- * never touched — the demo console's one-click beats still own them.
+ * (JH-2026-GUM-0001) is never touched — the demo console's one-click beats
+ * still own it, and the runbook releases it live.
  *
  * Idempotent by status: a challenge already at or past its target is skipped
  * with a line in the log, so re-running `pnpm seed:states` after a demo run
@@ -70,7 +76,7 @@ const ADMIN_EMAIL = "admin@milan.demo.milan.in";
 
 const ROUTED_THREE = ["JH-2026-PAK-0001", "JH-2026-RAN-0001", "JH-2026-SAH-0001"];
 const RESEARCH_ONE = "JH-2026-GUM-0003";
-const PUBLISHED_ONE = "JH-2026-DUM-0001";
+const PUBLISHED_ONE = "JH-2026-DHN-0001";
 const CONFIRMED_ONE = "JH-2026-GOD-0001";
 /**
  * Latehar sits in no other role's happy path for this pack, and — this is the
@@ -78,6 +84,12 @@ const CONFIRMED_ONE = "JH-2026-GOD-0001";
  * Sindri: a Bounty-listed challenge keeps its offers OFFERED, and the HEI
  * inbox would otherwise show the unbreached three plus this one. */
 const BREACHED_ONE = "JH-2026-LAT-0002";
+/**
+ * verify:gov climbs the WIDEN → OPEN_ALL → BREACH ladder on a Gumla challenge,
+ * so one must be sitting ROUTED with its deadlines unfired. GUM-0002 — never
+ * the demo hero, which the runbook releases live.
+ */
+const LADDER_TARGET = "JH-2026-GUM-0002";
 
 /* -------------------------------------------------------------- helpers */
 
@@ -364,7 +376,7 @@ async function main() {
     .orderBy(asc(challenges.trackingId));
 
   const byTracking = new Map(cast.map((c) => [c.trackingId, c]));
-  const need = [...ROUTED_THREE, RESEARCH_ONE, PUBLISHED_ONE, CONFIRMED_ONE, BREACHED_ONE];
+  const need = [...ROUTED_THREE, RESEARCH_ONE, PUBLISHED_ONE, CONFIRMED_ONE, BREACHED_ONE, LADDER_TARGET];
   for (const t of need) {
     if (!byTracking.has(t)) throw new Error(`[states] cast member ${t} is not seeded`);
   }
@@ -386,6 +398,28 @@ async function main() {
       reason: "Released at the human gate by the seed pack — the DC's countersign.",
     });
     log(`${t}: VERIFIED → ${released.status}; ${released.notified} notification(s) released.`);
+  }
+
+  /* --------------------------------------- 1b / one Gumla on the ladder */
+  {
+    const c = byTracking.get(LADDER_TARGET)!;
+    const [fresh] = await db.select({ status: challenges.status }).from(challenges).where(eq(challenges.id, c.id)).limit(1);
+    if (fresh.status === "SUBMITTED") {
+      await releaseFromIntake(c.trackingId, c.id, fresh.status, gov.id);
+      const released = await releaseGate({ challengeId: c.id, trackingId: c.trackingId, actorId: gov.id, reason: "Released at the human gate by the seed pack — verify:gov's ladder target." });
+      // The reaper is global and the clock is shared: verify:sla's +45d walk
+      // and the demo's +21d fast-forward would fire this target's rungs (due
+      // +7/+14d by default) before verify:gov runs. Shift every open deadline
+      // +120d — rung spacing intact. verify:gov time-travels to each rung's
+      // own due date, so it fires them wherever they sit.
+      await db.execute(
+        sqlTag`update sla_deadlines set due_at = due_at + make_interval(days => 120)
+                where challenge_id = ${c.id} and fired_at is null and cancelled_at is null`,
+      );
+      log(`${c.trackingId}: VERIFIED → ${released.status}; ${released.notified} notification(s) released; ladder rungs shielded +120d.`);
+    } else {
+      log(`${c.trackingId}: already ${fresh.status} — skipping.`);
+    }
   }
 
   /* ------------------------------------------------ 2 / one into research */
@@ -434,11 +468,11 @@ async function main() {
       const result = await publishArtifact({
         projectId,
         kind: "REPORT",
-        title: "Rainfall-runoff early warning for the North Koel basin: siting and thresholds",
+        title: "Mine-fire and subsidence monitoring over the Jharia coalfield: sensor siting and thresholds",
         abstract:
-          "A low-cost method for siting water-level loggers along seasonal streams, with the " +
-          "rise-rate thresholds that should trigger a ward-level advisory. Published under CC-BY " +
-          "so any district may reuse it.",
+          "A low-cost method for siting thermal and tilt sensors above fire-affected colonies, " +
+          "with the temperature-rate thresholds that should trigger a ward-level evacuation advisory. " +
+          "Published under CC-BY so any district may reuse it.",
         licence: "CC_BY",
         authorId: admin.id,
         file: { bytes: Buffer.from(`Milan seed artifact for ${c.trackingId}\n`), mime: "application/pdf", name: "report.pdf" },
@@ -451,7 +485,7 @@ async function main() {
     const ok = await recordIndustryEoi(
       c.trackingId,
       c.id,
-      "We would fund a pilot of this siting method across three blocks of West Singhbhum under our section-135 water programme, if the team is willing to field-validate with our district partner.",
+      "We would fund a pilot of this monitoring method across two more fire-affected colonies under our section-135 mine-safety programme, if the team is willing to field-validate with our district partner.",
     );
     if (ok) {
       log(`${c.trackingId}: SOLUTION_PUBLISHED with a recorded industry EOI — /industry/discover has its story.`);

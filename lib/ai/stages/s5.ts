@@ -31,7 +31,7 @@ import {
   user as userTable,
 } from "@/lib/db/schema";
 import { runWithChain } from "../providers/chain";
-import { embed } from "../providers/embed";
+import { embedMany } from "../providers/embed";
 import * as prompt from "../prompts/s5";
 import {
   MATCH_VERSION,
@@ -121,15 +121,21 @@ export async function ensureCapabilityEmbeddings(): Promise<number> {
     .from(capabilities)
     .where(sql`${capabilities.embedding} IS NULL`);
 
-  let n = 0;
-  for (const row of missing) {
-    const result = await embed(
-      capabilityText({ ...row, specialisationTags: row.specialisationTags ?? [] }),
-    );
-    await db.update(capabilities).set({ embedding: result.vector }).where(eq(capabilities.id, row.id));
-    n++;
-  }
-  return n;
+  if (missing.length === 0) return 0;
+  // Concurrent, not sequential: fifty-odd capabilities at ~2s a call is two
+  // minutes on the critical path of every first run on a fresh seed — past
+  // the success page's poll budget, so S5's card would never tick over live.
+  // Four at a time keeps one run from opening 47 sockets (see embedMany).
+  const results = await embedMany(
+    missing.map((row) => capabilityText({ ...row, specialisationTags: row.specialisationTags ?? [] })),
+    4,
+  );
+  await Promise.all(
+    results.map((result, i) =>
+      db.update(capabilities).set({ embedding: result.vector }).where(eq(capabilities.id, missing[i].id)),
+    ),
+  );
+  return missing.length;
 }
 
 /** Delivered-vs-claimed counts per organisation, for the track-record term. */
@@ -432,17 +438,25 @@ export async function releaseGate(args: {
 
   const { canTransition, transition } = await import("@/lib/db/stateMachine");
 
-  if (canTransition(before.status, "ROUTED")) {
-    await db.transaction(async (tx) => {
-      await transition(tx, {
-        challengeId: args.challengeId,
-        to: "ROUTED",
-        actorId: args.actorId ?? null,
-        reason: args.reason ?? "Released by a district officer after the human gate.",
-        meta: { by: "gov-gate" },
-      });
-    });
+  // The gate releases VERIFIED -> ROUTED and nothing else. An earlier version
+  // skipped the transition it could not make and notified anyway, which left
+  // offers nobody could claim — the exact failure this function was separated
+  // to prevent. Refuse loudly instead of half-releasing silently.
+  if (!canTransition(before.status, "ROUTED")) {
+    throw new Error(
+      `releaseGate needs a VERIFIED challenge (found ${before.status} on ${args.trackingId}): ` +
+        `walk the intake ladder to VERIFIED first, then release.`,
+    );
   }
+  await db.transaction(async (tx) => {
+    await transition(tx, {
+      challengeId: args.challengeId,
+      to: "ROUTED",
+      actorId: args.actorId ?? null,
+      reason: args.reason ?? "Released by a district officer after the human gate.",
+      meta: { by: "gov-gate" },
+    });
+  });
 
   const notified = await releaseNotifications(args.challengeId, args.trackingId);
 

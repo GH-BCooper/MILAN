@@ -25,8 +25,8 @@ let inflight: Promise<number> | null = null;
 /** Ensure the single `demo_state` row exists. Idempotent. */
 async function ensureRow(): Promise<void> {
   await db.execute(
-    raw`INSERT INTO demo_state (id, clock_offset_days, emergency_mode)
-        VALUES (1, ${envOffsetDays()}::int, false)
+    raw`INSERT INTO demo_state (id, clock_offset_days)
+        VALUES (1, ${envOffsetDays()}::int)
         ON CONFLICT (id) DO NOTHING`,
   );
 }
@@ -111,21 +111,4 @@ export async function setClockOffset(days: number, actorId: string | null = null
 /** The offset as the database has it, refreshed. For the banner and /demo. */
 export async function clockOffsetDays(): Promise<number> {
   return syncClockOffset();
-}
-
-/**
- * Emergency mode: a banner, a filter, a display re-sort — and, since the
- * Disaster Management teeth landed, a clock compression on every challenge
- * linked to the pinned hazard. Still never a stored-score change; see
- * `lib/sla/deadlines.ts` and `/gov/emergency`.
- */
-export async function emergencyState(): Promise<{ on: boolean; hazard: string | null }> {
-  try {
-    const rows = (await db.execute<{ emergency_mode: boolean; emergency_hazard: string | null }>(
-      raw`SELECT emergency_mode, emergency_hazard FROM demo_state WHERE id = 1`,
-    )) as unknown as Array<{ emergency_mode: boolean; emergency_hazard: string | null }>;
-    return { on: Boolean(rows[0]?.emergency_mode), hazard: rows[0]?.emergency_hazard ?? null };
-  } catch {
-    return { on: false, hazard: null };
-  }
 }

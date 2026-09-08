@@ -6,8 +6,7 @@ import { MilanMap } from "@/components/milan-map";
 import { RoleShell } from "@/components/role-shell";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
-import { emergencyState, syncClockOffset } from "@/lib/clock/server";
-import { surgeLabel, surgeRank } from "@/lib/emergency/surge";
+import { syncClockOffset } from "@/lib/clock/server";
 import { execRaw } from "@/lib/db/raw";
 import type { ChallengeStatus } from "@/lib/db/schema";
 import { impactCounts } from "@/lib/impact/counter";
@@ -51,8 +50,6 @@ interface MapRow extends Record<string, unknown> {
   lat: string | null;
   lng: string | null;
   priority_score: string | null;
-  hazard: string | null;
-  hazard_strength: string | null;
 }
 
 interface HeiRow extends Record<string, unknown> {
@@ -136,8 +133,7 @@ export default async function GovHome() {
   `);
 
   const points = await execRaw<MapRow>(sql`
-    SELECT tracking_id, title, lat::text AS lat, lng::text AS lng, priority_score::text AS priority_score,
-           hazard::text AS hazard, hazard_strength::text AS hazard_strength
+    SELECT tracking_id, title, lat::text AS lat, lng::text AS lng, priority_score::text AS priority_score
     FROM challenges
     WHERE district_code = ${district} AND lat IS NOT NULL AND lng IS NOT NULL
     ORDER BY priority_score DESC NULLS LAST
@@ -160,23 +156,6 @@ export default async function GovHome() {
   `);
 
   const gateCount = scalar("gate");
-
-  // Emergency Mode: re-rank the district's display order toward the pinned
-  // hazard, with the multiplier shown. The stored score is not touched — the
-  // label says so, because a number that moved without explanation during a
-  // flood week is exactly what nobody should trust.
-  const emergency = await emergencyState();
-  const surged = points
-    .map((p) => ({
-      point: p,
-      surge: surgeRank({
-        priorityScore: p.priority_score === null ? null : Number(p.priority_score),
-        hazard: p.hazard,
-        hazardStrength: p.hazard_strength === null ? null : Number(p.hazard_strength),
-        emergencyHazard: emergency.on ? emergency.hazard : null,
-      }),
-    }))
-    .sort((a, b) => b.surge.sortKey - a.surge.sortKey);
 
   return (
     <RoleShell
@@ -292,33 +271,17 @@ export default async function GovHome() {
             Darker is higher priority. Every marker links to the challenge, and every score on that
             page opens its own breakdown.
           </p>
-          {emergency.on && emergency.hazard ? (
-            <p className="mb-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-800 dark:text-red-200">
-              Emergency mode is on, pinned to {emergency.hazard.replace(/_/g, " ").toLowerCase()}. Markers are
-              re-ordered by a display surge of up to ×1.25 for {emergency.hazard.replace(/_/g, " ").toLowerCase()}
-              -linked challenges, and their SLA clocks run at half speed. No stored priority score changed —{" "}
-              <Link href="/gov/emergency" className="underline underline-offset-4">
-                see the switch
-              </Link>
-              .
-            </p>
-          ) : null}
           <div className="h-[24rem] overflow-hidden milan-glass rounded-xl">
             <MilanMap
               ariaLabel={`Challenges in district ${district}, coloured by priority`}
-              markers={surged.map(({ point: p, surge }) => {
-                const label = surgeLabel(surge);
-                return {
-                  id: p.tracking_id,
-                  lat: Number(p.lat),
-                  lng: Number(p.lng),
-                  label:
-                    `${p.title} — ${p.priority_score ? Number(p.priority_score).toFixed(3) : "unscored"}` +
-                    (label ? ` (${label})` : ""),
-                  href: `/c/${p.tracking_id}`,
-                  colour: priorityColour(p.priority_score === null ? null : Number(p.priority_score)),
-                };
-              })}
+              markers={points.map((p) => ({
+                id: p.tracking_id,
+                lat: Number(p.lat),
+                lng: Number(p.lng),
+                label: `${p.title} — ${p.priority_score ? Number(p.priority_score).toFixed(3) : "unscored"}`,
+                href: `/c/${p.tracking_id}`,
+                colour: priorityColour(p.priority_score === null ? null : Number(p.priority_score)),
+              }))}
             />
           </div>
         </section>
@@ -364,13 +327,10 @@ export default async function GovHome() {
 
         <section className="flex flex-wrap gap-2">
           <Link href={`/api/gov/export?district=${district}`} className="inline-flex h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
-            Export CSV for the district disaster management plan
+            Export CSV for the district review
           </Link>
           <Link href="/gov/verification" className="inline-flex h-11 items-center rounded-md border border-input px-4 text-sm font-semibold">
             Field verification tasks
-          </Link>
-          <Link href="/gov/emergency" className="inline-flex h-11 items-center rounded-md border border-input px-4 text-sm font-semibold">
-            Emergency filter
           </Link>
         </section>
       </div>

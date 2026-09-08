@@ -27,9 +27,9 @@ Basia, reported by Sunita Devi in Hindi.
 
 ## 0:00 — What this is
 
-**Say:** "Disaster management is mostly mitigation. This is a mitigation pipeline that runs in
-peacetime. Every challenge in it carries an explicit NDMA hazard linkage, and that linkage is a
-weighted term in the priority score."
+**Say:** "Communities hold the problems; universities hold the researchers. This is the pipeline
+between them. Every challenge is categorised by thematic domain, scored by deterministic code you
+can read, and pushed to a matched lab with a clock on it."
 
 **Do:** Landing page. Then `/demo`, and point at the health strip — invariant green, the ledger head
 hash, the open deadline count.

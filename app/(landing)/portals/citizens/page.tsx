@@ -32,7 +32,7 @@ export default function CitizenPortalPage() {
           {
             title: "It is triaged in the open",
             body:
-              "If it is a grievance with a known fix, we forward it to CPGRAMS and tell you where it went. If it is an unsolved problem, it becomes a challenge with a hazard linkage and a clock.",
+              "If it is a grievance with a known fix, we forward it to CPGRAMS and tell you where it went. If it is an unsolved problem, it becomes a scored challenge with a clock.",
           },
           {
             title: "A university team claims it",
@@ -77,7 +77,7 @@ export default function CitizenPortalPage() {
           {
             href: "/stats",
             title: "Public statistics",
-            body: "District-level counts, hazard mix, and confirmed impact — all clickable to source.",
+            body: "District-level counts, domain mix, and confirmed impact — all clickable to source.",
           },
           {
             href: "/ledger",

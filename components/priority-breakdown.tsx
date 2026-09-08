@@ -26,7 +26,6 @@ import type { ScoreResult, Term, TermKey } from "@/packages/scoring";
  */
 const TERM_COLOUR: Record<TermKey, string> = {
   severity: "#7c5cff",
-  hazard: "#f59e0b",
   peopleAffected: "#22d3ee",
   blockVulnerability: "#4f8cff",
   corroborations: "#10d9a0",
@@ -213,7 +212,6 @@ function RawValue({
         </Link>
       );
     case "severity":
-    case "hazard":
       return (
         <Link className={linkClass} href={`/c/${trackingId}#pipeline`}>
           {term.rawValue}

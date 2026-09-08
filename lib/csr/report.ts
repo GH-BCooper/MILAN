@@ -21,7 +21,6 @@ export interface CsrRow extends Record<string, unknown> {
   challenge: string;
   district: string | null;
   block: string | null;
-  ndma_hazard: string | null;
   domain: string | null;
   institution: string | null;
   project: string | null;
@@ -55,7 +54,6 @@ export async function csrReport(orgId: string, orgName: string): Promise<CsrSumm
            c.title AS challenge,
            d.name AS district,
            b.name AS block,
-           NULLIF(c.hazard::text, 'NONE') AS ndma_hazard,
            c.domain::text AS domain,
            ho.name AS institution,
            p.title AS project,

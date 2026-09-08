@@ -118,7 +118,7 @@ record("/gov shows the human-gate queue with a direct link", govHtml.includes('h
 record("/gov shows the impact counter split confirmed / unconfirmed", /Confirmed by the citizen/.test(govHtml) && /claimed, not confirmed|Claimed, not confirmed/i.test(govHtml));
 record("/gov shows the confirmation gap", /The confirmation gap/.test(govHtml));
 record("/gov shows per-institution offered ⁄ claimed ⁄ delivered ⁄ breached", /Institutional performance/.test(govHtml));
-record("/gov offers the DDMP CSV export", govHtml.includes("/api/gov/export?district=GUM"));
+record("/gov offers the district CSV export", govHtml.includes("/api/gov/export?district=GUM"));
 
 const sla = await get("/gov/sla", dc);
 const slaHtml = await sla.text();
@@ -130,21 +130,14 @@ record("/gov/gate loads for the DC", gate.status === 200, `HTTP ${gate.status}`)
 
 const verification = await get("/gov/verification", dc);
 const verHtml = await verification.text();
-record("/gov/verification loads and states the 0.06 endorsement term", verification.status === 200 && verHtml.includes("0.06"));
-
-const emergency = await get("/gov/emergency", dc);
-const emHtml = await emergency.text();
-record(
-  "/gov/emergency labels itself a filter, not a score change",
-  emergency.status === 200 && /never changes a stored priority score/i.test(emHtml),
-);
+record("/gov/verification loads and states the 0.08 endorsement term", verification.status === 200 && verHtml.includes("0.08"));
 
 /* --- the CSV actually downloads and carries the impact split --------------- */
 
 const csv = await get("/api/gov/export?district=GUM", dc);
 const csvBody = await csv.text();
 record(
-  "the DDMP CSV downloads with an impact_status column",
+  "the district CSV downloads with an impact_status column",
   csv.status === 200 && csvBody.split("\n")[0].includes("impact_status"),
   `${csvBody.split("\n").length - 1} rows`,
 );

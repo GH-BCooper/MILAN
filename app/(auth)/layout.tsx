@@ -1,9 +1,6 @@
-import { SiteHeader } from "@/components/site-header";
-
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <SiteHeader />
       <main className="relative mx-auto flex w-full max-w-lg flex-col items-stretch px-4 py-10 sm:px-6">
         {/* the halo behind the sign-in panel — decorative only */}
         <div

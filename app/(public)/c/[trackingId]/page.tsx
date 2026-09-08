@@ -242,11 +242,6 @@ export default async function ChallengePage({
               {c.domain.replaceAll("_", " ")}
             </span>
           ) : null}
-          {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
-              Hazard: {c.hazard.replaceAll("_", " ")}
-            </span>
-          ) : null}
           {c.isGrievance ? (
             <span className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium">
               Forwarded as a grievance
@@ -537,7 +532,7 @@ export default async function ChallengePage({
             <div className="mt-3 rounded-lg border border-dashed border-border bg-muted p-4">
               <p className="text-sm font-medium">Not scored yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Severity, people affected, corroborations, hazard linkage, block vulnerability,
+                Severity, people affected, block vulnerability, corroborations,
                 recurrence and official endorsement. Every term, its weight and its value are shown
                 here once the pipeline has run, and the total is clickable through to the
                 arithmetic.

@@ -43,7 +43,7 @@ export function VerifyForm({ trackingId, score }: { trackingId: string; score: n
         </button>
         <span className="text-xs text-muted-foreground">
           Priority now {score === null ? "unscored" : score.toFixed(3)} → expected{" "}
-          {score === null ? "unscored" : (score + 0.06).toFixed(3)} once endorsed
+          {score === null ? "unscored" : (score + 0.08).toFixed(3)} once endorsed
         </span>
       </div>
 

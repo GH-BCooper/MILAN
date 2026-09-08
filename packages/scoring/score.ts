@@ -2,13 +2,13 @@
  * S4 — the priority score.
  *
  * This function contains no model call, no database access, no network call and
- * no clock read. It is a weighted sum of seven normalised terms and it returns
+ * no clock read. It is a weighted sum of six normalised terms and it returns
  * every one of them with its raw value, its normalised value, its weight and
  * its contribution. Put the same input in twice and you get the same number
  * twice, on any machine, forever, and you can check the arithmetic by hand.
  *
  * That purity is the argument. "Is the AI deciding who gets help?" — no: the AI
- * proposes two of the seven inputs and this function, which you can read, does
+ * proposes one of the six inputs and this function, which you can read, does
  * the rest. `tests/scoring.test.ts` proves determinism and the equity property;
  * `<PriorityBreakdown/>` puts the whole table on the public page.
  */
@@ -17,8 +17,6 @@ import { SCORING_VERSION, TERM_LABELS, TERM_ORDER, WEIGHTS, type TermKey } from 
 
 export interface ScoringInput {
   severity: number | null;
-  hazard: string | null;
-  hazardStrength: number | null;
   peopleAffected: number | null;
   blockVulnerability: number | null;
   corroborationCount: number | null;
@@ -60,14 +58,6 @@ export function computePriority(input: ScoringInput): ScoreResult {
       normalised: normalise.severity(input.severity),
       rawValue: input.severity === null ? "not classified" : input.severity.toFixed(2),
       rawNumber: input.severity,
-    },
-    hazard: {
-      normalised: normalise.hazard(input.hazard, input.hazardStrength),
-      rawValue:
-        !input.hazard || input.hazard === "NONE"
-          ? "no NDMA hazard linkage"
-          : `${input.hazard.replaceAll("_", " ").toLowerCase()}, strength ${(input.hazardStrength ?? 0).toFixed(2)}`,
-      rawNumber: input.hazard && input.hazard !== "NONE" ? (input.hazardStrength ?? 0) : 0,
     },
     peopleAffected: {
       normalised: normalise.peopleAffected(input.peopleAffected),

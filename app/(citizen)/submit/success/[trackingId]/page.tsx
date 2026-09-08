@@ -117,6 +117,7 @@ export default async function SubmitSuccessPage({
           }
           heading="What is happening to your report, right now"
           initial={projection}
+          redirectTo={publicPath}
         />
 
         <section className="mt-10" aria-labelledby="next-heading">

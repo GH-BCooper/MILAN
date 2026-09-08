@@ -56,7 +56,6 @@ export interface ChallengeRow {
   status: ChallengeStatus;
   districtCode: string | null;
   domain: string | null;
-  hazard: string | null;
   reporterId: string | null;
 }
 
@@ -81,19 +80,11 @@ export interface ActionCtx {
   deadline: DeadlineRow;
   challenge: ChallengeRow;
   prep: ActionPrep;
-  /**
-   * Emergency Mode: 1 in peacetime, EMERGENCY_TIME_SCALE when the state pins
-   * this challenge's hazard. Follow-on deadlines and claim windows opened by an
-   * action use `ctxDays()` so a ladder that escalated under an emergency keeps
-   * running at emergency speed instead of snapping back to peacetime halfway up.
-   */
-  clockScale?: number;
 }
 
-/** A peacetime day-count, at this challenge's emergency speed. */
+/** A day-count from the action's own timestamp. */
 function ctxDays(ctx: ActionCtx, n: number): Date {
-  const scale = ctx.clockScale && ctx.clockScale > 0 && ctx.clockScale <= 1 ? ctx.clockScale : 1;
-  return new Date(ctx.now.getTime() + n * scale * 86_400_000);
+  return new Date(ctx.now.getTime() + n * 86_400_000);
 }
 
 /* ------------------------------------------------------------- recipients */
@@ -627,7 +618,6 @@ export async function ensureOpenDeadline(
   challengeId: string,
   status: ChallengeStatus,
   now: Date,
-  clockScale = 1,
 ): Promise<boolean> {
   const { isTerminal } = await import("@/lib/db/stateMachine");
   if (isTerminal(status) && status !== "PARKED") return false;
@@ -638,7 +628,7 @@ export async function ensureOpenDeadline(
   )) as unknown as Array<{ n: number }>;
   if (Number(open[0]?.n ?? 0) > 0) return false;
 
-  const specs = deadlinesFor(status, { now, clockScale });
+  const specs = deadlinesFor(status, { now });
   const rows = specs.length > 0 ? specs : [{ kind: "STAGE_TIMEOUT" as SlaKind, dueAt: new Date(now.getTime() + 30 * 86_400_000), payload: { reason: "invariant-1 backstop" } }];
   await tx.insert(slaDeadlines).values(
     rows.map((r) => ({ challengeId, kind: r.kind, dueAt: r.dueAt, payload: r.payload ?? {}, createdAt: now })),

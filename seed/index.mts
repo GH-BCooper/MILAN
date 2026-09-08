@@ -107,23 +107,13 @@ const DOMAIN_VALUES = [
   "WATER",
   "SANITATION",
   "ENVIRONMENT",
+  "ENERGY",
   "LIVELIHOODS",
   "ACCESSIBILITY",
   "URBAN_INFRA",
   "PUBLIC_SERVICE",
 ] as const;
-const HAZARD_VALUES = [
-  "FLOOD",
-  "DROUGHT",
-  "LANDSLIDE",
-  "HEATWAVE",
-  "MINING_SUBSIDENCE",
-  "EPIDEMIC",
-  "FOREST_FIRE",
-  "NONE",
-] as const;
 const DOMAINS: ReadonlySet<string> = new Set(DOMAIN_VALUES);
-const HAZARDS: ReadonlySet<string> = new Set(HAZARD_VALUES);
 
 /** People affected is captured as a bucket; we store the midpoint. */
 const BUCKET_MIDPOINT: Record<string, number> = {
@@ -354,10 +344,7 @@ async function main() {
   /* Task 4.9 — district reference data (JDIP Part 4.1). One row per district
    * in seed-data/districts-enrichment.csv, merged over the geography above by
    * district_code. Loaded from the CSV like everything else: data never lives
-   * in this file's body. A code not in the geography file is a loud error, and
-   * so is a hazard key outside the enum — the map's keys are the vulnerability
-   * chips a DC sees, and a typo there is a wrong answer on a government wall. */
-  const { hazardEnum } = await import("@/lib/db/schema");
+   * in this file's body. A code not in the geography file is a loud error. */
   const enrichmentRows = readCsv<Record<string, string>>("districts-enrichment.csv");
   let enriched = 0;
   for (const [i, r] of enrichmentRows.entries()) {
@@ -368,36 +355,11 @@ async function main() {
       continue;
     }
 
-    let vulnerability: Record<string, number> | null = null;
-    try {
-      const parsed: unknown = JSON.parse(r.disaster_vulnerability ?? "");
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        vulnerability = {};
-        for (const [key, val] of Object.entries(parsed as Record<string, unknown>)) {
-          if (!hazardEnum.enumValues.includes(key as (typeof hazardEnum.enumValues)[number])) {
-            warn(`districts-enrichment.csv line ${line}: "${key}" is not a hazard enum value — key dropped`);
-            continue;
-          }
-          const n = Number(val);
-          if (!Number.isFinite(n) || n < 0 || n > 1) {
-            warn(`districts-enrichment.csv line ${line}: "${key}" vulnerability ${val} is not in 0–1 — key dropped`);
-            continue;
-          }
-          vulnerability[key] = n;
-        }
-      } else {
-        warn(`districts-enrichment.csv line ${line}: disaster_vulnerability is not an object — left null`);
-      }
-    } catch {
-      warn(`districts-enrichment.csv line ${line}: disaster_vulnerability is not valid JSON — left null`);
-    }
-
     const values = {
       division: optional(r.division),
       population: r.population ? Math.trunc(Number(r.population)) : null,
       internetPenetration: num(r.internet_penetration),
       tribalPopulationPct: num(r.tribal_population_pct),
-      disasterVulnerability: vulnerability,
     };
     if (values.population !== null && !Number.isFinite(values.population)) {
       warn(`districts-enrichment.csv line ${line}: population "${r.population}" is not a number — left null`);
@@ -819,20 +781,14 @@ async function main() {
     if (peopleAffected === null) warn(`challenges.csv row ${index + 2}: no people_affected — left null`);
 
     /**
-     * domain and hazard are supplied by the dataset, and the hazard linkage is
-     * what makes a row a disaster-management item rather than a public-works
-     * item (CLAUDE.md invariant 1). Values are checked against the enums here
-     * so a typo fails loudly at seed time instead of at insert time.
+     * domain is supplied by the dataset: which of the eleven thematic domains
+     * this societal challenge belongs to. Values are checked against the enum
+     * here so a typo fails loudly at seed time instead of at insert time.
      */
     const domain = optional(row.domain);
     if (domain && !DOMAINS.has(domain)) {
       warn(`challenges.csv row ${index + 2}: unknown domain "${domain}" — left null`);
     }
-    const hazard = optional(row.hazard);
-    if (hazard && !HAZARDS.has(hazard)) {
-      warn(`challenges.csv row ${index + 2}: unknown hazard "${hazard}" — left null`);
-    }
-    if (!hazard) warn(`challenges.csv row ${index + 2}: no hazard linkage`);
 
     /**
      * severity_hint is seeded straight into `severity`. Phase 2's S1 recomputes
@@ -851,7 +807,7 @@ async function main() {
     // Three rows are backdated so /stats has real history to show on stage.
     //
     // The rest are staggered a minute apart in file order rather than all
-    // sharing one timestamp. Twenty-five citizens did not report in the same
+    // sharing one timestamp. Thirty citizens did not report in the same
     // millisecond, and S3 needs the ordering to be real: a merge always keeps
     // the OLDER report as the survivor, so identical timestamps would make it a
     // coin toss which of the three Basia reports is credited as the originator.
@@ -878,7 +834,6 @@ async function main() {
       lng: num(row.lng),
       peopleAffected,
       domain: domain && DOMAINS.has(domain) ? (domain as (typeof DOMAIN_VALUES)[number]) : null,
-      hazard: hazard && HAZARDS.has(hazard) ? (hazard as (typeof HAZARD_VALUES)[number]) : null,
       severity,
       recurrence: optional(row.recurrence),
       urgencySelfReport: Number(row.urgency_self_report ?? 0) || null,
@@ -1079,9 +1034,16 @@ async function main() {
   );
   // The dataset is the team's own. What is still outstanding is narrower, so
   // the reminder names it rather than crying wolf on every run.
+  // The voice half is conditional on what actually happened above: the old text
+  // cried "still empty" on every run even with a committed 257KB recording,
+  // when the real blocker is an unreachable Supabase Storage, not the mic.
   console.log(
     "\nREMINDER: the Hindi and Santali reports have not been checked by a native " +
-      "speaker (PHASE_1_LEARN.md 7.3), and seed-data/voice-note.mp3 is still empty.",
+      "speaker (PHASE_1_LEARN.md 7.3)" +
+      (mediaCount === 0
+        ? ", and the Sunita voice note was NOT attached — seed-data/voice-note.mp3 " +
+          "is missing/empty, or Supabase Storage was unreachable during the seed."
+        : ". The Sunita voice note is attached (challenge_media row written)."),
   );
 }
 

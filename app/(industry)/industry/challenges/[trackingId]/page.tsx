@@ -25,7 +25,6 @@ interface Row extends Record<string, unknown> {
   status: ChallengeStatus;
   district_name: string | null;
   domain: string | null;
-  hazard: string | null;
   priority_score: string | null;
   people_affected: number | null;
   corroboration_count: number;
@@ -43,7 +42,7 @@ export default async function IndustryChallengePage({ params }: { params: Promis
   const rows = await execRaw<Row>(sql`
     SELECT c.id, c.tracking_id, c.title, c.body_original, c.body_lang, c.body_en,
            c.framed_statement, c.success_criteria, c.status, d.name AS district_name,
-           c.domain::text AS domain, c.hazard::text AS hazard, c.priority_score::text AS priority_score,
+           c.domain::text AS domain, c.priority_score::text AS priority_score,
            c.people_affected, c.corroboration_count, c.impact_confirmed, c.impact_partial,
            o.name AS org_name,
            (SELECT json_agg(json_build_object('id', a.id, 'title', a.title, 'abstract', a.abstract,
@@ -75,9 +74,6 @@ export default async function IndustryChallengePage({ params }: { params: Promis
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded bg-muted px-2 py-1">{(c.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()}</span>
-          {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded bg-amber-500/15 px-2 py-1 text-amber-800 dark:text-amber-200">NDMA hazard: {c.hazard.replace(/_/g, " ").toLowerCase()}</span>
-          ) : null}
           <span className="rounded bg-muted px-2 py-1">{c.corroboration_count} reporters</span>
           {c.people_affected ? <span className="rounded bg-muted px-2 py-1">~{c.people_affected} people affected</span> : null}
           <span className="rounded bg-muted px-2 py-1 tabular-nums">priority {c.priority_score ? Number(c.priority_score).toFixed(3) : "—"}</span>

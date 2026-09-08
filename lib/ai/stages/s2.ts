@@ -1,5 +1,5 @@
 /**
- * S2 — domain, NDMA hazard linkage, severity and solvability.
+ * S2 — thematic domain, severity and solvability.
  *
  * Before the model is called, this stage looks up the five nearest
  * already-classified challenges by embedding cosine and passes their labels in
@@ -64,7 +64,6 @@ export async function knnPrior(
       .select({
         title: challenges.title,
         domain: challenges.domain,
-        hazard: challenges.hazard,
         embedding: challenges.embedding,
       })
       .from(challenges)
@@ -79,11 +78,10 @@ export async function knnPrior(
       .limit(JS_VECTOR_SCAN_LIMIT);
 
     return jsCosineRank(scan, embedding, k)
-      .filter((r) => r.domain && r.hazard && r.similarity >= S2_THRESHOLDS.priorMinSimilarity)
+      .filter((r) => r.domain && r.similarity >= S2_THRESHOLDS.priorMinSimilarity)
       .map((r) => ({
         title: r.title,
         domain: r.domain as string,
-        hazard: r.hazard as string,
         similarity: r.similarity,
       }));
   }
@@ -93,7 +91,6 @@ export async function knnPrior(
     .select({
       title: challenges.title,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       similarity: sql<number>`1 - (${challenges.embedding} <=> ${literal}::vector)`,
     })
     .from(challenges)
@@ -108,11 +105,10 @@ export async function knnPrior(
     .limit(k);
 
   return rows
-    .filter((r) => r.domain && r.hazard && Number(r.similarity) >= S2_THRESHOLDS.priorMinSimilarity)
+    .filter((r) => r.domain && Number(r.similarity) >= S2_THRESHOLDS.priorMinSimilarity)
     .map((r) => ({
       title: r.title,
       domain: r.domain as string,
-      hazard: r.hazard as string,
       similarity: Number(r.similarity),
     }));
 }
@@ -135,7 +131,7 @@ export function s2CacheInput(input: S2Input) {
     peopleAffected: input.peopleAffected,
     recurrence: input.recurrence,
     // Sorted labels only. Same neighbours classified the same way, same key.
-    priorLabels: input.priors.map((p) => `${p.domain}/${p.hazard}`).sort(),
+    priorLabels: input.priors.map((p) => p.domain).sort(),
   };
 }
 
@@ -166,7 +162,3 @@ export function decideS2(out: S2Output): S2Decision {
   return { kind: "ACCEPT" };
 }
 
-/** `hazard_strength` must be 0 when there is no hazard, whatever the model said. */
-export function normaliseS2(out: S2Output): S2Output {
-  return out.hazard === "NONE" ? { ...out, hazard_strength: 0 } : out;
-}

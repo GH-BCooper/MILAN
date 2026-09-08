@@ -1,6 +1,7 @@
-import { SiteHeader } from "@/components/site-header";
-
-/** The chrome every signed-in role area shares. */
+/** The chrome every signed-in role area shares. The top navbar itself lives in
+ *  <SiteChrome /> in the root layout, once for the whole app — this shell
+ *  must never render a header of its own.
+ */
 export function RoleShell({
   title,
   subtitle,
@@ -12,7 +13,6 @@ export function RoleShell({
 }) {
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <div className="milan-rise">
           <div aria-hidden className="milan-hairline mb-5 h-px w-24 rounded-full" />

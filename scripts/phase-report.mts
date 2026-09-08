@@ -1,8 +1,8 @@
 /**
  * `pnpm phase:report` — the Phase 2 distribution report.
  *
- * PHASE_2_BUILD.md Task 2.10 step 2: challenges by domain, by hazard, by
- * status, mean confidence per stage, fallback-level counts, and p50/p95 latency
+ * PHASE_2_BUILD.md Task 2.10 step 2: challenges by domain, by status,
+ * mean confidence per stage, fallback-level counts, and p50/p95 latency
  * per stage. Everything is read from the database rather than accumulated in a
  * script, so the numbers are the platform's own account of itself.
  */
@@ -43,14 +43,6 @@ table(
   "Challenges by domain",
   await sql`
     select coalesce(domain::text, '(unclassified)') as domain, count(*)::int as n
-    from challenges group by 1 order by 2 desc, 1`,
-);
-
-table(
-  "Challenges by NDMA hazard",
-  await sql`
-    select coalesce(hazard::text, '(unclassified)') as hazard, count(*)::int as n,
-           round(avg(hazard_strength), 2) as mean_strength
     from challenges group by 1 order by 2 desc, 1`,
 );
 
@@ -132,7 +124,7 @@ table(
 table(
   "Top 5 by priority",
   await sql`
-    select tracking_id, round(priority_score, 1) as score, domain::text, hazard::text, status
+    select tracking_id, round(priority_score, 1) as score, domain::text, status
     from challenges where priority_score is not null
     order by priority_score desc limit 5`,
 );

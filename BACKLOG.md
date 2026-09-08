@@ -154,7 +154,7 @@ The short version:
 | `blocks.csv` | 14 block names, correctly assigned to districts | centroids approximate, indices invented |
 | `heis.csv` | all 10 institutions exist, real websites | coordinates approximate |
 | `capabilities.csv` | department names are plausible | **all 40 faculty names, lab names, tags, capacities** |
-| `challenges.csv` | hazards and geography are plausible for Jharkhand | **all 23 reports, all reporter names, all the Hindi** |
+| `challenges.csv` | domains and geography are plausible for Jharkhand | **all 30 reports, all reporter names, all the Hindi** |
 | `industry.csv` | all 6 firms exist in Jharkhand | coordinates approximate |
 
 Keep the column headers exactly as they are — `seed/index.mts` reads them by name and
@@ -304,8 +304,9 @@ and §4 of that file before Phase 2 — the Phase 2 build assumes you can.
 
 ### 2.13 Reconcile the district reference data against the JDIP Part 4.1 table
 
-`seed-data/districts-enrichment.csv` (Task 4.9) carries division, population, internet penetration,
-tribal share and a per-hazard vulnerability map for all 24 districts. Populations and tribal shares
+`seed-data/districts-enrichment.csv` (Task 4.9) carries division, population, internet penetration and
+tribal share for all 24 districts (the per-hazard vulnerability map was removed in the Smart
+Education re-theme). Populations and tribal shares
 are Census 2011 and the divisions are the state's standard five, but **internet_penetration is an
 NFHS-5-based planning estimate**, and the vulnerability figures are hand-tuned. When the official
 JDIP Part 4.1 table is available, overwrite these columns from it — the DC district pages read them

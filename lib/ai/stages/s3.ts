@@ -468,7 +468,6 @@ export async function rollUp(args: {
   districtCode: string | null;
   children: Array<{ id: string; trackingId: string; title: string; corroborationCount: number; blockCode: string | null; lat: string | null; lng: string | null }>;
   domain: string | null;
-  hazard: string | null;
   title: string;
   body: string;
 }): Promise<RollupResult | null> {
@@ -574,7 +573,6 @@ export async function findRollupCandidates(challenge: {
   lat: string | null;
   lng: string | null;
   domain: string | null;
-  hazard: string | null;
   similarity: number;
 }> | null> {
   if (!challenge.districtCode || challenge.embedding.length === 0) return null;
@@ -592,7 +590,6 @@ export async function findRollupCandidates(challenge: {
         lat: challenges.lat,
         lng: challenges.lng,
         domain: challenges.domain,
-        hazard: challenges.hazard,
         isParent: challenges.isParent,
         parentId: challenges.parentId,
         status: challenges.status,
@@ -629,7 +626,6 @@ export async function findRollupCandidates(challenge: {
       lat: c.lat,
       lng: c.lng,
       domain: c.domain,
-      hazard: c.hazard,
       similarity: c.similarity,
     }));
   }
@@ -646,7 +642,6 @@ export async function findRollupCandidates(challenge: {
       lat: challenges.lat,
       lng: challenges.lng,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       isParent: challenges.isParent,
       parentId: challenges.parentId,
       status: challenges.status,
@@ -682,32 +677,27 @@ export async function findRollupCandidates(challenge: {
     lat: c.lat,
     lng: c.lng,
     domain: c.domain,
-    hazard: c.hazard,
     similarity: Number(c.similarity),
   }));
 }
 
 /**
  * Name the parent after what the children actually share, not after whichever
- * one happened to trigger the check. Three reports about water, farming and
- * heat in a drought district share the hazard, not the domain, and calling the
- * cluster "healthcare" because the last report was a health report would be a
- * label nobody could defend.
+ * one happened to trigger the check. Three reports from three blocks that
+ * agree on a domain are named for it; when they do not agree, the honest name
+ * is "related problems" rather than whichever label came last.
  */
 export function describeCluster(
-  children: Array<{ domain: string | null; hazard: string | null; blockCode: string | null }>,
+  children: Array<{ domain: string | null; blockCode: string | null }>,
   districtName: string,
 ): string {
   const blocks = new Set(children.map((c) => c.blockCode ?? "?")).size;
-  const hazards = mode(children.map((c) => c.hazard).filter((h): h is string => !!h && h !== "NONE"));
   const domains = mode(children.map((c) => c.domain).filter((d): d is string => !!d));
 
   const shared =
-    hazards && hazards.share >= 0.5
-      ? `${hazards.value.replaceAll("_", " ").toLowerCase()} exposure`
-      : domains && domains.share >= 0.5
-        ? `${domains.value.replaceAll("_", " ").toLowerCase()} problems`
-        : "related problems";
+    domains && domains.share >= 0.5
+      ? `${domains.value.replaceAll("_", " ").toLowerCase()} problems`
+      : "related problems";
 
   return `${districtName}: ${shared} reported across ${blocks} blocks`;
 }

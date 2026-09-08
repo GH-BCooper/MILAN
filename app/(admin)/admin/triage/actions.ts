@@ -20,7 +20,7 @@ import { db } from "@/lib/db";
 import type { Tx } from "@/lib/db";
 import { auditLog, challenges, trainingCorrections } from "@/lib/db/schema";
 import type { ChallengeStatus } from "@/lib/db/schema";
-import { DOMAINS, HAZARDS } from "@/lib/ai/schemas";
+import { DOMAINS } from "@/lib/ai/schemas";
 import { ROUTING } from "@/lib/ai/routing";
 import { requireRole } from "@/lib/auth/guards";
 import { transition, canTransition } from "@/lib/db/stateMachine";
@@ -109,7 +109,6 @@ const AcceptSchema = BaseSchema.extend({ decision: z.literal("ACCEPT") });
 const OverrideSchema = BaseSchema.extend({
   decision: z.literal("OVERRIDE"),
   domain: z.enum(DOMAINS).nullable().default(null),
-  hazard: z.enum(HAZARDS).nullable().default(null),
   severity: z.number().min(0).max(1).nullable().default(null),
   isGrievance: z.boolean().nullable().default(null),
   isUnsafe: z.boolean().nullable().default(null),
@@ -132,7 +131,6 @@ export async function resolveTriageAction(raw: unknown): Promise<TriageResult> {
       trackingId: challenges.trackingId,
       status: challenges.status,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       severity: challenges.severity,
       isGrievance: challenges.isGrievance,
     })
@@ -145,7 +143,6 @@ export async function resolveTriageAction(raw: unknown): Promise<TriageResult> {
   const at = clockNow();
   const proposed = {
     domain: challenge.domain,
-    hazard: challenge.hazard,
     severity: challenge.severity === null ? null : Number(challenge.severity),
     isGrievance: challenge.isGrievance,
   };
@@ -155,7 +152,6 @@ export async function resolveTriageAction(raw: unknown): Promise<TriageResult> {
       ? proposed
       : {
           domain: input.domain ?? challenge.domain,
-          hazard: input.hazard ?? challenge.hazard,
           severity: input.severity ?? (challenge.severity === null ? null : Number(challenge.severity)),
           isGrievance: input.isGrievance ?? challenge.isGrievance,
           isUnsafe: input.isUnsafe ?? false,
@@ -174,7 +170,6 @@ export async function resolveTriageAction(raw: unknown): Promise<TriageResult> {
           .update(challenges)
           .set({
             domain: corrected.domain,
-            hazard: corrected.hazard,
             severity: corrected.severity === null ? null : corrected.severity.toFixed(2),
             isGrievance: corrected.isGrievance ?? false,
             updatedAt: at,

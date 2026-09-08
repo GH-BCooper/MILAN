@@ -144,7 +144,7 @@ export function CapabilityCard(props: CapabilityCardProps) {
       <div className="mt-3 space-y-1">
         <Label htmlFor={`tags-${props.id}`}>Specialisation tags</Label>
         <p className="text-xs text-muted-foreground">
-          Comma separated. These are matched against the domain and hazard of every incoming
+          Comma separated. These are matched against the thematic domain of every incoming
           problem — 20% of the match score — so write what the lab actually does, not what it
           would like to do.
         </p>

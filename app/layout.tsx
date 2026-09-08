@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
+import { SiteChrome } from "@/components/site-chrome";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -47,7 +48,10 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/* Async because the single navbar (<SiteChrome />) reads the request headers
+   to tell the landing site from the app. Every page renders one header from
+   here and none anywhere else. */
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
@@ -56,6 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider>
+          <SiteChrome />
           {children}
           <Toaster />
         </ThemeProvider>

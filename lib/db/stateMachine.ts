@@ -17,7 +17,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { appendEntry } from "@/lib/ledger/append";
-import { deadlinesFor, emergencyScale } from "@/lib/sla/deadlines";
+import { deadlinesFor } from "@/lib/sla/deadlines";
 import type { Tx } from "./index";
 import {
   challenges,
@@ -45,13 +45,19 @@ export const TRANSITIONS: Record<ChallengeStatus, ChallengeStatus[]> = {
   SUBMITTED: ["TRIAGED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
   // The citizen answered the follow-up, or withdrew.
   NEEDS_MORE_INFO: ["TRIAGED", "SUBMITTED", "WITHDRAWN", "PARKED"],
-  TRIAGED: ["CLASSIFIED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
+  // Open claiming: any institution can take anything safety triage has
+  // cleared (TRIAGED and everything downstream of it), routed an offer or
+  // not. The five CLAIMED edges below are the pull path; the router's offers
+  // are the push path. SUBMITTED and NEEDS_MORE_INFO have no CLAIMED edge on
+  // purpose: nothing can be claimed before the S1 safety check. PARKED stays
+  // terminal (re-entry is by annual review, not by edge).
+  TRIAGED: ["CLASSIFIED", "CLAIMED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
   // Duplicates are signal: clustering can merge this into a parent instead.
-  CLASSIFIED: ["CLUSTERED", "MERGED", "NEEDS_MORE_INFO", "WITHDRAWN"],
-  CLUSTERED: ["PRIORITISED", "MERGED", "WITHDRAWN"],
+  CLASSIFIED: ["CLUSTERED", "CLAIMED", "MERGED", "NEEDS_MORE_INFO", "WITHDRAWN"],
+  CLUSTERED: ["PRIORITISED", "CLAIMED", "MERGED", "WITHDRAWN"],
   // severity >= 0.7 waits at /gov/gate for a human before it can be VERIFIED.
-  PRIORITISED: ["VERIFIED", "PARKED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "WITHDRAWN"],
-  VERIFIED: ["ROUTED", "PARKED", "BOUNTY_LISTED", "WITHDRAWN"],
+  PRIORITISED: ["VERIFIED", "CLAIMED", "PARKED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "MERGED", "WITHDRAWN"],
+  VERIFIED: ["ROUTED", "CLAIMED", "PARKED", "BOUNTY_LISTED", "WITHDRAWN"],
   // Nobody claimed it inside the window: widen, then open to all, then escalate.
   ROUTED: ["CLAIMED", "UNCLAIMED_ESCALATED", "PARKED", "WITHDRAWN"],
   UNCLAIMED_ESCALATED: ["ROUTED", "CLAIMED", "BOUNTY_LISTED", "PARKED", "WITHDRAWN"],
@@ -98,6 +104,27 @@ export const TERMINAL_STATES = [
 ] as const satisfies readonly ChallengeStatus[];
 
 export type TerminalState = (typeof TERMINAL_STATES)[number];
+
+/**
+ * States an HEI team can open-claim: everything safety triage has cleared
+ * plus the routed/escalated/bounty/fork states, which triage cleared earlier.
+ * Single source of truth for the claim action, the claim page, the challenge
+ * bank query and the bank's Claim buttons — they must never disagree.
+ */
+export const OPEN_CLAIMABLE_STATES: ChallengeStatus[] = [
+  "TRIAGED",
+  "CLASSIFIED",
+  "CLUSTERED",
+  "PRIORITISED",
+  "VERIFIED",
+  "ROUTED",
+  "UNCLAIMED_ESCALATED",
+  "BOUNTY_LISTED",
+  "FORKED",
+];
+
+/** States still inside safety triage: present but not yet claimable. */
+export const UNTRIAGED_STATES: ChallengeStatus[] = ["SUBMITTED", "NEEDS_MORE_INFO"];
 
 export function isTerminal(status: ChallengeStatus): status is TerminalState {
   return (TERMINAL_STATES as readonly ChallengeStatus[]).includes(status);
@@ -184,29 +211,13 @@ export function contentHashOf(payload: unknown): string {
  * The caller owns the transaction so that a state change can be bundled with
  * whatever else the same action writes — media rows, credit edges, a project.
  */
-/**
- * The emergency clock scale for this challenge, read from demo_state on the
- * transaction itself. Fails open to peacetime: a demo_state row that cannot be
- * read must not freeze every state change in the product.
- */
-async function emergencyClockScale(tx: Tx, hazard: string | null): Promise<number> {
-  try {
-    const rows = (await tx.execute<{ emergency_mode: boolean; emergency_hazard: string | null }>(
-      sql`SELECT emergency_mode, emergency_hazard FROM demo_state WHERE id = 1`,
-    )) as unknown as Array<{ emergency_mode: boolean; emergency_hazard: string | null }>;
-    return emergencyScale(Boolean(rows[0]?.emergency_mode), rows[0]?.emergency_hazard ?? null, hazard);
-  } catch {
-    return 1;
-  }
-}
-
 export async function transition(tx: Tx, input: TransitionInput): Promise<TransitionResult> {
   const { challengeId, to, actorId = null, reason = null, meta = {} } = input;
 
   // Lock the row. Two reapers firing on the same challenge in the same minute is
   // not hypothetical: Vercel Cron can overlap runs.
   const [row] = await tx
-    .select({ id: challenges.id, trackingId: challenges.trackingId, status: challenges.status, hazard: challenges.hazard })
+    .select({ id: challenges.id, trackingId: challenges.trackingId, status: challenges.status })
     .from(challenges)
     .where(eq(challenges.id, challengeId))
     .for("update");
@@ -251,19 +262,10 @@ export async function transition(tx: Tx, input: TransitionInput): Promise<Transi
     )
     .returning({ id: slaDeadlines.id });
 
-  // Emergency Mode: when the state pins this challenge's hazard, the clocks
-  // this transition opens run at EMERGENCY_TIME_SCALE. Read inside the
-  // transaction (one row, one read) rather than through lib/clock/server, so
-  // this module stays importable without a database — tests/sla.test.ts
-  // enumerates the machine against no DB at all, and that property is worth
-  // more than a shared helper.
-  const clockScale = await emergencyClockScale(tx, row.hazard);
-
   const specs = deadlinesFor(to, {
     now: at,
     projectId: input.projectId ?? null,
     lastActivityAt: input.lastActivityAt ?? null,
-    clockScale,
   });
   if (specs.length > 0) {
     await tx.insert(slaDeadlines).values(

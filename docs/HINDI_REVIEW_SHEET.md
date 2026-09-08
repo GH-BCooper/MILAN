@@ -3,19 +3,20 @@
 **Purpose:** a native Hindi speaker verifies correctness/naturalness of every Hindi string
 before the SIH demo. Read each item; mark ✅ correct or write the correction.
 
-> ⚠️ The original recommendation said "12 Hindi reports" — the repo actually has **
-7** Hindi reports (in `seed-data/challenges.csv`). The other Devanagari in the
-repo is **105 lines of Hindi keyword lexicon** in `lib/ai/gazetteer.ts` used for
-hazard/domain classification + safety filtering (review those too — see B4).
+> ⚠️ The original recommendation said "12 Hindi reports" — the repo actually has **10**
+Hindi reports plus **1** Santali report (in `seed-data/challenges.csv`). The other Devanagari
+in the repo is **92 lines of Hindi keyword lexicon** in `lib/ai/gazetteer.ts` used for
+domain classification + safety filtering (review those too — see B4).
 
 
 ## A. Seeded Hindi citizen reports (`seed-data/challenges.csv`, `body_original` where `body_lang=hi`)
 
-Total: **7**. Re-seed after any edit: `pnpm seed --reset`
+Total: **10** (plus 1 Santali report, `body_lang=sat`). Only the original 7 are quoted below —
+the three newer Hindi reports (school, power, solar) still need a reviewer pass. Re-seed after any edit: `pnpm seed --reset`
 
 ### A1. कोयल नदी के बांध में दरार बढ़ रही है
 - **District/Block:** GUM / GUM-BAS
-- **Hazard/domain:** FLOOD / WATER
+- **Domain:** WATER
 - **Hindi (body_original):**
 
   > बसिया के पास कोयल नदी का जो मिट्टी का बांध है, उसमें पुलिया के पास बड़ी दरार आ गई है। पिछले बरसात के बाद से दरार हर महीने लंबी होती जा रही है। बारिश में पानी अगर इस दरार से घुसा तो पूरा टोला डूब जाएगा। हम लोग पत्थर डाल रहे हैं पर काम नहीं हो रहा।
@@ -24,7 +25,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A2. सारे कुएं सूख गए, औरतें तीन किलोमीटर से पानी ला रही हैं
 - **District/Block:** GAR / GAR-BHA
-- **Hazard/domain:** DROUGHT / WATER
+- **Domain:** WATER
 - **Hindi (body_original):**
 
   > भंडरिया प्रखंड के हमारे गांव में मार्च से ही सारे कुएं और दो चापाकल सूख जाते हैं। औरतें और बच्चियां सुबह चार बजे उठकर तीन किलोमीटर दूर नाले से पानी लाती हैं। हर साल यही हाल है, पर इस साल जनवरी से ही कुआं खाली है। टैंकर कभी-कभी आता है। कोई ऐसा उपाय बताइए जिससे गांव का पानी गांव में रुके।
@@ -33,7 +34,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A3. चांडिल डैम का पानी हर बरसात में गांव में घुस आता है
 - **District/Block:** SKH / SKH-CHA
-- **Hazard/domain:** FLOOD / WATER
+- **Domain:** WATER
 - **Hindi (body_original):**
 
   > हम चांडिल डैम के किनारे बसे विस्थापित गांव के हैं। जब डैम का गेट खुलता है या पानी पीछे चढ़ता है तो हर साल अगस्त में हमारे खेत और घर के आंगन तक पानी आ जाता है। हमें कोई पहले से खबर नहीं देता, रात में पानी आता है। बुज़ुर्ग और बच्चे कैसे निकलें? कम से कम एक दिन पहले बताने का कोई तरीका होना चाहिए।
@@ -42,7 +43,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A4. घर की दीवारों में दरार और ज़मीन से धुआँ निकल रहा है
 - **District/Block:** DHN / DHN-JHA
-- **Hazard/domain:** MINING_SUBSIDENCE / ENVIRONMENT
+- **Domain:** ENVIRONMENT
 - **Hindi (body_original):**
 
   > झरिया में हमारा घर बीसीसीएल की पुरानी खदान के ऊपर है। पिछले साल से दीवारों में दरार आ रही है और आंगन में एक जगह से गर्म धुआँ निकलता है, रात में ज़मीन गर्म रहती है। पुनर्वास की लिस्ट में हमारा नाम कब आएगा पता नहीं। इस बीच हम कैसे जानें कि घर कब गिर सकता है? कोई नापने का तरीका हो तो बताइए।
@@ -51,7 +52,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A5. पलामू में तीन साल से खरीफ की धान सूख रही है, मज़दूरी के लिए लोग बाहर जा रहे हैं
 - **District/Block:** PAL / PAL-PAN
-- **Hazard/domain:** DROUGHT / AGRICULTURE
+- **Domain:** AGRICULTURE
 - **Hindi (body_original):**
 
   > पांकी के हमारे गांव में टांड़ ज़मीन ज़्यादा है। तीन साल से जुलाई में बारिश देर से आती है और सितंबर में रुक जाती है, धान की बाली आते-आते सूख जाती है। आधे घरों के जवान लड़के बाहर ईंट भट्ठे पर चले गए। कोई ऐसी खेती या बीज बताइए जो इस पानी में हो जाए, या पानी रोकने का ऐसा तरीका जो हम खुद बना सकें।
@@ -60,7 +61,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A6. मनरेगा साइट पर दोपहर में मज़दूर बेहोश हो रहे हैं
 - **District/Block:** PAL / PAL-MED
-- **Hazard/domain:** HEATWAVE / HEALTHCARE
+- **Domain:** HEALTHCARE
 - **Hindi (body_original):**
 
   > मेदिनीनगर के आसपास अप्रैल-मई में दोपहर में तालाब खुदाई का काम चलता है। इस साल दो मज़दूर काम करते-करते गिर गए, एक की मौत सदर अस्पताल में हो गई। साइट पर न छाया है न ओआरएस। गर्मी कब जानलेवा होगी, यह पहले से कैसे पता चले और काम का समय कैसे बदले, यह कोई तय करे।
@@ -69,7 +70,7 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 
 ### A7. 2022 में स्वीकृत पीएमजीएसवाई सड़क आज तक नहीं बनी
 - **District/Block:** CHA / CHA-KUN
-- **Hazard/domain:** NONE / PUBLIC_SERVICE
+- **Domain:** PUBLIC_SERVICE
 - **Hindi (body_original):**
 
   > कुंदा प्रखंड में हमारे गांव तक की सड़क प्रधानमंत्री ग्राम सड़क योजना में 2022 में स्वीकृत हुई थी, बोर्ड भी लगा था। ठेकेदार ने आधा किलोमीटर मिट्टी डालकर काम छोड़ दिया। बीडीओ साहब को तीन बार आवेदन दिया, कोई जवाब नहीं। हम चाहते हैं कि जो सड़क मंज़ूर है वह बने और जिस ठेकेदार ने पैसा लिया उससे पूछा जाए।
@@ -105,11 +106,11 @@ Total: **7**. Re-seed after any edit: `pnpm seed --reset`
 - (line 275) `const first = base.split(/(?<=[.।!?])\s/)[0]?.trim() || base;`
 
 
-### B4. Hindi keyword lexicon — `lib/ai/gazetteer.ts`  (105 Devanagari lines)
+### B4. Hindi keyword lexicon — `lib/ai/gazetteer.ts`  (92 Devanagari lines)
 
 > NOT place-names — this is the Hindi keyword lexicon the AI pipeline uses for
-> **hazard/domain classification** and **safety filtering** (e.g. `SELF_HARM`,
-> `VIOLENCE_THREAT`, `बलात्कार`, `रिश्वत`, hazard terms like `बाढ़`/`सूखा`/`लू`).
+> **domain classification** and **safety filtering** (e.g. `SELF_HARM`,
+> `VIOLENCE_THREAT`, `बलात्कार`, `रिश्वत`, domain terms like `बांध`/`धान`/`बिजली`).
 > A wrong or missing keyword here silently mis-routes or mis-classifies a real
 > citizen report, so review spelling + diacritics carefully. (A few commented
 > English↔Hindi pairs are reference examples, not live strings.)
@@ -199,24 +200,6 @@ if (/pmgsy|पीएमजीएसवाई|jal jeevan|जल जीवन|road
 { term: "जल जीवन", domain: "PUBLIC_SERVICE", weight: 0.8 },
 { term: "पेंशन", domain: "PUBLIC_SERVICE", weight: 0.8 },
 { term: "राशन", domain: "PUBLIC_SERVICE", weight: 0.7 },
-{ term: "बाढ़", hazard: "FLOOD", weight: 0.9 },
-{ term: "बांध", hazard: "FLOOD", weight: 0.7 },
-{ term: "बाँध", hazard: "FLOOD", weight: 0.7 },
-{ term: "कटाव", hazard: "FLOOD", weight: 0.7 },
-{ term: "बरसात", hazard: "FLOOD", weight: 0.4 },
-{ term: "सूखा", hazard: "DROUGHT", weight: 0.9 },
-{ term: "सूख", hazard: "DROUGHT", weight: 0.7 },
-{ term: "भूस्खलन", hazard: "LANDSLIDE", weight: 0.95 },
-{ term: "लू", hazard: "HEATWAVE", weight: 0.85 },
-{ term: "गर्मी", hazard: "HEATWAVE", weight: 0.5 },
-{ term: "बेहोश", hazard: "HEATWAVE", weight: 0.6 },
-{ term: "दोपहर", hazard: "HEATWAVE", weight: 0.3 },
-{ term: "धंस", hazard: "MINING_SUBSIDENCE", weight: 0.85 },
-{ term: "धुआँ", hazard: "MINING_SUBSIDENCE", weight: 0.5 },
-{ term: "दस्त", hazard: "EPIDEMIC", weight: 0.7 },
-{ term: "महामारी", hazard: "EPIDEMIC", weight: 0.9 },
-{ term: "वनाग्नि", hazard: "FOREST_FIRE", weight: 0.95 },
-{ term: "आग", hazard: "FOREST_FIRE", weight: 0.4 },
 "पक्की सड़क",
 "पुल बनवा",
 "निविदा",

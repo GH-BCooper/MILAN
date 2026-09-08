@@ -34,7 +34,6 @@ interface GateRow extends Record<string, unknown> {
   district_name: string | null;
   block_code: string | null;
   domain: string | null;
-  hazard: string | null;
   severity: string | null;
   priority_score: string | null;
   priority_breakdown: { terms?: Array<{ key: string; weight: number; value: number; contribution: number }>; total?: number; version?: string } | null;
@@ -65,7 +64,7 @@ export default async function GatePage({ searchParams }: { searchParams: Promise
   const rows = await execRaw<GateRow>(sql`
     SELECT c.tracking_id, c.title, c.body_original, c.body_lang, c.body_en, c.framed_statement,
            c.district_code, d.name AS district_name, c.block_code,
-           c.domain::text AS domain, c.hazard::text AS hazard,
+           c.domain::text AS domain,
            c.severity::text AS severity, c.priority_score::text AS priority_score,
            c.priority_breakdown, c.people_affected, c.corroboration_count,
            EXTRACT(DAY FROM (clock_now() - c.updated_at))::int AS waiting_days,

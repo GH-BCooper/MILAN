@@ -10,10 +10,9 @@
  */
 import { z } from "zod";
 
-import { domainEnum, hazardEnum } from "@/lib/db/schema";
+import { domainEnum } from "@/lib/db/schema";
 
 export const DOMAINS = domainEnum.enumValues;
-export const HAZARDS = hazardEnum.enumValues;
 
 const confidence = z.number().min(0).max(1);
 const unitInterval = z.number().min(0).max(1);
@@ -70,7 +69,7 @@ export const S1Schema = z.object({
 });
 export type S1Output = z.infer<typeof S1Schema>;
 
-/* ------------------------------------------ S2: domain, hazard, severity */
+/* ------------------------------------------------- S2: domain, severity */
 
 export interface S2Input {
   title: string;
@@ -82,14 +81,11 @@ export interface S2Input {
   peopleAffected: number | null;
   recurrence: string | null;
   /** The embedding kNN prior — our declared substitute for fine-tuning. */
-  priors: Array<{ title: string; domain: string; hazard: string; similarity: number }>;
+  priors: Array<{ title: string; domain: string; similarity: number }>;
 }
 
 export const S2Schema = z.object({
   domain: z.enum(DOMAINS),
-  hazard: z.enum(HAZARDS),
-  /** How strongly this problem is linked to that NDMA hazard. 0 when NONE. */
-  hazard_strength: unitInterval,
   severity: unitInterval,
   /** RESEARCH, ENGINEERING, POLICY or CAPITAL_WORKS — what kind of answer it needs. */
   solvability: z.enum(["RESEARCH", "ENGINEERING", "POLICY", "CAPITAL_WORKS"]),

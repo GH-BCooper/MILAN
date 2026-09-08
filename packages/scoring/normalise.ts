@@ -53,7 +53,7 @@ export function peopleAffected(n: number | null): number {
  * not outrank one report of a failing embankment — volume is evidence of
  * agreement, not of consequence. Second, it bounds the payoff of a brigading
  * attack: doubling the number of fake corroborations buys 1.41x, not 2x, and
- * the term is capped at 12% of the total score however far it is pushed.
+ * the term is capped at 14% of the total score however far it is pushed.
  *
  * Combine with the identity cap and distance decay in S3 (loophole row 7).
  */
@@ -70,24 +70,13 @@ export function corroborations(n: number | null): number {
  * was in v1.0.0 — no retrospective inflation. A crowd of proven reporters
  * counts for up to 2×; a crowd that includes penalised accounts counts for
  * less. Brigading fifty fresh accounts therefore buys no more than fifty
- * strangers ever did, and the sqrt cap above still bounds the term at 12% of
+ * strangers ever did, and the sqrt cap above still bounds the term at 14% of
  * the score. Identity caps and distance decay (loophole row 7) sit beside this
  * at the data layer.
  */
 export function corroborationTrustWeight(meanTrust: number | null | undefined): number {
   if (meanTrust === null || meanTrust === undefined || !Number.isFinite(meanTrust)) return 1;
   return Math.max(0, Math.min(2, clamp01(meanTrust) / 0.5));
-}
-
-/**
- * Hazard linkage: `hazard_strength` from S2, or exactly 0 when the hazard is
- * NONE. A problem with no NDMA hazard linkage scores nothing here — that is
- * what makes this a disaster risk reduction pipeline rather than a public works
- * queue, and it is visible on the page as a zero-width bar.
- */
-export function hazard(hazardClass: string | null, strength: number | null): number {
-  if (!hazardClass || hazardClass === "NONE") return 0;
-  return clamp01(strength ?? 0);
 }
 
 /** Recurrence, straight from the reporter's own answer at intake. */

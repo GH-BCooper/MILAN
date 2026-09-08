@@ -19,9 +19,9 @@ research assignment** for a university team, with a **hash-chained credit ledger
 so nobody's contribution can be erased, and an **SLA clock** so no challenge can
 silently die.
 
-It is a **disaster risk reduction** pipeline that runs in peacetime — mitigation
-and preparedness, not emergency response. Every challenge carries an explicit
-**NDMA hazard linkage**, and that linkage is a weighted term in the priority score.
+It is a **societal-challenge routing** pipeline: citizens report local problems, deterministic
+code scores and routes them by thematic domain, and university teams take them on as research
+and project work — in the NEP 2020 spirit of experiential, community-engaged learning.
 
 It is **not** a grievance portal. CPGRAMS and JharSewa route complaints with a
 known fix to an accountable officer. Milan routes **unsolved problems to a lab**.
@@ -51,7 +51,7 @@ citizen / university / industry / government  ──sign in──▶  Better Aut
         │
         ▼
 ┌─────────────────────────────── lib/ai/pipeline.ts ───────────────────────────────┐
-│  P0 (language) ──▶ S1 (safety/triage) ∥ S2 (domain/hazard, needs embedding)      │
+│  P0 (language) ──▶ S1 (safety/triage) ∥ S2 (domain/severity, needs embedding)    │
 │                        │                        │                                │
 │                REJECT_UNSAFE            embedding (started at t=0, parallel)     │
 │                FORWARD_EXTERNAL                 │                                │
@@ -290,7 +290,7 @@ all). `AI_PROVIDER_CHAIN` controls the order for a deliberately-degraded demo;
 `rules` is always appended regardless of what it says. A level-2 (rules) answer
 is recorded at 0.45 confidence and, critically, **never overwrites an existing
 classification** — it is recorded as a proposal and routed to `/admin/triage`
-instead, because replacing an authored domain/hazard with a keyword guess makes
+instead, because replacing an authored domain/severity with a keyword guess makes
 the data worse, silently, in exactly the conditions nobody is watching. Every
 call — success or failure, cached or live — writes an `ai_runs` row with its
 provider, model, fallback level, confidence, latency and an input hash; a cache
@@ -335,18 +335,16 @@ The model (`runS1`) reads the text and reports `is_unsafe`, `is_grievance`,
    → `HUMAN_QUEUE`, shown at `/admin/triage`; the challenge stays `SUBMITTED`.
 4. Otherwise → `CONTINUE`, transition to `TRIAGED`.
 
-### 6.3 S2 — Domain and hazard classification
+### 6.3 S2 — Domain, severity and solvability
 
-Classifies the report into one of ten domains (`WATER`, `HEALTHCARE`,
-`AGRICULTURE`, `SANITATION`, `ENVIRONMENT`, `LIVELIHOODS`, `EDUCATION`,
-`ACCESSIBILITY`, `URBAN_INFRA`, `PUBLIC_SERVICE`), one of eight NDMA hazard
-classes (`FLOOD`, `DROUGHT`, `LANDSLIDE`, `HEATWAVE`, `MINING_SUBSIDENCE`,
-`EPIDEMIC`, `FOREST_FIRE`, `NONE`), a hazard strength (0–1), a severity (0–1),
+Classifies the report into one of eleven domains (`EDUCATION`, `HEALTHCARE`,
+`AGRICULTURE`, `WATER`, `SANITATION`, `ENVIRONMENT`, `ENERGY`, `LIVELIHOODS`,
+`ACCESSIBILITY`, `URBAN_INFRA`, `PUBLIC_SERVICE`), a severity (0–1),
 solvability, and whether the fix is capital works (a tender, not a research
 question). It is seeded with an embedding kNN prior over already-classified
 challenges — the closest thing this system has to "learning" without a
 fine-tune. Transitions the challenge to `CLASSIFIED`. Once S2 completes, S5's
-routing computation is kicked off in the background (it needs domain, hazard and
+routing computation is kicked off in the background (it needs domain, severity and
 the embedding, and nothing S3 or S4 produce).
 
 ### 6.4 Embedding
@@ -393,7 +391,7 @@ blocks, similar enough (cosine ≥ 0.62) in the same district, spawn a new
 `BLOCK_SYSTEMIC` parent challenge — a real, routable, scorable row whose body
 lists its children. Children keep their own pages, their own statuses, their own
 credit chains; `parent_id` links without consuming. Named after what the
-children actually *share* (mode of hazard, then domain), not after whichever
+children actually *share* (mode of domain), not after whichever
 report happened to trigger the check.
 
 *Anti-brigading* (`scanForBrigading`): more than 3 corroborations from one
@@ -408,18 +406,19 @@ Not merged → transition to `CLUSTERED`.
 
 **"Is the AI deciding who gets help?" — no.** `packages/scoring/score.ts`
 (`computePriority`) is a pure function: no database, no network, no clock read,
-no model call reachable from it at all. Seven weighted, normalised terms
-(weights sum to exactly 1.00, asserted in `tests/scoring.test.ts`):
+no model call reachable from it at all. Six weighted, normalised terms
+(weights sum to exactly 1.00, asserted in `tests/scoring.test.ts`), scoring
+v2.0.0 — the v1 hazard-linkage term was removed in the Smart Education re-theme
+and its weight moved mostly into severity and people affected:
 
 | Term | Weight | Source | Normalisation |
 |---|---|---|---|
-| Severity | 0.22 | S2 (AI) | Clamped 0–1 |
-| Hazard linkage | 0.20 | S2 (AI) | `hazard_strength`, or 0 if hazard is NONE |
-| People affected | 0.15 | Citizen's own estimate | `log(1+n) / log(1+100,000)` — log-normalised on purpose, so a hamlet of 300 is not systematically outranked by a town of 6,000; equity is a deliberate design choice |
-| Block vulnerability | 0.15 | Seeded district disaster-management plan | Already 0–1 |
-| Corroborations | 0.12 | S3, trust-weighted (v1.1.0) | `sqrt(n) / sqrt(50)`, capped — diminishing returns bound a brigading attack's payoff |
-| Recurrence | 0.10 | Citizen's own answer | one-off 0.25 / seasonal 0.6 / yearly 0.8 / constant 1.0 |
-| Official endorsement | 0.06 | A block officer at `/gov/verification` | 1 or 0 — small on purpose: it should help, never decide |
+| Severity | 0.28 | S2 (AI) | Clamped 0–1 |
+| People affected | 0.20 | Citizen's own estimate | `log(1+n) / log(1+100,000)` — log-normalised on purpose, so a hamlet of 300 is not systematically outranked by a town of 6,000; equity is a deliberate design choice |
+| Block vulnerability | 0.18 | Seeded block need index, district fallback | Already 0–1 |
+| Corroborations | 0.14 | S3, trust-weighted (v1.1.0) | `sqrt(n) / sqrt(50)`, capped — diminishing returns bound a brigading attack's payoff |
+| Recurrence | 0.12 | Citizen's own answer | one-off 0.25 / seasonal 0.6 / yearly 0.8 / constant 1.0 |
+| Official endorsement | 0.08 | A block officer at `/gov/verification` | 1 or 0 — small on purpose: it should help, never decide |
 
 Every term's raw value, normalised value, weight and contribution
 (`weight × normalised`, rounded *before* multiplication so the visible
@@ -433,7 +432,7 @@ signed-in people who corroborated, centred on the 0.50 baseline so an unknown
 crowd counts exactly as it did in v1.0.0 — no retrospective inflation. Advances
 to `PRIORITISED`.
 
-**The routing bar:** a score below 85/100 does **not** route to any institution
+**The routing bar:** a score below 55/100 does **not** route to any institution
 — it is `PARKED` instead (with the full breakdown still shown, at `/flagged`, as
 the answer to "why didn't this route"), and re-enters routing automatically at
 its annual review, or sooner if new corroborations or facts lift it.
@@ -446,7 +445,7 @@ signals against the Institutional Capability Graph:
 | Signal | Weight | What it measures |
 |---|---|---|
 | Semantic fit | 0.45 | cosine(challenge embedding, capability embedding) |
-| Specialisation overlap | 0.20 | Jaccard of the lab's tags against domain+hazard keyword expansion |
+| Specialisation overlap | 0.20 | Jaccard of the lab's tags against domain keyword expansion |
 | Distance | 0.15 | `exp(-km / 250)` — decays to 1/e at 250 km; unknown coordinates score a neutral 0.4 |
 | Declared capacity | 0.12 | Capstone slots declared open in the current window, capped at 5 |
 | Track record | 0.08 | Delivered projects in this domain, Laplace-smoothed (prior = 3) so one-for-one does not outrank nine-for-ten |
@@ -608,7 +607,7 @@ ROUTED  ──+7d (WIDEN)──▶  UNCLAIMED_ESCALATED  ──+7d more (OPEN_AL
 - **BREACH** (day 21): `sla_breached_at` stamped, listed on the public
   `/bounties` board, district officer + admins notified.
 - **GRAND_CHALLENGE** (day 45): joins the annual Jharkhand Grand Challenges set;
-  an `ANNUAL_REVIEW` deadline (365 days, never compressed by Emergency Mode)
+  an `ANNUAL_REVIEW` deadline (365 days)
   keeps it from ever truly falling off the board.
 
 The escalation states carry the **remainder** of the ladder, not a fresh copy —
@@ -663,19 +662,16 @@ deployment on Hobby — this is a plan limit, documented, not silently accepted)
 console. `/api/cron/nightly` separately rescores every challenge, decays every
 reporter's trust, drains the outbox, and anchors the ledger head.
 
-### 9.6 Emergency Mode's effect on the clock (`/gov/emergency`)
+### 9.6 Emergency Mode — removed in the Smart Education re-theme
 
-A District Collector pins one NDMA hazard. Every open, non-`ANNUAL_REVIEW`
-deadline on a challenge linked to that hazard is compressed to half its
-remaining time (`EMERGENCY_TIME_SCALE = 0.5`), **reversibly** — the
-pre-emergency due date is kept in the row's own payload and restored exactly
-when the toggle switches off. Nothing here changes a stored priority score;
-lists re-sort by a bounded (×1.25 max), clearly labelled, display-only "surge"
-multiplier (`lib/emergency/surge.ts`) so a weak linked problem can rise above a
-slightly stronger unlinked one but never float above a genuinely severe one.
-Declared as a filter on the officer's screen, explicitly — not a claim of a
-separate emergency response system, which remains a stub (no standing-capacity
-surge routing, no separate response queue).
+An earlier cut shipped `/gov/emergency`: a District Collector pinned one NDMA
+hazard, open deadlines on linked challenges compressed reversibly to half time,
+and lists re-sorted under a bounded display-only surge multiplier. That feature
+belonged to the disaster-response framing — compressed clocks and live response
+queues are not part of PS 26043 Smart Education — so the route, the compression
+logic and the surge re-rank were deleted. The SLA ladder in §9.1–§9.5 is the
+whole clock story now: one set of deadlines, escalated in public, never silently
+shortened.
 
 ---
 
@@ -817,8 +813,8 @@ that routed correctly but could not send an email has still routed correctly.
 
 ### 13.4 `(public)`
 
-- **`/challenges`** — the public map + filterable list of every challenge;
-  honours Emergency Mode's display surge.
+- **`/challenges`** — the public map + filterable list of every challenge,
+  sorted by stored priority score with unscored challenges last.
 - **`/c/[trackingId]`** — the canonical page: lifecycle stepper, original text
   beside the English copy, framing, voice/evidence panels, corroboration button,
   threaded comments, the full priority breakdown (`#score`), the routing
@@ -861,7 +857,7 @@ activity feed).
 
 `/gov` (dashboard), `/gov/gate` (§7), `/gov/verification` (field endorsement —
 re-scores live on endorsement), `/gov/sla` (the district's SLA board),
-`/gov/emergency` (§9.6), `/gov/district/[code]` (a read-only district
+`/gov/district/[code]` (a read-only district
 reference).
 
 ### 13.8 `(admin)` — `requireRole("ADMIN")` (a wildcard for every other role
@@ -934,8 +930,8 @@ rails (the MoU is generated and hashed, never signed) · automated document
 verification at `/admin/verification` (a human looks at the file) · patent/DOI
 integration · automatic face/plate detection (citizen-driven blur instead — a
 stronger privacy claim, since the unblurred original never leaves the device) ·
-a separate live emergency response queue and automatic surge-routing (the
-compression + display surge in §9.6 are built; the rest is not) · a PMTiles
+a live emergency response queue or surge-routing (Emergency Mode was removed in
+the Smart Education re-theme, §9.6) · a PMTiles
 basemap (markers draw on a blank canvas, and say so) · block-level boundary
 geometry (districts are polygon-resolved; blocks remain nearest-centroid) · a
 third-party timestamp on the daily ledger anchor by default.
@@ -957,6 +953,6 @@ the permanent public credit record. `artifacts`, `access_log`, `access_requests`
 — publication and restricted access. `notifications`, `outbox` — delivery and
 the event log. `ai_runs`, `ai_cache`, `training_corrections` — every model call,
 cached and auditable. `audit_log` — every human override, everywhere. `demo_state`
-— the one row the clock offset, Emergency Mode and trust-decay bookkeeping live
+— the one row the clock offset and trust-decay bookkeeping live
 in. `industry_interests`, `impact_confirmations` — the industry and
 confirmation loops. `bug_reports` — deliberately outside the civic pipeline.

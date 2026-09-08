@@ -79,7 +79,7 @@ function NavItem({ item }: { item: NavLink }) {
   if (!item.children) {
     return (
       <Link
-        className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground"
+        className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/8 hover:text-foreground"
         href={item.href}
       >
         {item.label}
@@ -89,7 +89,7 @@ function NavItem({ item }: { item: NavLink }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="rounded-full px-3 py-1.5 text-muted-foreground outline-none transition-colors hover:bg-foreground/8 hover:text-foreground data-[state=open]:bg-foreground/8 data-[state=open]:text-foreground">
+      <DropdownMenuTrigger className="shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-muted-foreground outline-none transition-colors hover:bg-foreground/8 hover:text-foreground data-[state=open]:bg-foreground/8 data-[state=open]:text-foreground">
         {item.label}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
@@ -106,13 +106,17 @@ function NavItem({ item }: { item: NavLink }) {
 export async function SiteHeader() {
   const user = await currentUser();
   const nav: ReadonlyArray<NavLink> = user ? ROLE_NAV[user.role] ?? DEFAULT_NAV : DEFAULT_NAV;
+  const hasDropdown = nav.some((item) => item.children);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50">
       {/* the hairline of light that runs under every screen's chrome */}
       <div aria-hidden className="milan-hairline h-px w-full opacity-70" />
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2 text-lg font-bold tracking-tight">
+      {/* One row on desktop: brand, links and account cluster side by side.
+          Below lg the bar keeps its old wrap-stack — a phone cannot fit a
+          five-link nav beside the account cluster, and must not try. */}
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 lg:flex-nowrap lg:gap-y-0">
+        <Link href="/" className="group flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight">
           <span
             aria-hidden
             className="inline-block size-2.5 rounded-full bg-gradient-to-br from-[var(--grad-1)] to-[var(--grad-3)] shadow-[0_0_14px_2px_rgba(124,92,255,0.8)] transition-transform group-hover:scale-125"
@@ -120,21 +124,28 @@ export async function SiteHeader() {
           <span className="milan-gradient-text">Milan</span>
         </Link>
 
-        <nav aria-label="Primary" className="flex flex-wrap items-center gap-x-1 text-sm">
+        <nav
+          aria-label="Primary"
+          className={`flex min-w-0 flex-1 flex-wrap items-center gap-x-1 text-sm lg:flex-nowrap${hasDropdown ? "" : " lg:overflow-x-auto"}`}
+        >
           {nav.map((item) => (
             <NavItem key={item.href} item={item} />
           ))}
         </nav>
 
-        <div className="ms-auto flex items-center gap-3">
+        <div className="ms-auto flex shrink-0 items-center gap-3">
           <ThemeToggle />
           {user ? (
             <>
               <RoleBadge role={user.role} districtCode={user.districtCode} />
-              <Link className="text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)]" href="/profile">
+              <Link
+                className="hidden max-w-32 truncate text-sm font-medium text-foreground/90 transition-colors hover:text-[var(--grad-3)] sm:block lg:max-w-48"
+                href="/profile"
+                title={user.fullName}
+              >
                 {user.fullName}
               </Link>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="hidden lg:inline-flex">
                 <Link href="/report-bug">Report a bug</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
