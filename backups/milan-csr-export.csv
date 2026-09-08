@@ -1,8 +1,6 @@
 # Milan CSR export - Companies Act 2013 section 135
-# Generated 2026-10-12T14:04:47.648Z - confirmed and unconfirmed impact are separate rows in impact_status and must not be summed together
-# confirmed=3 partly=0 claimed_not_confirmed=0 disputed=0
-# beneficiaries_confirmed=900 beneficiaries_unconfirmed=0
+# Generated 2026-09-08T14:03:05.531Z - confirmed and unconfirmed impact are separate rows in impact_status and must not be summed together
+# confirmed=1 partly=0 claimed_not_confirmed=0 disputed=0
+# beneficiaries_confirmed=300 beneficiaries_unconfirmed=0
 tracking_id,challenge,district,block,ndma_hazard,domain,institution,project,interest_state,supported_since,beneficiaries,reporters,artifacts,licences,impact_status,confirmed_on,spend_committed_inr,spend_disbursed_inr
-JH-2026-GUM-0001,Crack spreading along the South Koel embankment near Basia,Gumla,Basia,FLOOD,WATER,BIT Sindri,Civil Engineering final-year project: Crack spreading along the South Koel embankment near Basia,ACCEPTED,2026-09-05,300,7,3,CC_BY,CONFIRMED BY CITIZEN,2026-10-12,,
-JH-2026-GUM-0001,Crack spreading along the South Koel embankment near Basia,Gumla,Basia,FLOOD,WATER,BIT Sindri,Civil Engineering final-year project: Crack spreading along the South Koel embankment near Basia,ACCEPTED,2026-09-05,300,7,0,,CONFIRMED BY CITIZEN,2026-10-12,,
-JH-2026-GUM-0001,Crack spreading along the South Koel embankment near Basia,Gumla,Basia,FLOOD,WATER,BIT Sindri,Civil Engineering final-year project: Crack spreading along the South Koel embankment near Basia,ACCEPTED,2026-09-05,300,7,0,,CONFIRMED BY CITIZEN,2026-10-12,,
+JH-2026-GUM-0001,Crack spreading along the South Koel embankment near Basia,Gumla,Basia,FLOOD,WATER,BIT Sindri,Civil Engineering final-year project: Crack spreading along the South Koel embankment near Basia,ACCEPTED,2026-09-08,300,7,4,CC_BY | RESTRICTED,CONFIRMED BY CITIZEN,2026-09-08,,

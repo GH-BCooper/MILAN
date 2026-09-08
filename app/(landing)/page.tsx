@@ -153,7 +153,16 @@ const FAQS = [
   },
 ] as const;
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ denied?: string }>;
+}) {
+  /* `requireRole()` bounces a wrong-role visitor here with ?denied=role. Without
+     this notice the redirect is silent — a government user who clicks an /admin
+     link simply finds themselves back on the home page with no idea why, which
+     reads as a broken link rather than a refusal. */
+  const { denied } = await searchParams;
   /* Real numbers only — CLAUDE.md forbids manufactured metrics. One round
      trip, same pattern as /stats: this connection pool does not tolerate
      concurrent raw queries. */
@@ -170,6 +179,18 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
+        {denied === "role" ? (
+          <div className="mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6">
+            <p
+              role="status"
+              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground"
+            >
+              <span className="font-semibold">That page belongs to a different role.</span> Your
+              account does not have access to it, so Milan brought you here instead. If you think
+              this is wrong, the platform administrator can check your role on your profile.
+            </p>
+          </div>
+        ) : null}
         {/* ── Hero ───────────────────────────────────────────────────────── */}
         <section className="relative mx-auto w-full max-w-6xl px-4 pb-6 pt-10 sm:px-6 sm:pt-16">
           <div

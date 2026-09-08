@@ -6,7 +6,8 @@ import { ForbiddenError, requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
 import { appendEntry } from "@/lib/ledger/append";
-import { challenges, creditEdges, domainEnum, outbox } from "@/lib/db/schema";
+import { challenges, creditEdges, domainEnum, outbox, slaDeadlines } from "@/lib/db/schema";
+import { deadlinesFor } from "@/lib/sla/deadlines";
 import { nextTrackingId } from "@/lib/db/trackingId";
 import { deriveTitle } from "@/app/(citizen)/submit/schema";
 
@@ -66,6 +67,27 @@ export async function submitQuestionAction(raw: unknown): Promise<SubmitQuestion
         updatedAt: now,
       })
       .returning({ id: challenges.id });
+
+    /**
+     * CLAUDE.md invariant 1: no challenge may silently die. A university or
+     * industry question lands in SUBMITTED exactly like a citizen report, so it
+     * needs the same intake clock — without this row it sits in a non-terminal
+     * state with nothing scheduled to notice, which is the precise failure the
+     * invariant test catches. `transition()` cancels and replaces it when the
+     * report moves on. See app/(citizen)/submit/actions.ts for the twin.
+     */
+    const intakeDeadlines = deadlinesFor("SUBMITTED", { now });
+    if (intakeDeadlines.length > 0) {
+      await tx.insert(slaDeadlines).values(
+        intakeDeadlines.map((s) => ({
+          challengeId: challenge.id,
+          kind: s.kind,
+          dueAt: s.dueAt,
+          payload: s.payload ?? {},
+          createdAt: now,
+        })),
+      );
+    }
 
     await tx.insert(creditEdges).values({
       challengeId: challenge.id,

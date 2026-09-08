@@ -1,7 +1,7 @@
 import { asc } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
-import { requireUser } from "@/lib/auth/guards";
+import { currentUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { blocks, districts } from "@/lib/db/schema";
 import { SubmitWizard } from "./submit-wizard";
@@ -16,7 +16,7 @@ export default async function SubmitPage({
 }) {
   const [{ draft }, user, districtRows, blockRows] = await Promise.all([
     searchParams,
-    requireUser("/submit"),
+    currentUser(),
     db
       .select({ code: districts.code, name: districts.name, nameHi: districts.nameHi, lat: districts.lat, lng: districts.lng })
       .from(districts)
@@ -39,7 +39,9 @@ export default async function SubmitPage({
   // Scoped by user id so a draft left behind by one account (their name, their
   // chosen language, their half-written report) never bleeds into another
   // account signed in later on the same shared/library device.
-  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : `current-${user.id}`;
+  // Signed out, every draft on the device shares the one "anon" key: there is no
+  // account to scope it to, and a report in progress must survive a refresh.
+  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : `current-${user?.id ?? "anon"}`;
 
   return (
     <>
