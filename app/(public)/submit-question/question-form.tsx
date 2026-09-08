@@ -45,6 +45,7 @@ export function QuestionForm({ defaultName }: { defaultName: string }) {
         setError(null);
         const result = await submitQuestionAction({
           name: formData.get("name"),
+          designation: formData.get("designation"),
           tag,
           qualification: formData.get("qualification"),
           question: formData.get("question"),
@@ -69,7 +70,16 @@ export function QuestionForm({ defaultName }: { defaultName: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="tag">Tag</Label>
+        <Label htmlFor="designation">Your designation</Label>
+        <p className="text-xs text-muted-foreground">
+          Your role at the institution or company, e.g. &ldquo;Assistant Professor, Civil
+          Engineering&rdquo; or &ldquo;CSR Manager&rdquo;.
+        </p>
+        <Input id="designation" name="designation" required minLength={2} maxLength={160} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="tag">Category</Label>
         <Select value={tag} onValueChange={setTag}>
           <SelectTrigger id="tag" className="w-full">
             <SelectValue />

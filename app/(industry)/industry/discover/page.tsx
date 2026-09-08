@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sql } from "drizzle-orm";
 
 import { RoleShell } from "@/components/role-shell";
+import { SelectWithOther } from "@/components/select-with-other";
 import { UnconfirmedTag } from "@/components/impact-counter";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
@@ -48,8 +49,11 @@ export default async function IndustryDiscover({
   const params = await searchParams;
   const one = (k: string) => (Array.isArray(params[k]) ? params[k][0] : params[k]) || undefined;
   const district = one("district");
-  const domain = one("domain");
-  const hazard = one("hazard");
+  // "Other" resolves to whatever free text the filer typed, so a filter never
+  // dead-ends just because the list of domains/hazards seeded so far doesn't
+  // happen to cover it.
+  const domain = one("domain") === "OTHER" ? one("domainOther") : one("domain");
+  const hazard = one("hazard") === "OTHER" ? one("hazardOther") : one("hazard");
   const solvability = one("solvability");
 
   const rows = await execRaw<Row>(sql`
@@ -82,42 +86,54 @@ export default async function IndustryDiscover({
       subtitle={`Signed in as ${user.fullName}. ${rows.length} open challenge${rows.length === 1 ? "" : "s"} still looking for a partner, filterable by domain, solvability, district and NDMA hazard. Already-published work lives under Solutions.`}
     >
       <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <label className="flex flex-col gap-1 text-xs font-medium">
+        <div className="flex flex-col gap-1 text-xs font-medium">
           District
-          <select name="district" defaultValue={district ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
-            <option value="">Every district</option>
-            {districts.map((d) => (
-              <option key={d.code} value={d.code}>{d.name}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium">
+          <SelectWithOther
+            name="district"
+            label="District"
+            placeholder="Every district"
+            defaultValue={district}
+            allowOther={false}
+            options={districts.map((d) => ({ value: d.code, label: d.name }))}
+          />
+        </div>
+        <div className="flex flex-col gap-1 text-xs font-medium">
           Domain
-          <select name="domain" defaultValue={domain ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
-            <option value="">Every domain</option>
-            {domainEnum.enumValues.map((d) => (
-              <option key={d} value={d}>{d.replace(/_/g, " ").toLowerCase()}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium">
+          <SelectWithOther
+            name="domain"
+            label="Domain"
+            placeholder="Every domain"
+            defaultValue={domain}
+            otherPlaceholder="Describe the domain"
+            options={domainEnum.enumValues.map((d) => ({ value: d, label: d.replace(/_/g, " ").toLowerCase() }))}
+          />
+        </div>
+        <div className="flex flex-col gap-1 text-xs font-medium">
           NDMA hazard
-          <select name="hazard" defaultValue={hazard ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
-            <option value="">Every hazard</option>
-            {hazardEnum.enumValues.map((h) => (
-              <option key={h} value={h}>{h.replace(/_/g, " ").toLowerCase()}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium">
+          <SelectWithOther
+            name="hazard"
+            label="NDMA hazard"
+            placeholder="Every hazard"
+            defaultValue={hazard}
+            otherPlaceholder="Describe the hazard"
+            options={hazardEnum.enumValues.map((h) => ({ value: h, label: h.replace(/_/g, " ").toLowerCase() }))}
+          />
+        </div>
+        <div className="flex flex-col gap-1 text-xs font-medium">
           Solvability / TRL
-          <select name="solvability" defaultValue={solvability ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
-            <option value="">Any</option>
-            <option value="RESEARCH">Research question</option>
-            <option value="ENGINEERING">Engineering build</option>
-            <option value="CAPITAL_WORKS">Capital works</option>
-          </select>
-        </label>
+          <SelectWithOther
+            name="solvability"
+            label="Solvability"
+            placeholder="Any"
+            defaultValue={solvability}
+            allowOther={false}
+            options={[
+              { value: "RESEARCH", label: "Research question" },
+              { value: "ENGINEERING", label: "Engineering build" },
+              { value: "CAPITAL_WORKS", label: "Capital works" },
+            ]}
+          />
+        </div>
         <div className="flex items-end gap-2">
           <button className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">Filter</button>
           <Link href="/industry/discover" className="h-11 rounded-md border border-input px-4 text-sm font-semibold leading-[2.75rem]">
@@ -166,7 +182,13 @@ export default async function IndustryDiscover({
                   <UnconfirmedTag />
                 ) : null}
                 {r.impact_confirmed ? (
-                  <span className={`rounded px-2 py-1 font-medium ${r.impact_partial ? "bg-amber-500/15 text-amber-200" : "bg-emerald-500/15 text-emerald-200"}`}>
+                  <span
+                    className={`rounded px-2 py-1 font-medium ${
+                      r.impact_partial
+                        ? "bg-amber-500/12 text-amber-800 dark:text-amber-200"
+                        : "bg-emerald-500/12 text-emerald-800 dark:text-emerald-200"
+                    }`}
+                  >
                     {r.impact_partial ? "citizen says partly fixed" : "confirmed fixed by the citizen"}
                   </span>
                 ) : null}

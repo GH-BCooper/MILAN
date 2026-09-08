@@ -36,7 +36,10 @@ export default async function SubmitPage({
 
   // One draft per browser tab unless the citizen returns to a specific draft.
   // The id only ever names a localStorage key; it is never sent to the server.
-  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : "current";
+  // Scoped by user id so a draft left behind by one account (their name, their
+  // chosen language, their half-written report) never bleeds into another
+  // account signed in later on the same shared/library device.
+  const draftId = draft && /^[A-Za-z0-9_-]{6,64}$/.test(draft) ? draft : `current-${user.id}`;
 
   return (
     <>

@@ -12,6 +12,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { organization, user as userTable, userProfiles } from "@/lib/db/schema";
 import { AvatarUpload } from "./avatar-upload";
+import { DeleteAccountForm } from "./delete-account-form";
 import { PasswordForm } from "./password-form";
 
 export const dynamic = "force-dynamic";
@@ -104,6 +105,14 @@ export default async function ProfilePage() {
           Changing it signs out every other device.
         </p>
         <PasswordForm />
+      </section>
+
+      <section className="mt-10 max-w-md">
+        <h2 className="text-lg font-semibold text-destructive">Delete account</h2>
+        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+          Removes everything Milan holds about you from the database.
+        </p>
+        <DeleteAccountForm />
       </section>
     </RoleShell>
   );

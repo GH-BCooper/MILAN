@@ -715,46 +715,33 @@ export function SubmitWizard({
             and if they decline their own words are used and that is recorded. */}
         {state.step === 5 ? (
           <div className="space-y-4">
-            {framing.state === "loading" ? (
-              <Alert>
-                <AlertDescription className="flex items-center gap-2 text-sm">
+            {/* One line of status instead of a stacked alert per state — the
+                citizen needs to know whether to wait, not read three paragraphs. */}
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              {framing.state === "loading" ? (
+                <>
                   <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Milan is suggesting a clearer wording. You will be able to change it or refuse it.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-
-            {framing.state === "failed" ? (
-              <Alert>
-                <AlertDescription className="text-sm">
-                  {framing.error} Nothing is lost — your report will be submitted in your own words.
-                </AlertDescription>
-              </Alert>
-            ) : null}
-
-            {framing.state === "ready" ? (
-              <Alert>
-                <AlertDescription className="text-sm">
-                  Milan has suggested a clearer wording on the right. Read it. Change anything that
-                  is wrong. If you do not like it, leave the box below unticked and your own words
-                  are used instead — and we record that you chose them.
-                  <span className="mt-1 block font-mono text-[11px] text-muted-foreground">
-                    {framing.provider} · confidence {framing.confidence.toFixed(2)}
-                    {framing.fallbackLevel === 2 ? " · fallback: rules" : ""}
+                  Milan is suggesting a clearer wording — you can change or refuse it.
+                </>
+              ) : framing.state === "failed" ? (
+                "Milan could not suggest a wording this time. Your own words will be used — nothing is lost."
+              ) : framing.state === "ready" ? (
+                <>
+                  Milan&apos;s suggestion is on the right. Edit it, or leave the tick below unticked
+                  to keep your own words.
+                  <span className="font-mono text-[11px] opacity-70">
+                    · {framing.provider} {framing.confidence.toFixed(2)}
                   </span>
-                </AlertDescription>
-              </Alert>
-            ) : null}
+                </>
+              ) : null}
+            </p>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <section className="space-y-2">
-                <Label htmlFor="original-readonly">Your words, exactly as you wrote them</Label>
-                <p className="text-xs text-muted-foreground">
-                  This is kept forever and shown beside everything else. Nobody can change it.
-                </p>
+              <section className="space-y-1.5">
+                <Label htmlFor="original-readonly">Your words</Label>
                 <Textarea
                   id="original-readonly"
-                  rows={8}
+                  rows={7}
                   lang={state.bodyLang}
                   value={state.bodyOriginal}
                   onChange={(e) => set({ bodyOriginal: e.target.value })}
@@ -762,14 +749,11 @@ export function SubmitWizard({
                 />
               </section>
 
-              <section className="space-y-2">
+              <section className="space-y-1.5">
                 <Label htmlFor="framed">Milan&apos;s suggested wording</Label>
-                <p className="text-xs text-muted-foreground">
-                  Written so a university team can start work on it. Edit it freely.
-                </p>
                 <Textarea
                   id="framed"
-                  rows={8}
+                  rows={7}
                   lang="en"
                   value={state.framedStatement}
                   placeholder={
@@ -783,37 +767,37 @@ export function SubmitWizard({
               </section>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="success">What would success look like?</Label>
-              <p className="text-xs text-muted-foreground">
-                How would you know the problem was actually solved? This is what a student team
-                will be measured against — and only your confirmation counts as impact.
-              </p>
               <Textarea
                 id="success"
-                rows={3}
+                rows={2}
+                placeholder="How would you know the problem was actually solved?"
                 value={state.successCriteria}
                 onChange={(e) => set({ successCriteria: e.target.value })}
                 className="text-base"
               />
             </div>
 
-            <div className="flex items-start gap-3 milan-glass rounded-xl p-3">
+            <label
+              htmlFor="approve"
+              className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm"
+            >
               <input
                 id="approve"
                 type="checkbox"
-                className="mt-1 size-5"
+                className="mt-0.5 size-5"
                 checked={state.framingApprovedByCitizen}
                 disabled={!state.framedStatement.trim()}
                 onChange={(e) => set({ framingApprovedByCitizen: e.target.checked })}
               />
-              <Label htmlFor="approve" className="text-sm font-normal leading-snug">
-                I have read the suggested wording and I approve it.
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Leave this unticked to use your own words. Either way your original is kept.
+              <span>
+                I approve Milan&apos;s wording.
+                <span className="ms-1 text-xs text-muted-foreground">
+                  Leave unticked to keep your own words — either way, your original is kept.
                 </span>
-              </Label>
-            </div>
+              </span>
+            </label>
           </div>
         ) : null}
 

@@ -17,7 +17,7 @@ import { parseBreakdown } from "@/packages/scoring";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
-import { requireUser } from "@/lib/auth/guards";
+import { currentUser } from "@/lib/auth/guards";
 import { framingProvenance } from "@/lib/ai/stages/p1_framing";
 import { handoffContract } from "@/lib/ai/triage";
 import { projectTrace } from "@/lib/ai/trace-projection";
@@ -83,9 +83,10 @@ export default async function ChallengePage({
 }) {
   const { trackingId } = await params;
   const decoded = decodeURIComponent(trackingId).toUpperCase();
-  // The list at /challenges is public; a specific report's full detail —
-  // credit chain, priority breakdown, pipeline trace — requires an account.
-  const user = await requireUser(`/c/${trackingId}`);
+  // Genuinely public, no login — the success page tells every citizen they
+  // can check this page "at any time, with no login". A signed-in viewer
+  // still gets the extra affordances below (corroborate, comment).
+  const user = await currentUser();
 
   const [row] = await db
 

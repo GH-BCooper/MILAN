@@ -175,10 +175,28 @@ export function MilanMap({
       });
       map.current = instance;
       setBasemap(pmtilesUrl && tilesOk ? "tiles" : "blank");
+
+      // Leaflet measures its container's size once, at construction. Inside a
+      // multi-step wizard the container can still be mid-layout (fonts not
+      // painted, the step's height transition not settled) at that instant,
+      // which is what "the map sometimes doesn't work" actually is: it comes
+      // up sized or centred wrong, silently, with no error. Re-measuring one
+      // frame later — after layout has definitely settled — fixes it without
+      // guessing at a fixed delay.
+      requestAnimationFrame(() => {
+        if (!cancelled) instance.invalidateSize();
+      });
     })();
+
+    // Keep re-measuring as the container itself changes size (a step
+    // transition, a phone rotated, the sidebar collapsing) — the same fix as
+    // above, but for every resize after the first, not just the initial one.
+    const observer = new ResizeObserver(() => map.current?.invalidateSize());
+    if (container.current) observer.observe(container.current);
 
     return () => {
       cancelled = true;
+      observer.disconnect();
       if (map.current) {
         map.current.remove();
         map.current = null;

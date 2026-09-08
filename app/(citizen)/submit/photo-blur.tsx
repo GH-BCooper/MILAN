@@ -111,9 +111,15 @@ export function PhotoBlur({
   };
 
   const onCanvasPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // Without this, a touchscreen treats the tap as the start of a scroll
+    // gesture and swallows it — the canvas never sees a pointer event and
+    // blurring looks like it does nothing. This is the browser's default for
+    // any element it isn't told otherwise about.
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
     const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
     addRegionAt(x, y);
@@ -189,7 +195,7 @@ export function PhotoBlur({
             if (canvas) addRegionAt(canvas.width / 2, canvas.height / 2);
           }
         }}
-        className="mt-3 block max-h-[24rem] w-full cursor-crosshair rounded-md border border-border bg-muted object-contain"
+        className="mt-3 block max-h-[24rem] w-full touch-none cursor-crosshair rounded-md border border-border bg-muted object-contain"
       />
 
       {note ? <p className="mt-2 text-sm text-amber-700">{note}</p> : null}

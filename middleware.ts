@@ -23,7 +23,6 @@ const PROTECTED_PREFIXES = [
   "/demo",
   "/submit",
   "/submit-question",
-  "/c",
   "/profile",
 ];
 
@@ -64,7 +63,6 @@ export const config = {
     "/submit",
     "/submit/:path*",
     "/submit-question",
-    "/c/:path*",
     "/profile",
   ],
 };

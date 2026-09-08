@@ -22,20 +22,32 @@ export async function LandingHeader() {
           <span className="milan-gradient-text">Milan</span>
         </Link>
 
-        <nav aria-label="Portals" className="hidden flex-wrap items-center gap-x-1 text-sm md:flex">
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/citizens">
-            Citizens
-          </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/universities">
-            Universities
-          </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/industry">
-            Industry
-          </Link>
-          <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/challenges">
-            Challenges
-          </Link>
-        </nav>
+        {/* The portal switcher is for a logged-out visitor choosing who they are.
+            Once signed in, that choice is already made — showing it anyway is
+            what let a university account see "Citizens"/"Industry" links that
+            were never theirs to use. */}
+        {!user ? (
+          <nav aria-label="Portals" className="hidden flex-wrap items-center gap-x-1 text-sm md:flex">
+            <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/citizens">
+              Citizens
+            </Link>
+            <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/universities">
+              Universities
+            </Link>
+            <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/portals/industry">
+              Industry
+            </Link>
+            <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/challenges">
+              Challenges
+            </Link>
+          </nav>
+        ) : (
+          <nav aria-label="Primary" className="hidden flex-wrap items-center gap-x-1 text-sm md:flex">
+            <Link className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground" href="/challenges">
+              Challenges
+            </Link>
+          </nav>
+        )}
 
         <div className="ms-auto flex items-center gap-2 sm:gap-3">
           <ThemeToggle />

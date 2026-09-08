@@ -40,6 +40,7 @@ const RegisterSchema = z
     districtCode: z.string().trim().min(1).optional().or(z.literal("")),
     orgId: z.string().trim().min(1).optional().or(z.literal("")),
     proofType: z.string().trim().min(1).optional().or(z.literal("")),
+    proofTypeOther: z.string().trim().max(160).optional().or(z.literal("")),
     designation: z.string().trim().max(160).optional().or(z.literal("")),
     idNumber: z.string().trim().max(80).optional().or(z.literal("")),
     orgEmail: z.string().trim().toLowerCase().email().optional().or(z.literal("")),
@@ -73,6 +74,13 @@ const RegisterSchema = z
         message: "Choose what you can show as proof of affiliation.",
       });
     }
+    if (needsProof && v.proofType === "OTHER" && !v.proofTypeOther) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["proofTypeOther"],
+        message: "Describe what you can show as proof of affiliation.",
+      });
+    }
     if (needsProof && !v.designation) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -101,6 +109,7 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
   }
   const input = parsed.data;
   const needsProof = input.role === "HEI_MEMBER" || input.role === "INDUSTRY";
+  const proofType = input.proofType === "OTHER" ? input.proofTypeOther || "" : input.proofType;
 
   // The proof document. Read before the account is created so a bad upload
   // fails the whole registration rather than leaving a half-verified account.
@@ -148,7 +157,7 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
         districtCode: input.districtCode || null,
         orgId: input.orgId || null,
         orgVerificationStatus: needsProof ? "PENDING" : "NOT_APPLICABLE",
-        orgProofType: needsProof ? input.proofType || null : null,
+        orgProofType: needsProof ? proofType || null : null,
         orgProofMeta: needsProof
           ? { designation: input.designation || null, idNumber: input.idNumber || null, orgEmail: input.orgEmail || null }
           : null,
@@ -171,7 +180,11 @@ export async function registerAction(_prev: RegisterState, formData: FormData): 
     if (e instanceof APIError) {
       return { error: e.body?.message ?? "That email is already registered." };
     }
-    throw e;
+    // Never let a registration failure fall through to Next.js's generic
+    // error boundary — the citizen loses every field they typed and has no
+    // idea what happened. Log it server-side and hand back a plain message.
+    console.error("registerAction failed", e);
+    return { error: "Something went wrong creating your account. Please try again." };
   }
 
   redirect("/verify-account");

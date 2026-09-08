@@ -36,8 +36,10 @@ export function OtpBox({
 
   if (verified || (state as { ok?: boolean }).ok) {
     return (
-      <div className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 p-4">
-        <p className="text-sm font-medium text-emerald-200">{label} verified — {destination}.</p>
+      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/12 p-4">
+        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">
+          {label} verified — {destination}.
+        </p>
       </div>
     );
   }
@@ -58,7 +60,7 @@ export function OtpBox({
       <p className="text-xs text-muted-foreground">Code sent to {destination}.</p>
 
       {demoCode ? (
-        <p className="rounded-md bg-amber-500/15 p-2 font-mono text-sm text-amber-200">
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/12 p-2 font-mono text-sm text-amber-800 dark:text-amber-200">
           Demo mode — no real {kind === "email" ? "mail" : "SMS"} gateway is configured. Your code is{" "}
           <strong>{demoCode}</strong>.
         </p>
