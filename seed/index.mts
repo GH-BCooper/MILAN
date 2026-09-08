@@ -1042,7 +1042,7 @@ async function main() {
       "speaker (PHASE_1_LEARN.md 7.3)" +
       (mediaCount === 0
         ? ", and the Sunita voice note was NOT attached — seed-data/voice-note.mp3 " +
-          "is missing/empty, or Supabase Storage was unreachable during the seed.",
+          "is missing/empty, or Supabase Storage was unreachable during the seed."
         : ". The Sunita voice note is attached (challenge_media row written)."),
   );
 }
