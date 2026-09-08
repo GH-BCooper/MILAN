@@ -12,7 +12,6 @@
     "test": "vitest run",
     "seed": "tsx --conditions=react-server seed/index.mts",
     "seed:ai": "tsx --conditions=react-server seed/presync.mts",
-    "seed:ai": "tsx --conditions=react-server seed/presync.mts",
     "seed:states": "tsx --conditions=react-server -r ./seed/tsx-shims.cjs seed/states.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -48,13 +47,8 @@
     "verify:phase3": "tsx --conditions=react-server scripts/verify-phase3.mts",
     "backup": "node scripts/backup.mjs backups/phase3-demo.sql"
   },
-  "name": "milan",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Milan \u2014 citizen problems become time-bound, routed research assignments. SIH 2026, SIH26043.",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
-    "@react-map/india": "^1.0.21",
     "@react-map/india": "^1.0.21",
     "@supabase/supabase-js": "^2.45.0",
     "better-auth": "^1.2.0",
