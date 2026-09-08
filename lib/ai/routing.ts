@@ -68,8 +68,12 @@ export const ROUTING = {
    *  the citizen so the "why" is never a mystery — invariant 10. PARKED
    *  already carries an automatic annual re-review, so a challenge that
    *  clears the bar later (more corroborations, a vulnerability update)
-   *  re-enters routing on its own; nothing here is a second rejection. */
-  minPriorityToRoute: 85,
+   *  re-enters routing on its own; nothing here is a second rejection.
+   *  Lowered from 85 to 70: at 85, real seed-scored challenges almost never
+   *  cleared the bar, so /gov/routing and the challenge detail's S5 section
+   *  sat empty on the demo path — a routing pipeline nobody ever saw route.
+   *  70 still parks the genuinely thin reports; it stops parking everything. */
+  minPriorityToRoute: 70,
   /** The distance at which the distance term has decayed to 1/e. */
   distanceDecayKm: 250,
   /** Capacity is scaled against this many declared slots. */

@@ -79,21 +79,37 @@ export function VerificationCard({ item }: { item: PendingVerification }) {
         </div>
       </dl>
 
-      <div className="mt-3">
-        {item.proofDocumentKey ? (
-          <a
-            className="text-sm font-medium text-primary underline underline-offset-4"
-            href={`/api/admin/verification-document?userId=${item.userId}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open the submitted document ↗
-          </a>
-        ) : (
-          <p className="text-sm text-amber-800 dark:text-amber-200">
-            No document could be retrieved — object storage may be unreachable. See invariant 8.
-          </p>
-        )}
+      {/*
+       * Verification is simple name matching: does the name typed at
+       * registration appear on the document itself? There is no OCR wired up
+       * (no pdf-parse/tesseract.js in package.json, and CLAUDE.md invariant 8
+       * rules out depending on a live OCR API with no local fallback), so
+       * lib/media/nameMatch.ts's deterministic check has nothing extracted to
+       * run against yet — this is that same check, done by eye: the name to
+       * look for is put directly beside the document, not left for the
+       * reviewer to remember from the card header above.
+       */}
+      <div className="mt-3 rounded-md border border-dashed border-border p-3">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          Check this name is on the document
+        </p>
+        <p className="mt-1 text-base font-semibold">{item.fullName}</p>
+        <div className="mt-2">
+          {item.proofDocumentKey ? (
+            <a
+              className="text-sm font-medium text-primary underline underline-offset-4"
+              href={`/api/admin/verification-document?userId=${item.userId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open the submitted document ↗
+            </a>
+          ) : (
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              No document could be retrieved — object storage may be unreachable. See invariant 8.
+            </p>
+          )}
+        </div>
       </div>
 
       {mode === "none" ? (

@@ -18,6 +18,7 @@ import { LifecycleStepper } from "@/components/lifecycle-stepper";
 import { StatusBadge } from "@/components/status-badge";
 import { currentUser } from "@/lib/auth/guards";
 import { framingProvenance } from "@/lib/ai/stages/p1_framing";
+import { ROUTING } from "@/lib/ai/routing";
 import { handoffContract } from "@/lib/ai/triage";
 import { projectTrace } from "@/lib/ai/trace-projection";
 import { db } from "@/lib/db";
@@ -490,7 +491,11 @@ export default async function ChallengePage({
               joined and both are credited.
             </p>
             <div className="mt-3">
-              <CorroborateButton trackingId={c.trackingId} signedIn={Boolean(user)} />
+              <CorroborateButton
+                trackingId={c.trackingId}
+                signedIn={Boolean(user)}
+                isOwnReport={Boolean(user && c.reporterId && user.id === c.reporterId)}
+              />
             </div>
           </div>
         </section>
@@ -541,57 +546,67 @@ export default async function ChallengePage({
           )}
         </section>
 
-        {offers.length > 0 ? (
-          <section className="mt-8" id="routing" aria-labelledby="routing-heading">
-            <h2 id="routing-heading" className="text-lg font-semibold">
-              Where it was sent
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              A professor never has to go looking. Each department below was matched by a published
-              scoring function and sent a direct link, with a written reason and a clock.
-            </p>
-            {gateHeld ? (
-              <p className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
-                Severity is at or above 0.70, so nothing has been sent yet. A District Collector
-                confirms or overrides this shortlist first, and any override is recorded with a
-                written reason.
-              </p>
-            ) : null}
-            <ol className="mt-3 space-y-2">
-              {offers.map((offer) => (
-                <li key={offer.id} className="milan-glass rounded-xl p-4">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium">
-                      <span className="me-2 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                        #{offer.rank}
-                      </span>
-                      {offer.orgName}
-                      {offer.department ? (
-                        <span className="text-muted-foreground">
-                          {" "}
-                          — {offer.department}
-                          {offer.labName ? ` · ${offer.labName}` : ""}
+        <section className="mt-8" id="routing" aria-labelledby="routing-heading">
+          <h2 id="routing-heading" className="text-lg font-semibold">
+            Where it was sent
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A professor never has to go looking. Each department below was matched by a published
+            scoring function and sent a direct link, with a written reason and a clock.
+          </p>
+          {offers.length > 0 ? (
+            <>
+              {gateHeld ? (
+                <p className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
+                  Severity is at or above 0.70, so nothing has been sent yet. A District Collector
+                  confirms or overrides this shortlist first, and any override is recorded with a
+                  written reason.
+                </p>
+              ) : null}
+              <ol className="mt-3 space-y-2">
+                {offers.map((offer) => (
+                  <li key={offer.id} className="milan-glass rounded-xl p-4">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-medium">
+                        <span className="me-2 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                          #{offer.rank}
                         </span>
-                      ) : null}
+                        {offer.orgName}
+                        {offer.department ? (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            — {offer.department}
+                            {offer.labName ? ` · ${offer.labName}` : ""}
+                          </span>
+                        ) : null}
+                      </p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        match {offer.matchScore ? Number(offer.matchScore).toFixed(3) : "—"}
+                      </p>
+                    </div>
+                    {offer.reasonText ? <p className="mt-1 text-sm">{offer.reasonText}</p> : null}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {offer.notifiedAt
+                        ? `Notified ${formatDate(offer.notifiedAt)}.`
+                        : "Not notified yet — waiting for a district officer to confirm."}
+                      {offer.claimWindowEndsAt
+                        ? ` Claim window closes ${formatDate(offer.claimWindowEndsAt)}.`
+                        : ""}
                     </p>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      match {offer.matchScore ? Number(offer.matchScore).toFixed(3) : "—"}
-                    </p>
-                  </div>
-                  {offer.reasonText ? <p className="mt-1 text-sm">{offer.reasonText}</p> : null}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {offer.notifiedAt
-                      ? `Notified ${formatDate(offer.notifiedAt)}.`
-                      : "Not notified yet — waiting for a district officer to confirm."}
-                    {offer.claimWindowEndsAt
-                      ? ` Claim window closes ${formatDate(offer.claimWindowEndsAt)}.`
-                      : ""}
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </section>
-        ) : null}
+                  </li>
+                ))}
+              </ol>
+            </>
+          ) : (
+            <p className="mt-3 rounded-md border border-dashed border-border bg-muted p-3 text-sm text-muted-foreground">
+              {!breakdown
+                ? "Not routed yet — the pipeline has not scored this report, so S5 has not run."
+                : c.priorityScore !== null && Number(c.priorityScore) < ROUTING.minPriorityToRoute
+                  ? `No matching department was searched for: the priority score of ${Number(c.priorityScore).toFixed(1)} is below the ${ROUTING.minPriorityToRoute}-point routing bar, so this report was parked instead. It re-enters routing automatically if new corroborations or facts raise the score.`
+                  : "No matching department was found. This report cleared the routing bar, but no university capability in the current seed data scored above zero against it — check /admin/routing for the full candidate list."}
+            </p>
+          )}
+        </section>
 
         {/* The live answer to "why not just use CPGRAMS". We are not competing
             with it; when something is a grievance we hand it over, and we show
