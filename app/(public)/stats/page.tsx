@@ -194,11 +194,11 @@ export default async function StatsPage() {
           </div>
 
           <div className="rounded-lg border-2 border-emerald-400/40 bg-emerald-500/15 p-4">
-            <p className="text-sm font-medium text-emerald-200">Confirmed impact</p>
-            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-200">
+            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Confirmed impact</p>
+            <p className="mt-1 text-4xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">
               {impactN.toLocaleString("en-IN")}
             </p>
-            <p className="mt-2 text-xs font-medium text-emerald-200">
+            <p className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-200">
               Impact counts only citizen-confirmed outcomes.
               {impact.partial > 0 ? ` ${impact.partial} more were confirmed as partly fixed and are counted separately.` : ""}
             </p>

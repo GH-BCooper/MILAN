@@ -80,7 +80,7 @@ export function ClaimCountdown({
 
   return (
     <span
-      className={`font-mono font-semibold tabular-nums ${urgent ? "text-amber-200" : ""} ${className}`}
+      className={`font-mono font-semibold tabular-nums ${urgent ? "text-amber-800 dark:text-amber-200" : ""} ${className}`}
       // Announced off: a screen reader reading a ticking clock aloud every
       // second is unusable. The absolute deadline is in the title instead.
       aria-live="off"

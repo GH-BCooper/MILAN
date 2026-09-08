@@ -33,7 +33,7 @@ export function RespondForm({ interestId }: { interestId: string }) {
         </button>
       </div>
       {state ? (
-        <p className={`text-sm ${state.ok ? "text-emerald-200" : "text-red-200"}`} role="status">
+        <p className={`text-sm ${state.ok ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200"}`} role="status">
           {state.message}
         </p>
       ) : null}

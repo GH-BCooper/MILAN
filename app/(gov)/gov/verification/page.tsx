@@ -111,7 +111,7 @@ export default async function VerificationPage() {
                           {r.priority_score ? Number(r.priority_score).toFixed(3) : "—"}
                         </p>
                         {r.official_endorsed ? (
-                          <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+                          <span className="rounded bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">
                             verified in the field
                           </span>
                         ) : null}

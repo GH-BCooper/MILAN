@@ -78,7 +78,7 @@ export default async function HeiInbox() {
                         </span>
                       ) : null}
                       {item.hazard && item.hazard !== "NONE" ? (
-                        <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+                        <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
                           {item.hazard.replaceAll("_", " ")}
                         </span>
                       ) : null}

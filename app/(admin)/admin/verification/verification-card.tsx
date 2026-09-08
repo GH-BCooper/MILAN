@@ -90,7 +90,7 @@ export function VerificationCard({ item }: { item: PendingVerification }) {
             Open the submitted document ↗
           </a>
         ) : (
-          <p className="text-sm text-amber-200">
+          <p className="text-sm text-amber-800 dark:text-amber-200">
             No document could be retrieved — object storage may be unreachable. See invariant 8.
           </p>
         )}

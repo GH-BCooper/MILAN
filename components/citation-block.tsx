@@ -49,7 +49,7 @@ export function CitationBlock({ citation, bibtex }: { citation: string; bibtex: 
         ) : null}
       </div>
       {copied === "failed" ? (
-        <p className="mt-2 text-xs text-red-200">
+        <p className="mt-2 text-xs text-red-800 dark:text-red-200">
           Your browser blocked the clipboard. Select the text above and copy it by hand.
         </p>
       ) : null}

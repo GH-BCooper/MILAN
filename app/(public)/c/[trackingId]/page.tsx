@@ -224,17 +224,17 @@ export default async function ChallengePage({
             <UnconfirmedTag />
           ) : null}
           {c.impactConfirmed && c.impactPartial ? (
-            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-200">
+            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 dark:text-amber-200">
               the citizen says partly fixed
             </span>
           ) : null}
           {c.impactConfirmed && !c.impactPartial ? (
-            <span className="rounded border border-emerald-400/40 bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-medium text-emerald-200">
+            <span className="rounded border border-emerald-400/40 bg-emerald-500/15 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-200">
               confirmed fixed by the citizen
             </span>
           ) : null}
           {c.impactDisputed ? (
-            <span className="rounded border border-red-400/40 bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-200">
+            <span className="rounded border border-red-400/40 bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-800 dark:text-red-200">
               disputed — the citizen says nothing changed
             </span>
           ) : null}
@@ -244,7 +244,7 @@ export default async function ChallengePage({
             </span>
           ) : null}
           {c.hazard && c.hazard !== "NONE" ? (
-            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+            <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
               Hazard: {c.hazard.replaceAll("_", " ")}
             </span>
           ) : null}
@@ -553,7 +553,7 @@ export default async function ChallengePage({
               scoring function and sent a direct link, with a written reason and a clock.
             </p>
             {gateHeld ? (
-              <p className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-200">
+              <p className="mt-3 rounded-md border border-amber-400/40 bg-amber-500/15 p-3 text-sm text-amber-800 dark:text-amber-200">
                 Severity is at or above 0.70, so nothing has been sent yet. A District Collector
                 confirms or overrides this shortlist first, and any override is recorded with a
                 written reason.

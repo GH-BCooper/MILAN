@@ -63,8 +63,8 @@ export function ConfirmForm({ token }: { token: string }) {
           disabled={pending}
           className="flex w-full flex-col items-start rounded-lg border-2 border-amber-400/40 bg-amber-500/15 px-5 py-4 text-left disabled:opacity-50"
         >
-          <span className="text-lg font-bold text-amber-200">Partly</span>
-          <span className="mt-1 text-sm text-amber-200">
+          <span className="text-lg font-bold text-amber-800 dark:text-amber-200">Partly</span>
+          <span className="mt-1 text-sm text-amber-800 dark:text-amber-200">
             Counted on its own, separately. It will never be shown as a full fix.
           </span>
         </button>
@@ -75,8 +75,8 @@ export function ConfirmForm({ token }: { token: string }) {
           disabled={pending}
           className="flex w-full flex-col items-start rounded-lg border-2 border-red-400/40 bg-foreground/5 px-5 py-4 text-left disabled:opacity-50"
         >
-          <span className="text-lg font-bold text-red-200">No, nothing changed</span>
-          <span className="mt-1 text-sm text-red-200">
+          <span className="text-lg font-bold text-red-800 dark:text-red-200">No, nothing changed</span>
+          <span className="mt-1 text-sm text-red-800 dark:text-red-200">
             The claim is marked disputed, the District Collector is told, and nothing is counted.
           </span>
         </button>
@@ -84,7 +84,7 @@ export function ConfirmForm({ token }: { token: string }) {
 
       {pending ? <p className="text-sm text-muted-foreground">Recording your answer…</p> : null}
       {state && !state.ok ? (
-        <p className="text-sm text-red-200" role="status">
+        <p className="text-sm text-red-800 dark:text-red-200" role="status">
           {state.message}
         </p>
       ) : null}

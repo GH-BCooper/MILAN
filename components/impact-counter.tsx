@@ -18,18 +18,18 @@ export function ImpactCounter({ counts, scopeLabel }: { counts: ImpactCounts; sc
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <div className="rounded-xl border border-emerald-400/40 bg-gradient-to-br from-emerald-500/20 to-teal-500/5 p-4 shadow-[0_0_30px_-14px_rgba(16,217,160,0.9)] backdrop-blur-md">
-        <p className="text-3xl font-bold tabular-nums text-emerald-200">{counts.confirmed}</p>
-        <p className="mt-1 text-sm font-semibold text-emerald-200">Confirmed by the citizen</p>
-        <p className="mt-1 text-xs text-emerald-200">
+        <p className="text-3xl font-bold tabular-nums text-emerald-800 dark:text-emerald-200">{counts.confirmed}</p>
+        <p className="mt-1 text-sm font-semibold text-emerald-800 dark:text-emerald-200">Confirmed by the citizen</p>
+        <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">
           The person who reported the problem says it is fixed. This is the only thing that moves this
           number{scopeLabel ? ` in ${scopeLabel}` : ""}.
         </p>
       </div>
 
       <div className="rounded-xl border border-amber-400/40 bg-gradient-to-br from-amber-500/20 to-orange-500/5 p-4 shadow-[0_0_30px_-14px_rgba(251,191,36,0.8)] backdrop-blur-md">
-        <p className="text-3xl font-bold tabular-nums text-amber-200">{counts.partial}</p>
-        <p className="mt-1 text-sm font-semibold text-amber-200">Partly fixed</p>
-        <p className="mt-1 text-xs text-amber-200">
+        <p className="text-3xl font-bold tabular-nums text-amber-800 dark:text-amber-200">{counts.partial}</p>
+        <p className="mt-1 text-sm font-semibold text-amber-800 dark:text-amber-200">Partly fixed</p>
+        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
           The citizen answered &ldquo;partly&rdquo;. Counted separately and never rounded up into the
           number on the left.
         </p>
