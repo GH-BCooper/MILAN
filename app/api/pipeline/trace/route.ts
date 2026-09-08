@@ -46,7 +46,15 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: "no such challenge" }, { status: 404 });
   }
 
-  const projection = await projectTrace(challenge.id);
+  let projection: Awaited<ReturnType<typeof projectTrace>>;
+  try {
+    projection = await projectTrace(challenge.id);
+  } catch (e) {
+    // Per-stage isolation inside projectTrace should make this unreachable;
+    // if it fires, the terminal — not a silent spinner — says what broke.
+    console.error(`[trace] projection failed for ${trackingId}:`, e);
+    return Response.json({ error: "The trace could not be read right now." }, { status: 500 });
+  }
   if (!projection) {
     return Response.json({ error: "no such challenge" }, { status: 404 });
   }

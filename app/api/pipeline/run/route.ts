@@ -98,11 +98,16 @@ export async function POST(request: Request): Promise<Response> {
    * promise settles, so the platform cannot freeze or recycle the function
    * mid-run the way it would once the response finishes.
    */
-  runOnce(challenge.id, () => runPipeline(challenge.id, async () => undefined));
+  const started = runOnce(challenge.id, () => runPipeline(challenge.id, async () => undefined));
+  // The success page shows a spinner from this response until the receipts
+  // land; these two lines are how a terminal tells "the run is slow" apart
+  // from "the run never started" and "the run wedged mid-flight".
+  console.info(`[pipeline] run ${started ? "started" : "already in flight"} for ${challenge.trackingId}`);
   const tracked = inflightPromise(challenge.id);
   if (tracked) {
     after(async () => {
       await tracked;
+      console.info(`[pipeline] run finished for ${challenge.trackingId}`);
     });
   }
 

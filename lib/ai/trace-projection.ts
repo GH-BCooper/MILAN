@@ -17,7 +17,10 @@
  * The rule that makes this honest: every card renders only from state that
  * provably happened — a row, a persisted score, a written route. Where the
  * live trace had ephemeral detail (S3's comparison table, S2's kNN priors)
- * that was never persisted, the card says so rather than inventing it.
+ * that was never persisted, the card says so rather than inventing it. A
+ * stage that throws while being projected is isolated behind try/catch and
+ * renders amber (see `unreadable`): one unreadable card must never blank
+ * the other five.
  */
 import { desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -131,6 +134,7 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   const p0 = latestOf("P0_TRANSLATE");
   let P0: TraceStage = { status: "waiting" };
+  try {
   if (p0) {
     const translated = c.bodyEn !== null;
     P0 = {
@@ -163,8 +167,14 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   /* ------------------------------------------------------------ S1 */
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: P0 projection failed:`, e);
+    P0 = unreadable("P0");
+  }
+
   const s1 = latestOf("S1_TRIAGE");
   let S1: TraceStage = { status: "waiting" };
+  try {
   if (s1) {
     const value = outputOf(s1) as Parameters<typeof decideS1>[0] | null;
     const decision = value
@@ -191,8 +201,14 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   /* ------------------------------------------------------------ S2 */
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: S1 projection failed:`, e);
+    S1 = unreadable("S1");
+  }
+
   const s2 = latestOf("S2_CLASSIFY");
   let S2: TraceStage = { status: "waiting" };
+  try {
   if (s2) {
     const raw = outputOf(s2);
     const value = raw ? (raw as S2Output) : null;
@@ -216,7 +232,13 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   /* ------------------------------------------------------------ S3 */
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: S2 projection failed:`, e);
+    S2 = unreadable("S2");
+  }
+
   let S3: TraceStage = { status: "waiting" };
+  try {
   if (halted) {
     S3 = { status: "skipped", note: haltedNote(c.status, row.parentTrackingId) };
   } else if (c.isParent) {
@@ -251,7 +273,13 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   /* ------------------------------------------------------------ S4 */
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: S3 projection failed:`, e);
+    S3 = unreadable("S3");
+  }
+
   let S4: TraceStage = { status: "waiting" };
+  try {
   if (c.priorityBreakdown !== null && c.priorityScore !== null) {
     const breakdown = c.priorityBreakdown as { version?: number; total?: number; terms?: Array<{ label: string; contribution: number }> };
     const top = [...(breakdown.terms ?? [])]
@@ -273,8 +301,14 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
 
   /* ------------------------------------------------------------ S5 */
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: S4 projection failed:`, e);
+    S4 = unreadable("S4");
+  }
+
   const s5 = latestOf("S5_REASON");
   let S5: TraceStage = { status: "waiting" };
+  try {
   if (routeRows.length > 0) {
     const gated = routeRows.every((r) => r.notifiedAt === null);
     const matches = routeRows.map((r) => {
@@ -312,6 +346,11 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
     S5 = { status: "skipped", note: haltedNote("MERGED", row.parentTrackingId) };
   }
 
+  } catch (e) {
+    console.error(`[trace] ${c.trackingId}: S5 projection failed:`, e);
+    S5 = unreadable("S5");
+  }
+
   /* Halted reports skip everything downstream of the halting stage. */
   if (c.status === "REJECTED_UNSAFE" || c.status === "FORWARDED_EXTERNAL") {
     if (S2.status === "waiting") S2 = { status: "skipped", note: haltedNote(c.status, null) };
@@ -343,6 +382,20 @@ export async function projectTrace(challengeId: string): Promise<TraceProjection
   const complete = TRACE_KEY_ORDER.every((k) => stages[k].status !== "waiting");
 
   return { stages, complete, status: c.status };
+}
+
+/**
+ * A stage that threw while being projected renders amber, never blank, and
+ * never takes the other five cards down with it: a failure to READ a receipt
+ * must not present as a failure to HAVE one. The terminal carries the error.
+ */
+function unreadable(key: TraceStageKey): TraceStage {
+  return {
+    status: "degraded",
+    note:
+      `This card could not be read back from its receipts (${key}) — the raw rows ` +
+      `are in /admin/ai-runs.`,
+  };
 }
 
 function haltedNote(status: string, parentTrackingId: string | null): string {

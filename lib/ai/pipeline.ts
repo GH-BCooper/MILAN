@@ -36,6 +36,7 @@ import { canTransition, transition } from "@/lib/db/stateMachine";
 import { removeObjects } from "@/lib/media/storage";
 import { getObject } from "@/lib/media/storage";
 import { embed } from "./providers/embed";
+import { withTimeout } from "./providers/types";
 import { transcribe, translate } from "./stages/p0";
 import { decideS1, handoffContract, runS1 } from "./stages/s1";
 import { decideS2, knnPrior, runS2 } from "./stages/s2";
@@ -279,7 +280,17 @@ async function stageP0(ctx: Ctx, emit: Emit): Promise<void> {
       .limit(1);
 
     if (audio) {
-      const bytes = await getObject(audio.storageKey);
+      // Storage has no timeout of its own (neither the Supabase nor the S3
+      // client bounds a download), and this await sits on the pipeline's
+      // critical path: a wedged fetch would freeze every card behind P0 with
+      // nothing in the trace to say why. Bound it; a voice note that cannot
+      // be fetched in fifteen seconds is treated exactly like a missing one.
+      let bytes: Buffer | null = null;
+      try {
+        bytes = await withTimeout("p0-voice-fetch", 15_000, () => getObject(audio.storageKey));
+      } catch (e) {
+        console.warn(`[pipeline] voice fetch for ${c.trackingId} failed:`, e instanceof Error ? e.message : e);
+      }
       const result = bytes ? await transcribe(bytes, audio.mime) : null;
       if (result) {
         await db
