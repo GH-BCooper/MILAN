@@ -70,7 +70,7 @@ export async function LandingHeader() {
                 <Link href="/login">Sign in</Link>
               </Button>
               <Button asChild size="sm" className="hidden sm:inline-flex">
-                <Link href="/submit">Report a problem</Link>
+                <Link href="/report-bug">Report a bug</Link>
               </Button>
             </>
           )}

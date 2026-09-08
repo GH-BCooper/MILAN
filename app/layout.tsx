@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 /* Self-hosted (app/fonts/, SIL OFL 1.1 — licences sit beside the files) so
@@ -57,7 +56,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col antialiased">
         <ThemeProvider>
-          <SiteHeader />
           {children}
           <Toaster />
         </ThemeProvider>
