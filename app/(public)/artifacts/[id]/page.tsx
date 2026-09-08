@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/lib/auth/guards";
 import { mayDownload } from "@/lib/artifacts/publish";
 import { execRaw } from "@/lib/db/raw";
@@ -92,7 +90,6 @@ export default async function ArtifactPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {a.kind.toLowerCase()} · {restricted ? "Restricted" : "CC-BY"}

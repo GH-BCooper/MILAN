@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { requireRole } from "@/lib/auth/guards";
 import { clockNow, elapsedMs } from "@/lib/clock";
 import { clockOffsetDays, syncClockOffset } from "@/lib/clock/server";
@@ -126,7 +124,6 @@ export default async function DemoConsole() {
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Demo console</h1>

@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { execRaw } from "@/lib/db/raw";
 import { tierLabel } from "@/lib/credit/trust";
 
@@ -68,7 +66,6 @@ export default async function CreditRecordPage({ params }: { params: Promise<{ u
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Public credit record

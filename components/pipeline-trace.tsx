@@ -152,7 +152,12 @@ export function PipelineTrace({
           if (phase === "running" && mine.status === "waiting") {
             return { ...current, [key]: { ...mine, status: "running" } };
           }
-          return current;
+          // This stage is already caught up to `latest` — move on and check
+          // the next one. (A bare `return current` here, instead of
+          // `continue`, used to exit the whole loop the moment the first
+          // stage settled, so P0 was the only card that ever ticked over
+          // without a page reload.)
+          continue;
         }
         return current;
       });

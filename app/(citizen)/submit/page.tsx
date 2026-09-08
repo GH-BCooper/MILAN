@@ -1,6 +1,4 @@
 import { asc } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { blocks, districts } from "@/lib/db/schema";
@@ -45,7 +43,6 @@ export default async function SubmitPage({
 
   return (
     <>
-      <SiteHeader />
       {/* Wide enough for step 5's two-column wording review to breathe; the
           wizard itself narrows back to a centred column for every other step
           (see submit-wizard.tsx) so nothing else on the page gets wider by

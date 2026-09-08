@@ -2,7 +2,6 @@ import Link from "next/link";
 import { sql } from "drizzle-orm";
 
 import { LedgerEntryRow, type EntryView } from "@/components/ledger-entry-row";
-import { SiteHeader } from "@/components/site-header";
 import { VerifyChainButton } from "@/components/verify-chain-button";
 import { execRaw } from "@/lib/db/raw";
 
@@ -79,7 +78,6 @@ export default async function LedgerPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Provenance ledger</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">

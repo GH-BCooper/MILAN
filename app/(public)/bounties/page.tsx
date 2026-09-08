@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { nativeSelectClassName } from "@/components/select-with-other";
 import { execRaw } from "@/lib/db/raw";
@@ -184,7 +182,6 @@ export default async function BountiesPage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Bounty board</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">

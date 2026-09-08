@@ -120,8 +120,25 @@ export function PhotoBlur({
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
-    const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
+
+    // The canvas is styled with `object-fit: contain` inside a box whose CSS
+    // width and max-height can each constrain it independently (w-full plus
+    // max-h-[24rem]). When the box's aspect ratio does not match the canvas's
+    // own (any portrait phone photo, once the height cap kicks in), the
+    // rendered bitmap is letterboxed inside `rect` rather than filling it. A
+    // naive rect-relative scale ignores that letterbox and drifts further off
+    // the further a tap lands from the box's centre — exactly the reported
+    // bug. So first find the actual on-screen rect of the drawn image, then
+    // map into canvas pixel space from that.
+    const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
+    const renderedWidth = canvas.width * scale;
+    const renderedHeight = canvas.height * scale;
+    const offsetX = rect.left + (rect.width - renderedWidth) / 2;
+    const offsetY = rect.top + (rect.height - renderedHeight) / 2;
+
+    const x = (e.clientX - offsetX) / scale;
+    const y = (e.clientY - offsetY) / scale;
+    if (x < 0 || y < 0 || x > canvas.width || y > canvas.height) return; // tap landed on the letterbox, not the photo
     addRegionAt(x, y);
   };
 

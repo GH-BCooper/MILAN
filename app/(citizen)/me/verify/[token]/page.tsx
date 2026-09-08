@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { sql } from "drizzle-orm";
-
-import { SiteHeader } from "@/components/site-header";
 import { execRaw } from "@/lib/db/raw";
 import { readVerifyToken } from "@/lib/verify/token";
 import { ConfirmForm } from "./confirm-form";
@@ -39,7 +37,6 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
   if ("error" in read) {
     return (
       <>
-        <SiteHeader />
         <main className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">
           <h1 className="text-xl font-bold">This link did not work</h1>
           <p className="mt-2 text-sm text-muted-foreground">{read.error}</p>
@@ -68,7 +65,6 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
   if (rows.length === 0) {
     return (
       <>
-        <SiteHeader />
         <main className="mx-auto w-full max-w-xl px-4 py-10 sm:px-6">
           <h1 className="text-xl font-bold">That report could not be found.</h1>
         </main>
@@ -80,7 +76,6 @@ export default async function VerifyPage({ params }: { params: Promise<{ token: 
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-xl px-4 py-8 sm:px-6">
         <p className="font-mono text-xs font-semibold text-muted-foreground">{c.tracking_id}</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Has this actually been fixed?</h1>

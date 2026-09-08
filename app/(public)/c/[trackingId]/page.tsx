@@ -15,7 +15,6 @@ import { PipelineTrace } from "@/components/pipeline-trace";
 import { PriorityBreakdown } from "@/components/priority-breakdown";
 import { parseBreakdown } from "@/packages/scoring";
 import { LifecycleStepper } from "@/components/lifecycle-stepper";
-import { SiteHeader } from "@/components/site-header";
 import { StatusBadge } from "@/components/status-badge";
 import { currentUser } from "@/lib/auth/guards";
 import { framingProvenance } from "@/lib/ai/stages/p1_framing";
@@ -209,7 +208,6 @@ export default async function ChallengePage({
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
         <p className="font-mono text-sm font-semibold tracking-tight text-muted-foreground">
           {c.trackingId}

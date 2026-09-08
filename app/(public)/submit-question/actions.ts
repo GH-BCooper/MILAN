@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { z } from "zod";
 
 import { ForbiddenError, requireRole } from "@/lib/auth/guards";
@@ -10,6 +11,8 @@ import { challenges, creditEdges, domainEnum, outbox, slaDeadlines } from "@/lib
 import { deadlinesFor } from "@/lib/sla/deadlines";
 import { nextTrackingId } from "@/lib/db/trackingId";
 import { deriveTitle } from "@/app/(citizen)/submit/schema";
+import { inflightPromise, runOnce } from "@/lib/ai/inflight";
+import { runPipeline } from "@/lib/ai/pipeline";
 
 const SubmitQuestionSchema = z.object({
   name: z.string().trim().min(2, "Enter a name.").max(120),
@@ -47,7 +50,7 @@ export async function submitQuestionAction(raw: unknown): Promise<SubmitQuestion
   const title = deriveTitle(input.question);
   const bodyOriginal = `${input.question}\n\nSubmitted by: ${input.name}, ${input.designation} (${user.role === "HEI_MEMBER" ? "university" : "industry"})\nQualification: ${input.qualification}`;
 
-  const trackingId = await db.transaction(async (tx) => {
+  const submitted = await db.transaction(async (tx) => {
     const trackingId = await nextTrackingId(tx, user.districtCode);
 
     const [challenge] = await tx
@@ -116,8 +119,26 @@ export async function submitQuestionAction(raw: unknown): Promise<SubmitQuestion
       createdAt: now,
     });
 
-    return trackingId;
+    return { trackingId, challengeId: challenge.id };
   });
 
-  return { ok: true, trackingId };
+  /**
+   * Unlike a citizen report — whose success page passes `autoStart` to
+   * PipelineTrace — this flow redirects straight to the public /c/[trackingId]
+   * page, which only offers a privileged *replay*, never an initial run. Left
+   * as-is, a university/industry question sat at SUBMITTED forever: no S1..S4
+   * pass meant no routes row, so it never reached /hei/inbox or the challenge
+   * bank. Start it the same way app/api/pipeline/run/route.ts does — fire the
+   * background run now, and hold this invocation open (Fluid Compute) until
+   * it settles, without blocking the redirect on the LLM round trip.
+   */
+  runOnce(submitted.challengeId, () => runPipeline(submitted.challengeId, async () => undefined));
+  const tracked = inflightPromise(submitted.challengeId);
+  if (tracked) {
+    after(async () => {
+      await tracked;
+    });
+  }
+
+  return { ok: true, trackingId: submitted.trackingId };
 }

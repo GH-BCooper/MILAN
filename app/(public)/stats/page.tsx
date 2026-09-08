@@ -2,7 +2,6 @@ import Link from "next/link";
 import { sql } from "drizzle-orm";
 
 import { DistrictHeatMap, type DistrictHeatWeight } from "@/components/district-heat";
-import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { ConfirmationGap, ImpactCounter } from "@/components/impact-counter";
 import { execRaw } from "@/lib/db/raw";
@@ -179,7 +178,6 @@ export default async function StatsPage() {
 
   return (
     <>
-      <SiteHeader />
       <main className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold tracking-tight">Public statistics</h1>
         <p className="mt-1 text-sm text-muted-foreground">

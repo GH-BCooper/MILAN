@@ -809,23 +809,34 @@ export function SubmitWizard({
               </div>
             </fieldset>
 
-            <div className="space-y-2">
-              <Label htmlFor="urgency">How urgent does it feel to you? (1 to 5)</Label>
-              <input
-                id="urgency"
-                type="range"
-                min={1}
-                max={5}
-                step={1}
-                value={state.urgencySelfReport}
-                onChange={(e) => set({ urgencySelfReport: Number(e.target.value) })}
-                className="h-11 w-full"
-                aria-describedby="urgency-value"
-              />
-              <p id="urgency-value" className="text-sm font-medium" aria-live="polite">
-                {state.urgencySelfReport} of 5
-              </p>
-            </div>
+            <fieldset>
+              <legend className="text-sm font-medium">How urgent does it feel to you? (1 to 5)</legend>
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <label
+                    key={n}
+                    className="flex min-h-11 flex-col items-center gap-1 milan-glass rounded-xl p-3"
+                  >
+                    <input
+                      type="radio"
+                      name="urgency"
+                      className="size-5"
+                      value={n}
+                      checked={state.urgencySelfReport === n}
+                      onChange={() => set({ urgencySelfReport: n })}
+                      aria-label={
+                        n === 1 ? "1, not urgent" : n === 5 ? "5, very urgent" : String(n)
+                      }
+                    />
+                    <span className="text-sm font-medium">{n}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                <span>Not urgent</span>
+                <span>Very urgent</span>
+              </div>
+            </fieldset>
           </div>
         ) : null}
 
