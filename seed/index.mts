@@ -650,10 +650,25 @@ async function main() {
         orgId,
         // Demo accounts are pre-verified; a real citizen starts at tier 1.
         verifiedTier: acc.role === "CITIZEN" ? 2 : 3,
+        // Migration 0012 only grandfathers rows that existed before it ran,
+        // and the seed writes these rows after every migration — so without
+        // this the seeded HEI/INDUSTRY accounts default to NOT_APPLICABLE and
+        // requireRole bounces their dashboards to "Awaiting verification"
+        // (H-02). Demo org accounts are pre-verified by design.
+        orgVerificationStatus:
+          acc.role === "HEI_MEMBER" || acc.role === "INDUSTRY" ? "APPROVED" : "NOT_APPLICABLE",
       })
       .onConflictDoUpdate({
         target: userProfiles.userId,
-        set: { role: acc.role, fullName: acc.name, districtCode: acc.districtCode ?? null, orgId, phone: acc.phone ?? null },
+        set: {
+          role: acc.role,
+          fullName: acc.name,
+          districtCode: acc.districtCode ?? null,
+          orgId,
+          phone: acc.phone ?? null,
+          orgVerificationStatus:
+            acc.role === "HEI_MEMBER" || acc.role === "INDUSTRY" ? "APPROVED" : "NOT_APPLICABLE",
+        },
       });
 
     if (orgId) {

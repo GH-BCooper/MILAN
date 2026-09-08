@@ -8,6 +8,7 @@ import { z } from "zod";
 import { currentUser } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
+import { clientIp } from "@/lib/net/clientIp";
 import { challenges, corroborations, userProfiles } from "@/lib/db/schema";
 import { corroborationWeight } from "@/lib/credit/trust";
 import {
@@ -42,10 +43,10 @@ export async function corroborateAction(raw: unknown): Promise<CorroborateResult
 
   const user = await currentUser();
   const headerList = await headers();
+  // Trusted-proxy model (lib/net/clientIp.ts): a spoofable header must not let
+  // one browser present itself as many distinct corroborators.
   const fingerprint =
-    headerList.get("x-forwarded-for")?.split(",")[0].trim() ??
-    headerList.get("user-agent")?.slice(0, 64) ??
-    "unknown";
+    clientIp(headerList) ?? headerList.get("user-agent")?.slice(0, 64) ?? "anonymous";
 
   const [challenge] = await db
     .select({ id: challenges.id, lat: challenges.lat, lng: challenges.lng })

@@ -75,8 +75,9 @@ export default async function InterestPage({ params }: { params: Promise<{ id: s
           <p className="font-semibold">What accepting does, and what it does not.</p>
           <p className="mt-1 text-muted-foreground">
             Accepting writes a <span className="font-medium text-foreground">FUNDER</span> edge onto the
-            public credit chain and moves the challenge to INDUSTRY_INTEREST. It does not sign anything
-            and it does not move any money.
+            public credit chain and moves the challenge to INDUSTRY_INTEREST — if it is still in
+            research, the move happens when the solution is published. It does not sign anything and
+            it does not move any money.
           </p>
           <p className="mt-2 text-muted-foreground">
             <span className="font-medium text-foreground">Declared stubs:</span> e-signature, payment
