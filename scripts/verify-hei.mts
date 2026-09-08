@@ -73,16 +73,46 @@ if (!challenge) {
 }
 
 const [org] = await sql`select id, name from organization where name = 'BIT Sindri'`;
-const offers = await sql`
-  select r.id, r.rank, r.state, r.notified_at, o.name as org
-  from routes r join organization o on o.id = r.org_id
-  where r.challenge_id = ${challenge.id} order by r.rank`;
+
+async function shortlist() {
+  return sql`
+    select r.id, r.rank, r.state, r.notified_at, o.name as org
+    from routes r join organization o on o.id = r.org_id
+    where r.challenge_id = ${challenge.id} order by r.rank`;
+}
+
+let offers = await shortlist();
+
+/**
+ * No shortlist? Route it, then carry on.
+ *
+ * A demo reset deliberately clears spent routes (lib/demo/reset.ts), so on a
+ * clean database this challenge is back at SUBMITTED with nothing to claim.
+ * That is the correct state, not a failure — so rather than reporting FAIL on a
+ * precondition, this script produces the precondition the way the product does,
+ * by running the real pipeline. `pnpm verify:hei` is then a single command that
+ * works from any starting state.
+ */
+if (offers.length === 0) {
+  console.log("\n  No shortlist yet — running the pipeline to produce one…");
+  const { runPipeline } = await import("../lib/ai/pipeline");
+  await runPipeline(challenge.id as string, async () => {});
+  offers = await shortlist();
+  const [routed] = await sql`select status from challenges where id = ${challenge.id}`;
+  console.log(`  Pipeline finished; challenge is ${routed.status}.\n`);
+}
 
 record(
   "the challenge has a routed shortlist",
   offers.length > 0,
   offers.map((o) => `#${o.rank} ${o.org} ${o.state}`).join(", "),
 );
+
+if (offers.length === 0) {
+  console.error("The pipeline produced no shortlist. Check ROUTING.minPriorityToRoute and the capability seed.");
+  await sql.end();
+  process.exit(1);
+}
 
 // A previous run may already have released the gate, so the assertion is about
 // what S5 DID when it routed — recorded in the ledger — not about the state a
@@ -95,10 +125,12 @@ const heldAtGate =
   offers.every((o) => o.notified_at === null) ||
   gateEntries.some((e) => String((e.payload as Record<string, unknown>)?.reason ?? "").includes("human gate"));
 
+// Re-read: the pipeline above may have just written the severity.
+const [scored] = await sql`select severity from challenges where id = ${challenge.id}`;
 record(
   "the human gate held it (severity >= 0.7)",
-  Number(challenge.severity) >= 0.7 ? heldAtGate : true,
-  `severity ${challenge.severity}, ${heldAtGate ? "held for a district officer" : "released automatically"}`,
+  Number(scored.severity) >= 0.7 ? heldAtGate : true,
+  `severity ${scored.severity}, ${heldAtGate ? "held for a district officer" : "released automatically"}`,
 );
 
 // Held is a property of the OFFERS, not of one status: a challenge waits at the
@@ -146,14 +178,40 @@ record(
   notifications[0]?.action_url ?? "",
 );
 
+/**
+ * Has BIT Sindri already taken this one?
+ *
+ * Same principle as the gate check above: re-running a verification must not
+ * change its verdict. The claim is a one-shot state change, so on a second run
+ * the offer is CLAIMED, the claim form is correctly replaced by the "not
+ * available" panel, and POSTing again is correctly refused. Every assertion
+ * after this point is about persisted state and holds either way — so the beat
+ * is asserted once, on whichever run actually performed it, and its outcome is
+ * asserted on every run.
+ */
+const claimedRoute = offers.find((o) => o.state === "CLAIMED" && o.org === org.name);
+const [existingProject] = await sql`select id from projects where challenge_id = ${challenge.id}`;
+const alreadyClaimed = Boolean(claimedRoute && existingProject);
+
 const claimPage = await authed(`/hei/challenges/${target}/claim`);
 const claimHtml = await claimPage.text();
 record("the claim page loads for the HOD", claimPage.ok, `${claimPage.status}`);
-record(
-  "it carries the routing reason and the priority breakdown",
-  claimHtml.includes("Why you") && claimHtml.includes("Priority score"),
-);
-record("it shows the citizen's own words", claimHtml.includes("As it was reported"));
+
+if (alreadyClaimed) {
+  // The claim form is gone on purpose. What must still be true is that the page
+  // says so plainly instead of 404ing or rendering blank.
+  record(
+    "the claim page explains that it is no longer available",
+    claimHtml.includes("Not available to claim") || claimHtml.includes("not currently offered"),
+    "already claimed by this institution on an earlier run",
+  );
+} else {
+  record(
+    "it carries the routing reason and the priority breakdown",
+    claimHtml.includes("Why you") && claimHtml.includes("Priority score"),
+  );
+  record("it shows the citizen's own words", claimHtml.includes("As it was reported"));
+}
 
 /* --------------------------------------------------------------- claim it */
 
@@ -162,8 +220,10 @@ const [capability] = await sql`
   from routes r join capabilities c on c.id = r.capability_id
   where r.challenge_id = ${challenge.id} and r.org_id = ${org.id} limit 1`;
 
-console.log("\n  Claiming as the HOD, over HTTP, with the session cookie…");
-const claimResponse = await fetch(`${BASE}/api/hei/claim`, {
+if (!alreadyClaimed) console.log("\n  Claiming as the HOD, over HTTP, with the session cookie…");
+const claimResponse = alreadyClaimed
+  ? null
+  : await fetch(`${BASE}/api/hei/claim`, {
   method: "POST",
   headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
   body: JSON.stringify({
@@ -182,20 +242,21 @@ const claimResponse = await fetch(`${BASE}/api/hei/claim`, {
     creditCitizen: true,
     confirmCapacity: true,
   }),
-});
-const claimResult = (await claimResponse.json()) as
-  | { ok: true; projectId: string; message: string }
-  | { ok: false; error: string };
+    });
 
-record(
-  "the claim succeeded",
-  claimResult.ok,
-  claimResult.ok ? claimResult.message : claimResult.error,
-);
+if (claimResponse) {
+  const claimResult = (await claimResponse.json()) as
+    | { ok: true; projectId: string; message: string }
+    | { ok: false; error: string };
 
-if (!claimResult.ok) {
-  await sql.end();
-  process.exit(1);
+  record("the claim succeeded", claimResult.ok, claimResult.ok ? claimResult.message : claimResult.error);
+
+  if (!claimResult.ok) {
+    await sql.end();
+    process.exit(1);
+  }
+} else {
+  record("the challenge is claimed by BIT Sindri", true, `claimed on an earlier run — project ${existingProject.id}`);
 }
 
 /* ------------------------------------------------- everything it wrote */
@@ -212,12 +273,16 @@ record(
   afterRoutes.map((r) => `${r.org}:${r.state}`).join(", "),
 );
 
-const [capAfter] = await sql`select declared_capacity from capabilities where id = ${capability.id}`;
-record(
-  "declared capacity was decremented",
-  Number(capAfter.declared_capacity) === Number(capability.declared_capacity) - 1,
-  `${capability.declared_capacity} → ${capAfter.declared_capacity}`,
-);
+// Only meaningful on the run that actually claimed: the claim decrements
+// capacity, so on a re-run it is already down and nothing further is spent.
+if (!alreadyClaimed) {
+  const [capAfter] = await sql`select declared_capacity from capabilities where id = ${capability.id}`;
+  record(
+    "declared capacity was decremented",
+    Number(capAfter.declared_capacity) === Number(capability.declared_capacity) - 1,
+    `${capability.declared_capacity} → ${capAfter.declared_capacity}`,
+  );
+}
 
 const [project] = await sql`
   select id, title, ip_track, last_activity_at from projects where challenge_id = ${challenge.id}`;
@@ -276,12 +341,22 @@ record(
 const publicPage = await fetch(`${BASE}/c/${target}`);
 const publicHtml = await publicPage.text();
 record("the public page renders the credit chain", publicHtml.includes("Credit chain"));
+// Assert the labels a reader actually sees. The raw enum spelling only reaches
+// the HTML incidentally, via the flight payload, so testing for it was testing
+// a rendering detail rather than the page.
+const RELATION_LABEL: Record<string, string> = {
+  ORIGINATOR: "Originator",
+  CORROBORATOR: "Corroborator",
+  TEAM_MEMBER: "Team member",
+  MENTOR: "Mentor",
+  FUNDER: "Funder",
+  IMPLEMENTER: "Implementer",
+};
+const shown = [...new Set(relations)].map((r) => RELATION_LABEL[String(r)] ?? String(r));
 record(
   "the public page shows every relation this challenge has",
-  [...new Set(relations)]
-    .map((r) => String(r).replaceAll("_", " "))
-    .every((r) => publicHtml.includes(r)),
-  [...new Set(relations)].join(", "),
+  shown.every((label) => publicHtml.includes(label)),
+  shown.join(", "),
 );
 
 /* -------------------------------------------------------- the workspaces */
