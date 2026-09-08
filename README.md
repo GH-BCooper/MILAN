@@ -5,11 +5,11 @@ for a university team, with a hash-chained credit ledger so nobody's contributio
 an SLA clock so no challenge can silently die.**
 
 Built for Smart India Hackathon 2026, problem statement **SIH26043** (Government of Jharkhand,
-Disaster Management, Software).
+Smart Education, Software), with the Department of Higher & Technical Education.
 
-It is a **disaster risk reduction** pipeline that runs in peacetime — mitigation and preparedness,
-not response. Every challenge carries an explicit NDMA hazard linkage, and that linkage is a
-weighted term in the priority score.
+It is a **societal-challenge routing** pipeline: citizens report local problems, deterministic code
+scores and routes them by thematic domain, and university teams take them on as research and
+project work — in the NEP 2020 spirit of experiential, community-engaged learning.
 
 It is **not** a grievance portal. CPGRAMS and JharSewa route complaints with a known fix to an
 accountable officer. Milan routes **unsolved problems to a lab**. Grievances are detected in S1 and
@@ -19,8 +19,8 @@ forwarded, with the citizen told where they went.
 
 ## The five sentences
 
-1. Disaster management is mostly mitigation. We are a mitigation pipeline that runs in peacetime, and
-   every challenge carries an explicit hazard linkage.
+1. Communities hold the problems; universities hold the researchers. We are the pipeline between
+   them: every challenge is categorised by thematic domain, scored, and pushed to a matched lab.
 2. CPGRAMS routes complaints to officers. We route unsolved problems to labs, with a clock. When
    something is a grievance, we forward it to CPGRAMS.
 3. Discovery is never luck. Every problem is pushed to matched departments, and every state has an
@@ -219,11 +219,6 @@ We declare our stubs on a slide. Judges forgive honest stubs and punish fake dep
   privacy in one way: the citizen blurs faces and plates themselves on their device (canvas mosaic,
   tap to place), and only the blurred bytes are ever uploaded — the unblurred original never leaves
   the phone. `challenge_media.faces_blurred` records what the citizen actually blurred.
-- **Partial Emergency Mode** — `/gov/emergency` now has real teeth: the pinned hazard's open SLA
-  clocks compress to half time reversibly (original due dates kept in the row and restored on
-  switch-off; annual re-reviews exempt) and lists re-sort with a visible, bounded ×1.25 display
-  surge. Still declared stubs: a separate live response queue and automatic surge-routing to
-  institutions with standing capacity. No stored priority score ever changes.
 - **Live multilingual ASR** — the stage and the live path are real; the demo uses a seeded
   ground-truth transcript keyed by content hash, and `seed-data/voice-note.mp3` is now recorded
   (its SHA-256 is wired into `lib/ai/seededTranscripts.ts`). Live ASR is Groq whisper-large-v3.

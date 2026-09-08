@@ -61,7 +61,6 @@ export async function decideGate(_prev: GateResult | null, form: FormData): Prom
       districtCode: challenges.districtCode,
       severity: challenges.severity,
       domain: challenges.domain,
-      hazard: challenges.hazard,
       bodyOriginal: challenges.bodyOriginal,
     })
     .from(challenges)
@@ -113,7 +112,7 @@ export async function decideGate(_prev: GateResult | null, form: FormData): Prom
         challengeId: challenge.id,
         stage: "S1",
         inputText: challenge.bodyOriginal,
-        proposed: { severity: challenge.severity, domain: challenge.domain, hazard: challenge.hazard },
+        proposed: { severity: challenge.severity, domain: challenge.domain },
         corrected: { severity: severity ?? challenge.severity },
         reason: reason ?? null,
         correctedBy: user.id,

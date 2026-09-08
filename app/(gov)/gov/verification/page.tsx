@@ -14,7 +14,7 @@ export const metadata = { title: "Field verification" };
  * Field verification tasks, grouped by block.
  *
  * A block officer's day is geographic, so the list is too. Endorsing sets
- * `official_endorsed`, which is a 0.06 term in the priority score — the page
+ * `official_endorsed`, which is a 0.08 term in the priority score — the page
  * shows the score before and after rather than leaving the officer to wonder
  * whether their signature did anything.
  */
@@ -73,7 +73,7 @@ export default async function VerificationPage() {
       <div className="milan-glass rounded-xl bg-muted p-4 text-sm">
         <p className="font-semibold">What an endorsement is worth, exactly.</p>
         <p className="mt-1 text-muted-foreground">
-          Official endorsement is a 0.06 term in the priority score — enough to move a report up a
+          Official endorsement is a 0.08 term in the priority score — enough to move a report up a
           queue, not enough to own one. A citizen&rsquo;s report is never blocked on an officer visiting.
           The number and its arithmetic are public on every challenge page, endorsed or not.
         </p>

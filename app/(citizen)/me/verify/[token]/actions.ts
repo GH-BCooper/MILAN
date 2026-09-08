@@ -18,6 +18,7 @@ import { z } from "zod";
 
 import { currentUser } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
+import { syncClockOffset } from "@/lib/clock/server";
 import { db } from "@/lib/db";
 import { challenges, impactConfirmations } from "@/lib/db/schema";
 import { transition } from "@/lib/db/stateMachine";
@@ -39,6 +40,13 @@ export interface ConfirmState {
 }
 
 export async function confirmImpact(_prev: ConfirmState | null, form: FormData): Promise<ConfirmState> {
+  // Token expiry is a time decision, so the offset cell must be fresh: a warm
+  // process that last synced during a demo fast-forward would otherwise reject
+  // every confirmation as expired (verify:phase3 caught exactly this — the
+  // cell sat at +181d while the database said 0). Forced, not TTL: a
+  // confirmation is a rare write, and a five-second-stale clock is the exact
+  // race that fails the suite when impact runs right behind gov.
+  await syncClockOffset(true);
   const parsed = Input.safeParse({
     token: form.get("token"),
     answer: form.get("answer"),

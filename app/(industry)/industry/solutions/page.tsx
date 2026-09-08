@@ -7,7 +7,7 @@ import { STATUS_LABEL } from "@/components/status-badge";
 import { nativeSelectClassName } from "@/components/select-with-other";
 import { requireRole } from "@/lib/auth/guards";
 import { execRaw } from "@/lib/db/raw";
-import { domainEnum, hazardEnum, type ChallengeStatus } from "@/lib/db/schema";
+import { domainEnum, type ChallengeStatus } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Solutions" };
@@ -29,7 +29,6 @@ interface Row extends Record<string, unknown> {
   status: ChallengeStatus;
   district_name: string | null;
   domain: string | null;
-  hazard: string | null;
   solvability: string | null;
   priority_score: string | null;
   impact_confirmed: boolean;
@@ -50,12 +49,11 @@ export default async function IndustrySolutions({
   const one = (k: string) => (Array.isArray(params[k]) ? params[k][0] : params[k]) || undefined;
   const district = one("district");
   const domain = one("domain");
-  const hazard = one("hazard");
   const solvability = one("solvability");
 
   const rows = await execRaw<Row>(sql`
     SELECT c.tracking_id, c.title, c.status, d.name AS district_name,
-           c.domain::text AS domain, c.hazard::text AS hazard, c.solvability,
+           c.domain::text AS domain, c.solvability,
            c.priority_score::text AS priority_score,
            c.impact_confirmed, c.impact_partial,
            o.name AS org_name,
@@ -69,7 +67,6 @@ export default async function IndustrySolutions({
     WHERE c.status IN ('SOLUTION_PUBLISHED','INDUSTRY_INTEREST','AGREEMENT_SIGNED','PILOT','IMPLEMENTED','CITIZEN_VERIFIED','CLOSED')
       ${district ? sql`AND c.district_code = ${district}` : sql``}
       ${domain ? sql`AND c.domain::text = ${domain}` : sql``}
-      ${hazard ? sql`AND c.hazard::text = ${hazard}` : sql``}
       ${solvability ? sql`AND c.solvability = ${solvability}` : sql``}
     ORDER BY c.priority_score DESC NULLS LAST
     LIMIT 100
@@ -80,9 +77,9 @@ export default async function IndustrySolutions({
   return (
     <RoleShell
       title="Solutions"
-      subtitle={`Signed in as ${user.fullName}. ${rows.length} published solution${rows.length === 1 ? "" : "s"}, filterable by domain, solvability, district and NDMA hazard.`}
+      subtitle={`Signed in as ${user.fullName}. ${rows.length} published solution${rows.length === 1 ? "" : "s"}, filterable by domain, solvability and district.`}
     >
-      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs font-medium">
           District
           <select name="district" defaultValue={district ?? ""} className={nativeSelectClassName}>
@@ -98,15 +95,6 @@ export default async function IndustrySolutions({
             <option value="">Every domain</option>
             {domainEnum.enumValues.map((d) => (
               <option key={d} value={d}>{d.replace(/_/g, " ").toLowerCase()}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs font-medium">
-          NDMA hazard
-          <select name="hazard" defaultValue={hazard ?? ""} className={nativeSelectClassName}>
-            <option value="">Every hazard</option>
-            {hazardEnum.enumValues.map((h) => (
-              <option key={h} value={h}>{h.replace(/_/g, " ").toLowerCase()}</option>
             ))}
           </select>
         </label>
@@ -144,7 +132,6 @@ export default async function IndustrySolutions({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {r.tracking_id} · {r.district_name ?? "unlocated"} ·{" "}
                     {(r.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()}
-                    {r.hazard && r.hazard !== "NONE" ? ` · ${r.hazard.replace(/_/g, " ").toLowerCase()}` : ""}
                     {r.org_name ? ` · ${r.org_name}` : ""}
                   </p>
                 </div>

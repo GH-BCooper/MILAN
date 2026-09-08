@@ -28,8 +28,21 @@ function run(script: string): Promise<number> {
   });
 }
 
+// Better Auth allows 100 auth calls per 60s window (lib/auth/index.ts), and
+// every server-side session read counts — a single child can spend dozens.
+// Back-to-back children pool their hits into one window and 429 (the rules
+// tier runs each child in seconds, so live-AI pacing never tripped this). A
+// gap longer than the window puts every child in its own window; each child
+// is green standalone, so the meta-suite goes green too.
+const GAP_MS = 65_000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 const results: Array<[string, number]> = [];
-for (const [script, label] of SCRIPTS) {
+for (const [index, [script, label]] of SCRIPTS.entries()) {
+  if (index > 0) {
+    console.log(`\n… ${GAP_MS / 1000}s pacing gap so the auth rate-limit window clears …`);
+    await sleep(GAP_MS);
+  }
   console.log(`\n${"=".repeat(78)}\n${label}\n${"=".repeat(78)}`);
   results.push([label, await run(script)]);
 }

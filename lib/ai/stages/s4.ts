@@ -6,7 +6,7 @@
  * row is written for it, and the whole computation is a call into
  * `packages/scoring`, which is pure.
  *
- * All this module does is read the seven inputs, hand them to the pure
+ * All this module does is read the six inputs, hand them to the pure
  * function, and write the total plus the full breakdown back. The breakdown is
  * stored, not recomputed on render, so the number a citizen saw last month can
  * still be explained even after the weights change — the row carries the
@@ -22,7 +22,7 @@ import { blocks, challenges, districts } from "@/lib/db/schema";
 import { computePriority, type ScoreResult, type ScoringInput } from "@/packages/scoring";
 
 /**
- * Gather the seven inputs.
+ * Gather the six inputs.
  *
  * Block vulnerability falls back to the district index: `seed-data/districts.csv`
  * carries one index per district, and a block inherits it (PROGRESS.md, Phase 1
@@ -32,8 +32,6 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
   const [row] = await db
     .select({
       severity: challenges.severity,
-      hazard: challenges.hazard,
-      hazardStrength: challenges.hazardStrength,
       peopleAffected: challenges.peopleAffected,
       corroborationCount: challenges.corroborationCount,
       recurrence: challenges.recurrence,
@@ -63,8 +61,6 @@ export async function scoringInputFor(challengeId: string): Promise<ScoringInput
 
   return {
     severity: row.severity === null ? null : Number(row.severity),
-    hazard: row.hazard,
-    hazardStrength: row.hazardStrength === null ? null : Number(row.hazardStrength),
     peopleAffected: row.peopleAffected,
     blockVulnerability: vulnerability === null ? null : Number(vulnerability),
     corroborationCount: row.corroborationCount,

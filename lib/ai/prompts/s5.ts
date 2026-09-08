@@ -93,8 +93,8 @@ export const FEWSHOT: Array<{ input: string; output: string }> = [
       department: "Civil Engineering",
       lab: null,
       terms: [
-        { label: "Distance", detail: "9 km from the reported location", contribution: 0.22 },
-        { label: "Semantic fit", detail: "general civil-works match to the department", contribution: 0.14 },
+        { label: "Distance", detail: "9 km from the reported location", contribution: 0.14 },
+        { label: "Semantic fit", detail: "general civil-works match to the department", contribution: 0.1 },
         { label: "Track record", detail: "previous road-drainage work in the district", contribution: 0.05 },
       ],
     }),

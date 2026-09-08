@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { nativeSelectClassName } from "@/components/select-with-other";
-import { DOMAINS, HAZARDS } from "@/lib/ai/schemas";
+import { DOMAINS } from "@/lib/ai/schemas";
 import { resolveTriageAction } from "./actions";
 
 const MIN_REASON = 12;
@@ -46,7 +46,6 @@ export function TriageCard(props: TriageCardProps) {
   const [mode, setMode] = useState<"none" | "accept" | "override">("none");
   const [reason, setReason] = useState("");
   const [domain, setDomain] = useState<string>(String(props.proposal?.domain ?? ""));
-  const [hazard, setHazard] = useState<string>(String(props.proposal?.hazard ?? ""));
   const [severity, setSeverity] = useState<string>(String(props.proposal?.severity ?? ""));
   const [isGrievance, setIsGrievance] = useState<boolean>(Boolean(props.proposal?.is_grievance));
   const [pending, startTransition] = useTransition();
@@ -71,7 +70,6 @@ export function TriageCard(props: TriageCardProps) {
               inputHash: props.inputHash,
               reason: reason.trim(),
               domain: domain || null,
-              hazard: hazard || null,
               severity: severity === "" ? null : Number(severity),
               isGrievance,
               isUnsafe: false,
@@ -157,22 +155,6 @@ export function TriageCard(props: TriageCardProps) {
                 </select>
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`hazard-${props.challengeId}`}>NDMA hazard</Label>
-                <select
-                  id={`hazard-${props.challengeId}`}
-                  className={selectClass}
-                  value={hazard}
-                  onChange={(e) => setHazard(e.target.value)}
-                >
-                  <option value="">Leave unchanged</option>
-                  {HAZARDS.map((h) => (
-                    <option key={h} value={h}>
-                      {h.replaceAll("_", " ")}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
                 <Label htmlFor={`severity-${props.challengeId}`}>Severity (0–1)</Label>
                 <input
                   id={`severity-${props.challengeId}`}
@@ -215,7 +197,7 @@ export function TriageCard(props: TriageCardProps) {
               placeholder={
                 mode === "accept"
                   ? "e.g. The classification is right; the model was unsure because the report mixes two problems."
-                  : "e.g. This is drought, not flood — the report is about wells failing after March."
+                  : "e.g. This is a water problem, not a health problem — the report is about wells failing after March."
               }
             />
             <p className="text-xs text-muted-foreground">

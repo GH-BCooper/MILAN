@@ -56,7 +56,6 @@ async function widenShortlist(challenge: ChallengeRow): Promise<ActionPrep["wide
         lat: challenges.lat,
         lng: challenges.lng,
         domain: challenges.domain,
-        hazard: challenges.hazard,
       })
       .from(challenges)
       .where(eq(challenges.id, challenge.id))
@@ -73,7 +72,6 @@ async function widenShortlist(challenge: ChallengeRow): Promise<ActionPrep["wide
         s5.matchScore(capability, {
           embedding: row.embedding as number[],
           domain: row.domain,
-          hazard: row.hazard,
           lat: row.lat === null ? null : Number(row.lat),
           lng: row.lng === null ? null : Number(row.lng),
           trackRecord,

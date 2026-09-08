@@ -30,7 +30,6 @@ interface Row extends Record<string, unknown> {
   district_code: string | null;
   district_name: string | null;
   domain: string | null;
-  hazard: string | null;
   priority_score: string | null;
   escalation_stage: string | null;
   grand_challenge: boolean;
@@ -54,16 +53,14 @@ const STAGE_ORDER = ["WIDEN", "OPEN_ALL", "BREACH", "GRAND_CHALLENGE"];
 function Filters({
   districts,
   domains,
-  hazards,
   current,
 }: {
   districts: Array<{ code: string; name: string }>;
   domains: string[];
-  hazards: string[];
   current: Record<string, string | undefined>;
 }) {
   return (
-    <form className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" method="get">
+    <form className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" method="get">
       <label className="flex flex-col gap-1 text-xs font-medium">
         District
         <select name="district" defaultValue={current.district ?? ""} className={nativeSelectClassName}>
@@ -89,18 +86,6 @@ function Filters({
       </label>
 
       <label className="flex flex-col gap-1 text-xs font-medium">
-        NDMA hazard
-        <select name="hazard" defaultValue={current.hazard ?? ""} className={nativeSelectClassName}>
-          <option value="">Every hazard</option>
-          {hazards.map((h) => (
-            <option key={h} value={h}>
-              {h.replace(/_/g, " ").toLowerCase()}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-xs font-medium">
         Escalation stage
         <select name="stage" defaultValue={current.stage ?? ""} className={nativeSelectClassName}>
           <option value="">Any stage</option>
@@ -120,7 +105,7 @@ function Filters({
         </select>
       </label>
 
-      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-5">
+      <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
         <button type="submit" className="h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground">
           Apply filters
         </button>
@@ -141,7 +126,6 @@ export default async function BountiesPage({
   const one = (k: string) => (Array.isArray(params[k]) ? params[k][0] : params[k]) || undefined;
   const district = one("district");
   const domain = one("domain");
-  const hazard = one("hazard");
   const stage = one("stage");
   const set = one("set");
 
@@ -150,7 +134,7 @@ export default async function BountiesPage({
 
   const rows = await execRaw<Row>(sql`
     SELECT c.tracking_id, c.title, c.status, c.district_code, d.name AS district_name,
-           c.domain::text AS domain, c.hazard::text AS hazard, c.priority_score,
+           c.domain::text AS domain, c.priority_score,
            c.escalation_stage, c.grand_challenge, c.open_to_all,
            c.sla_breached_at::text AS sla_breached_at, c.routed_at::text AS routed_at,
            c.corroboration_count,
@@ -162,7 +146,6 @@ export default async function BountiesPage({
       AND c.status NOT IN ('CLAIMED','CLOSED','MERGED','WITHDRAWN','REJECTED_UNSAFE','FORWARDED_EXTERNAL')
       ${district ? sql`AND c.district_code = ${district}` : sql``}
       ${domain ? sql`AND c.domain::text = ${domain}` : sql``}
-      ${hazard ? sql`AND c.hazard::text = ${hazard}` : sql``}
       ${stage ? sql`AND c.escalation_stage = ${stage}` : sql``}
       ${set === "grand" ? sql`AND c.grand_challenge` : sql``}
     ORDER BY c.priority_score DESC NULLS LAST, c.created_at
@@ -172,13 +155,11 @@ export default async function BountiesPage({
   const facets = await execRaw<{ kind: string; code: string; name: string | null }>(sql`
     SELECT 'district' AS kind, code, name FROM districts
     UNION ALL SELECT 'domain', unnest(enum_range(NULL::domain))::text, NULL
-    UNION ALL SELECT 'hazard', unnest(enum_range(NULL::hazard))::text, NULL
     ORDER BY 1, 3 NULLS LAST, 2
   `);
 
   const districts = facets.filter((f) => f.kind === "district").map((f) => ({ code: f.code, name: f.name ?? f.code }));
   const domains = facets.filter((f) => f.kind === "domain").map((f) => f.code);
-  const hazards = facets.filter((f) => f.kind === "hazard").map((f) => f.code);
 
   return (
     <>
@@ -190,7 +171,7 @@ export default async function BountiesPage({
           as an SLA breach at twenty-one. Nothing on this page arrived by someone forgetting about it.
         </p>
 
-        <Filters districts={districts} domains={domains} hazards={hazards} current={{ district, domain, hazard, stage, set }} />
+        <Filters districts={districts} domains={domains} current={{ district, domain, stage, set }} />
 
         <p className="mt-6 text-sm text-muted-foreground">
           <span className="text-2xl font-bold tabular-nums text-foreground">{rows.length}</span> challenge
@@ -226,7 +207,6 @@ export default async function BountiesPage({
                       <p className="mt-1 text-xs text-muted-foreground">
                         {r.tracking_id} · {r.district_name ?? r.district_code ?? "unlocated"} ·{" "}
                         {(r.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()} ·{" "}
-                        {r.hazard && r.hazard !== "NONE" ? `NDMA hazard: ${r.hazard.replace(/_/g, " ").toLowerCase()}` : "no hazard linkage"} ·{" "}
                         {r.corroboration_count} reporter{r.corroboration_count === 1 ? "" : "s"}
                       </p>
                     </div>

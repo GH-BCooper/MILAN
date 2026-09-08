@@ -7,7 +7,7 @@ import { UnconfirmedTag } from "@/components/impact-counter";
 import { STATUS_LABEL } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
 import { execRaw } from "@/lib/db/raw";
-import { domainEnum, hazardEnum, type ChallengeStatus } from "@/lib/db/schema";
+import { domainEnum, type ChallengeStatus } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Challenges" };
@@ -29,7 +29,6 @@ interface Row extends Record<string, unknown> {
   status: ChallengeStatus;
   district_name: string | null;
   domain: string | null;
-  hazard: string | null;
   solvability: string | null;
   priority_score: string | null;
   impact_confirmed: boolean;
@@ -50,15 +49,14 @@ export default async function IndustryDiscover({
   const one = (k: string) => (Array.isArray(params[k]) ? params[k][0] : params[k]) || undefined;
   const district = one("district");
   // "Other" resolves to whatever free text the filer typed, so a filter never
-  // dead-ends just because the list of domains/hazards seeded so far doesn't
-  // happen to cover it.
+  // dead-ends just because the list of domains seeded so far doesn't happen to
+  // cover it.
   const domain = one("domain") === "OTHER" ? one("domainOther") : one("domain");
-  const hazard = one("hazard") === "OTHER" ? one("hazardOther") : one("hazard");
   const solvability = one("solvability");
 
   const rows = await execRaw<Row>(sql`
     SELECT c.tracking_id, c.title, c.status, d.name AS district_name,
-           c.domain::text AS domain, c.hazard::text AS hazard, c.solvability,
+           c.domain::text AS domain, c.solvability,
            c.priority_score::text AS priority_score,
            c.impact_confirmed, c.impact_partial,
            o.name AS org_name,
@@ -72,7 +70,6 @@ export default async function IndustryDiscover({
     WHERE c.status IN ('IN_RESEARCH','BOUNTY_LISTED','UNCLAIMED_ESCALATED','ROUTED')
       ${district ? sql`AND c.district_code = ${district}` : sql``}
       ${domain ? sql`AND c.domain::text = ${domain}` : sql``}
-      ${hazard ? sql`AND c.hazard::text = ${hazard}` : sql``}
       ${solvability ? sql`AND c.solvability = ${solvability}` : sql``}
     ORDER BY c.priority_score DESC NULLS LAST
     LIMIT 100
@@ -83,9 +80,9 @@ export default async function IndustryDiscover({
   return (
     <RoleShell
       title="Challenges"
-      subtitle={`Signed in as ${user.fullName}. ${rows.length} open challenge${rows.length === 1 ? "" : "s"} still looking for a partner, filterable by domain, solvability, district and NDMA hazard. Already-published work lives under Solutions.`}
+      subtitle={`Signed in as ${user.fullName}. ${rows.length} open challenge${rows.length === 1 ? "" : "s"} still looking for a partner, filterable by domain, solvability and district. Already-published work lives under Solutions.`}
     >
-      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-1 text-xs font-medium">
           District
           <SelectWithOther
@@ -106,17 +103,6 @@ export default async function IndustryDiscover({
             defaultValue={domain}
             otherPlaceholder="Describe the domain"
             options={domainEnum.enumValues.map((d) => ({ value: d, label: d.replace(/_/g, " ").toLowerCase() }))}
-          />
-        </div>
-        <div className="flex flex-col gap-1 text-xs font-medium">
-          NDMA hazard
-          <SelectWithOther
-            name="hazard"
-            label="NDMA hazard"
-            placeholder="Every hazard"
-            defaultValue={hazard}
-            otherPlaceholder="Describe the hazard"
-            options={hazardEnum.enumValues.map((h) => ({ value: h, label: h.replace(/_/g, " ").toLowerCase() }))}
           />
         </div>
         <div className="flex flex-col gap-1 text-xs font-medium">
@@ -159,7 +145,6 @@ export default async function IndustryDiscover({
                   <p className="mt-1 text-xs text-muted-foreground">
                     {r.tracking_id} · {r.district_name ?? "unlocated"} ·{" "}
                     {(r.domain ?? "unclassified").replace(/_/g, " ").toLowerCase()}
-                    {r.hazard && r.hazard !== "NONE" ? ` · ${r.hazard.replace(/_/g, " ").toLowerCase()}` : ""}
                     {r.org_name ? ` · ${r.org_name}` : ""}
                   </p>
                 </div>

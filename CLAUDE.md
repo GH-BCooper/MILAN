@@ -1,7 +1,8 @@
 # CLAUDE.md — Milan
 
 You are building **Milan** for Smart India Hackathon 2026, PS **SIH26043** (Government of
-Jharkhand, Theme: Disaster Management, Category: Software). Read this file at the start of every
+Jharkhand, Theme: Smart Education, Category: Software), with the Department of Higher &
+Technical Education. Read this file at the start of every
 session, then read `PROGRESS.md` to find out where the previous session stopped.
 
 ---
@@ -12,9 +13,9 @@ Milan converts a citizen's verified local problem into a **time-bound, routed re
 for a university team, with a **hash-chained credit ledger** so nobody's contribution can be erased,
 and an **SLA clock** so no challenge can silently die.
 
-It is a **disaster risk reduction** pipeline that runs in peacetime — mitigation and preparedness,
-not response. Every challenge carries an explicit **NDMA hazard linkage** and that linkage is a
-weighted term in the priority score.
+It is a **societal-challenge routing** pipeline: citizens report local problems, deterministic code
+scores and routes them by thematic domain, and university teams take them on as research and
+project work — in the NEP 2020 spirit of experiential, community-engaged learning.
 
 It is **not** a grievance portal. CPGRAMS and JharSewa route complaints with a known fix to an
 accountable officer. Milan routes **unsolved problems to a lab**. Grievances are detected in S1 and
@@ -221,7 +222,7 @@ Append a new section; never overwrite earlier ones.
 
 ## 9. The five sentences (the product must make each one true)
 
-1. "Disaster management is mostly mitigation. We are a mitigation pipeline that runs in peacetime, and every challenge carries an explicit hazard linkage."
+1. "Communities hold the problems; universities hold the researchers. We are the pipeline between them: every challenge is categorised by thematic domain, scored, and pushed to a matched lab."
 2. "CPGRAMS routes complaints to officers. We route unsolved problems to labs, with a clock. When something is a grievance, we forward it to CPGRAMS."
 3. "Discovery is never luck. Every problem is pushed to matched departments, and every state has an SLA with an automatic escalation."
 4. "Universities are not doing us a favour — 200,000 Indian students invent a fake final-year project every year. We give them real ones."

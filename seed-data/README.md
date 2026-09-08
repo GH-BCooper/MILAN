@@ -8,8 +8,8 @@ CSVs Claude generated to get Phase 1 built. Two files are still outstanding.
 | `districts.csv` | Real — 24 districts, 263 blocks |
 | `districts-enrichment.csv` | Real — 24 districts, JDIP 4.1 reference columns (added 2026-09-08, Task 4.9) |
 | `heis.csv` | Real — 12 institutions |
-| `capabilities.csv` | Real — 47 departments and labs |
-| `challenges.csv` | Real — 25 citizen reports |
+| `capabilities.csv` | Real — 47 departments and labs, plus 4 agent-drafted rows (2 Education, 2 Electrical — faculty names still to fill) |
+| `challenges.csv` | Real — 25 citizen reports, plus 5 agent-drafted rows (3 education, 2 energy — Hindi still to review) |
 | `industry.csv` | Real — 8 firms |
 | `blocks.csv` | **Stale placeholder. No longer read** — superseded by `districts.csv` |
 | `voice-note.mp3` | **Empty file. Not yet recorded** — BACKLOG.md §2.2 |
@@ -18,7 +18,9 @@ CSVs Claude generated to get Phase 1 built. Two files are still outstanding.
 Still open before the demo, and not optional:
 
 1. **The Hindi has not been checked by a native speaker.** `PHASE_1_LEARN.md` §7.3
-   makes this a blocking item. 7 reports are in Hindi and 1 in Santali (`sat`).
+   makes this a blocking item. 10 reports are in Hindi and 1 in Santali (`sat`);
+   the 3 newest Hindi reports (single-teacher school, girls' dropout, study-hour
+   power cuts) are agent-drafted and need a native review before the demo.
 2. **`seed_status` and `corroborations` were assigned by Claude on 2026-09-05**,
    not by the team. They are demo staging, not field data: which three reports
    have already been resolved, and how many extra people reported each problem.
@@ -46,12 +48,11 @@ tables.
 - A row with an empty `block_code` is treated as district-only and is legitimate.
 
 ### districts-enrichment.csv
-`district_code,division,population,internet_penetration,tribal_population_pct,disaster_vulnerability`
+`district_code,division,population,internet_penetration,tribal_population_pct`
 
 One row per **district** (24 rows), merged over `districts.csv` by `district_code`.
-The `disaster_vulnerability` column is a JSON object mapping hazard-enum keys to
-0–1 vulnerability figures; the seeder validates every key against the enum and
-every figure against 0–1, and warns rather than guesses when a row is off.
+(The old `disaster_vulnerability` JSON column was removed in the Smart Education
+re-theme: the PS categorises by thematic domain, not by hazard class.)
 
 Provenance, column by column:
 - `division` — the five administrative divisions of Jharkhand (Palamu,
@@ -62,8 +63,6 @@ Provenance, column by column:
   not a measured district statistic; it exists to size the voice/SMS-first
   story, and it is what a judge should challenge and the team should replace
   with the JDIP Part 4.1 table when the document is supplied.
-- `disaster_vulnerability` — hand-tuned against JSDMA district disaster
-  management plans and the hazard mix the seeded challenges carry.
 
 ### blocks.csv
 **No longer read.** It described the 2026-09-04 placeholder geography and its
@@ -89,13 +88,14 @@ district codes no longer exist. `districts.csv` is the single geography source.
 - `hei_code` must exist in `heis.csv`; unknown codes are skipped with a warning.
 
 ### challenges.csv
-`district_code,block_code,title,body_original,body_lang,domain,hazard,severity_hint,people_affected,recurrence,lat,lng,reporter_name`
+`district_code,block_code,title,body_original,body_lang,body_en,domain,severity_hint,people_affected,recurrence,lat,lng,reporter_name,seed_status,corroborations`
 
 - `body_lang` is an ISO code — `en`, `hi`, `sat` (Santali) all appear. When it is
   `en`, `body_en` is the citizen's own words; otherwise `body_en` stays null and
   Phase 2's S0 translates it. `body_original` is never destroyed.
-- `domain` must be one of the ten `domain` enum values, `hazard` one of the eight
-  `hazard` values. A typo is caught at seed time with its CSV line number.
+- `domain` must be one of the eleven `domain` enum values (the PS's thematic
+  domains plus sanitation). A typo is caught at seed time with its CSV line number.
+  (The old `hazard` column was removed in the Smart Education re-theme.)
 - `severity_hint` (0..1) is seeded into `severity`. Phase 2's S1 recomputes it;
   `>= 0.7` is the human-gate threshold.
 - `people_affected` is a plain count. A `people_affected_bucket` column

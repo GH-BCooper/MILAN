@@ -10,6 +10,12 @@
  * challenge table the whole provenance claim collapses, so they are written
  * together.
  *
+ * Open claiming: a routed offer is honoured when one exists (its window is
+ * checked), but any institution can claim anything past the human gate with a
+ * team and a university email. An open claim writes its own CLAIMED route row
+ * (rank 0) so the per-institution counts stay honest, and closes every other
+ * open offer exactly the way a routed claim does.
+ *
  * The citizen is added to the credit chain as a Domain Informant by default.
  * That is a product principle, not a nicety: the person who noticed the problem
  * is part of the team that solves it, and a student paper that comes out of
@@ -21,7 +27,7 @@ import { z } from "zod";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { transition } from "@/lib/db/stateMachine";
+import { OPEN_CLAIMABLE_STATES, UNTRIAGED_STATES, transition } from "@/lib/db/stateMachine";
 import { appendEntry } from "@/lib/ledger/append";
 import {
   capabilities,
@@ -74,6 +80,45 @@ export async function claimChallengeAction(raw: unknown): Promise<ClaimResult> {
 }
 
 /**
+ * Open claiming: any institution can claim anything safety triage has cleared
+ * (OPEN_CLAIMABLE_STATES) — routed an offer or not. The router's offers are
+ * the push path; this is the pull path. The only states that hold are the
+ * untriaged ones: nothing can be claimed before the S1 safety check.
+ */
+
+/** Freemail domains a claimant's own account email may not come from. */
+const FREEMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "googlemail.com",
+  "yahoo.com",
+  "yahoo.co.in",
+  "yahoo.in",
+  "outlook.com",
+  "outlook.in",
+  "hotmail.com",
+  "hotmail.co.in",
+  "live.com",
+  "live.in",
+  "rediffmail.com",
+  "protonmail.com",
+  "proton.me",
+  "icloud.com",
+  "zoho.com",
+]);
+
+function claimantEmailError(email: string): string | null {
+  const domain = email.trim().toLowerCase().split("@")[1] ?? "";
+  if (!domain) return "Your account has no email address on it, so it cannot claim.";
+  if (FREEMAIL_DOMAINS.has(domain)) {
+    return (
+      `Claiming needs a university email address — ${domain} is a personal mailbox. ` +
+      `Sign in with your institutional account (the one your affiliation proof belongs to).`
+    );
+  }
+  return null;
+}
+
+/**
  * The claim itself, with the acting user passed in.
  *
  * Split out so that the /demo console's "HOD claims it" button can run the
@@ -89,6 +134,12 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
   if (!user.orgId) {
     return { ok: false, error: "Your account is not attached to an institution." };
   }
+
+  // A team and a university email: the team is the form below, and the email
+  // is the claimant's own account. (Team members may use any mailbox — an
+  // unregistered student on Gmail is still credited by name.)
+  const emailProblem = claimantEmailError(user.email);
+  if (emailProblem) return { ok: false, error: emailProblem };
 
   const parsed = ClaimSchema.safeParse(raw);
   if (!parsed.success) {
@@ -119,8 +170,25 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
 
   if (!challenge) return { ok: false, error: "That challenge does not exist." };
 
-  // Rechecked server-side, not trusted from the form: an offer belongs to an
-  // organisation, and a department cannot claim work it was never offered.
+  // Claimability is a property of the challenge's state, for offered and open
+  // claims alike. Without this gate an offer row on an unreleased challenge
+  // would die later in transition() with an IllegalTransitionError instead of
+  // a sentence a professor can act on.
+  if (!OPEN_CLAIMABLE_STATES.includes(challenge.status)) {
+    // The untriaged list is explicit; every other non-claimable state —
+    // already claimed, in research, merged away, parked, withdrawn, rejected —
+    // is past the point where a team can take it, and says so.
+    const untriaged = (UNTRIAGED_STATES as readonly string[]).includes(challenge.status);
+    return {
+      ok: false,
+      error: untriaged
+        ? "This challenge is still being checked for safety — it becomes claimable the moment triage clears it. Nothing can be claimed before that check."
+        : "This challenge has already been claimed — it is past the point where a team can take it.",
+    };
+  }
+
+  // A routed offer, when there is one, still wins: its claim window is
+  // honoured. Without one this is an open claim — any institution, any team.
   const [offer] = await db
     .select({ id: routes.id, capabilityId: routes.capabilityId, claimWindowEndsAt: routes.claimWindowEndsAt })
     .from(routes)
@@ -133,15 +201,10 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
     )
     .limit(1);
 
-  if (!offer) {
-    return {
-      ok: false,
-      error: "This challenge is not currently offered to your institution, or it has already been claimed.",
-    };
-  }
+  const openClaim = !offer;
 
   const now = clockNow();
-  if (offer.claimWindowEndsAt && offer.claimWindowEndsAt.getTime() < now.getTime()) {
+  if (offer?.claimWindowEndsAt && offer.claimWindowEndsAt.getTime() < now.getTime()) {
     return { ok: false, error: "The claim window for this challenge has closed." };
   }
 
@@ -263,17 +326,36 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
 
       /* the offers ------------------------------------------------------ */
 
-      await tx
-        .update(routes)
-        .set({ state: "CLAIMED" })
-        .where(eq(routes.id, offer.id));
+      if (offer) {
+        await tx.update(routes).set({ state: "CLAIMED" }).where(eq(routes.id, offer.id));
+      } else {
+        // An open claim writes its own route row so the per-institution
+        // offered/claimed/delivered counts stay honest. Rank 0: outside the
+        // routed top three by definition, and the reason says so plainly.
+        await tx.insert(routes).values({
+          challengeId: challenge.id,
+          orgId: user.orgId as string,
+          capabilityId: capability.id,
+          rank: 0,
+          matchScore: null,
+          reasonText: `Open claim by ${capability.department}: no routed offer, first team with declared capacity takes it.`,
+          reasonTerms: null,
+          notifiedAt: null,
+          claimWindowEndsAt: null,
+          state: "CLAIMED",
+        });
+      }
 
-      // The other two institutions are told nothing more; their offer simply
-      // closes. Leaving them OFFERED would let two teams claim the same work.
+      // Every other open offer simply closes. Leaving them OFFERED would let
+      // two teams claim the same work.
       await tx
         .update(routes)
         .set({ state: "EXPIRED" })
-        .where(and(eq(routes.challengeId, challenge.id), ne(routes.id, offer.id), eq(routes.state, "OFFERED")));
+        .where(
+          offer
+            ? and(eq(routes.challengeId, challenge.id), ne(routes.id, offer.id), eq(routes.state, "OFFERED"))
+            : and(eq(routes.challengeId, challenge.id), eq(routes.state, "OFFERED")),
+        );
 
       /* capacity -------------------------------------------------------- */
 
@@ -293,6 +375,7 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
         payload: {
           trackingId: challenge.trackingId,
           claimedBy: user.orgId,
+          openClaim,
           department: capability.department,
           title: input.title,
           ipTrack: input.ipTrack,
@@ -335,6 +418,7 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
     revalidatePath(`/c/${trackingId}`);
     revalidatePath("/hei");
     revalidatePath("/hei/inbox");
+    revalidatePath("/hei/challenge-bank");
 
     return {
       ok: true,

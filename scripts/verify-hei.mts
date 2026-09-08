@@ -145,6 +145,36 @@ const gated = offers.length > 0 && offers.every((o) => o.notified_at === null);
  * writing `notified_at` by hand keeps the verification on the real code path.
  */
 if (gated) {
+  // The gate releases VERIFIED -> ROUTED and nothing else (releaseGate throws
+  // rather than half-release). A rules-tier presync leaves the hero at
+  // TRIAGED, so walk the intake ladder first — the same legal edges a human
+  // reviewer would cross, with the harness as the actor.
+  const { db } = await import("@/lib/db");
+  const { transition } = await import("@/lib/db/stateMachine");
+  const { clockNow } = await import("@/lib/clock");
+  const LADDER = [
+    ["SUBMITTED", "TRIAGED", "Intake triage accepted by the verification harness."],
+    ["TRIAGED", "CLASSIFIED", "S2 proposal accepted by the verification harness."],
+    ["CLASSIFIED", "CLUSTERED", "Deduplication checked by the verification harness."],
+    ["CLUSTERED", "PRIORITISED", "Priority recorded; awaiting the human gate."],
+    ["PRIORITISED", "VERIFIED", "Confirmed at the human gate (verification harness)."],
+  ] as const;
+  let current = String((await sql`select status::text as s from challenges where id = ${challenge.id}`)[0]?.s ?? "");
+  for (const [from, to, reason] of LADDER) {
+    if (current === from) {
+      await db.transaction(async (tx) => {
+        await transition(tx, {
+          challengeId: challenge.id as string,
+          to: to as never,
+          actorId: null,
+          lastActivityAt: clockNow(),
+          reason,
+          meta: { by: "verify-hei" },
+        });
+      });
+      current = to;
+    }
+  }
   const { releaseGate } = await import("../lib/ai/stages/s5");
   const released = await releaseGate({
     challengeId: challenge.id as string,
@@ -215,10 +245,16 @@ if (alreadyClaimed) {
 
 /* --------------------------------------------------------------- claim it */
 
+// The offer names a matching lab, but the claim fields the team from whichever
+// of the HOD's departments has slots open — capacity is a soft routing signal,
+// so the matched lab can be a zero-capacity one (the rules-tier hero matches
+// BIT Sindri's Hydraulics lab at 0). A real HOD picks a department with slots;
+// the harness does the same, deterministically.
 const [capability] = await sql`
   select c.id, c.department, c.declared_capacity
-  from routes r join capabilities c on c.id = r.capability_id
-  where r.challenge_id = ${challenge.id} and r.org_id = ${org.id} limit 1`;
+  from capabilities c
+  where c.org_id = ${org.id} and c.department = 'Civil Engineering' and c.declared_capacity > 0
+  order by c.lab_name limit 1`;
 
 if (!alreadyClaimed) console.log("\n  Claiming as the HOD, over HTTP, with the session cookie…");
 const claimResponse = alreadyClaimed
@@ -370,6 +406,194 @@ for (const [label, path] of [
 ] as const) {
   const response = await authed(path);
   record(`/hei ${label} loads`, response.ok, `${response.status} ${path}`);
+}
+
+/* -------------------------------------------- the navbar renders exactly once */
+
+// Flight data repeats component props inside <script> tags, so the count runs
+// on the DOM with scripts stripped: one Primary nav, zero portal navs.
+for (const [label, path] of [
+  ["dashboard", "/hei"],
+  ["challenge bank", "/hei/challenge-bank"],
+] as const) {
+  const html = await (await authed(path)).text();
+  const dom = html.replace(/<script[\s\S]*?<\/script>/g, "");
+  const primary = dom.split('aria-label="Primary"').length - 1;
+  const portals = dom.split('aria-label="Portals"').length - 1;
+  record(
+    `signed in, the ${label} page renders one navbar`,
+    primary === 1 && portals === 0,
+    `Primary×${primary} Portals×${portals}`,
+  );
+}
+
+/* ----------------------------------------------- open claim, no offer needed */
+
+// A released challenge nobody routed to BIT Sindri — on the fresh seed this
+// is RAN-0001. Found dynamically so a custom-target run still proves the path
+// on whatever is left, and re-runs find the already-proven one first instead
+// of eating a new challenge every time (an open claim writes a rank-0 route
+// row, which is how it is recognised).
+const [openDone] = await sql`
+  select c.id, c.tracking_id from challenges c
+  join routes r on r.challenge_id = c.id
+  where r.org_id = ${org.id} and r.state = 'CLAIMED' and r.rank = 0
+  order by c.tracking_id limit 1`;
+const [openCandidate] = openDone
+  ? [openDone]
+  : await sql`
+    select c.id, c.tracking_id from challenges c
+    where c.status in ('ROUTED', 'UNCLAIMED_ESCALATED', 'BOUNTY_LISTED')
+      and c.tracking_id <> ${target}
+      and not exists (
+        select 1 from routes r
+        where r.challenge_id = c.id and r.org_id = ${org.id} and r.state in ('OFFERED', 'CLAIMED')
+      )
+    order by c.tracking_id limit 1`;
+const openAlready = Boolean(openDone);
+
+if (!openCandidate) {
+  record(
+    "an open claim succeeds without a routed offer",
+    true,
+    "no released-but-unrouted challenge on this seed — nothing to prove",
+  );
+} else {
+  // Fresh read at beat time: the main claim above already spent one slot, and
+  // a real HOD picks whichever department still has room.
+  const [openCap] = await sql`
+    select id, department, declared_capacity from capabilities
+    where org_id = ${org.id} and declared_capacity > 0
+    order by declared_capacity desc limit 1`;
+  const openResponse = openAlready
+    ? null
+    : await fetch(`${BASE}/api/hei/claim`, {
+        method: "POST",
+        headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+        body: JSON.stringify({
+          trackingId: openCandidate.tracking_id,
+          capabilityId: openCap?.id,
+          title: "Open-claim proof: field survey and low-cost design study",
+          ipTrack: "OPEN",
+          members: [
+            { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+            { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+            { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+          ],
+          mentorEmail: HOD,
+          mentorName: "Head of Civil Engineering, BIT Sindri",
+          citizenRole: "Domain Informant",
+          creditCitizen: true,
+          confirmCapacity: true,
+        }),
+      });
+  if (openResponse) {
+    const openResult = (await openResponse.json()) as { ok: boolean; error?: string; message?: string };
+    record(
+      "an open claim succeeds without a routed offer",
+      openResult.ok,
+      openResult.ok ? openResult.message ?? openCandidate.tracking_id : openResult.error,
+    );
+    if (!openResult.ok) {
+      await sql.end();
+      process.exit(1);
+    }
+  } else {
+    record(
+      "an open claim succeeds without a routed offer",
+      true,
+      `${openCandidate.tracking_id} open-claimed on an earlier run`,
+    );
+  }
+
+  const [openAfter] = await sql`select status from challenges where id = ${openCandidate.id}`;
+  record(
+    "the open-claimed challenge is now CLAIMED",
+    openAfter.status === "CLAIMED",
+    `${openCandidate.tracking_id}: ${openAfter.status}`,
+  );
+  const openRoutes = await sql`
+    select r.state, r.rank, o.name as org from routes r
+    join organization o on o.id = r.org_id
+    where r.challenge_id = ${openCandidate.id} order by r.rank`;
+  record(
+    "the open claim wrote a rank-0 CLAIMED row and closed every other offer",
+    openRoutes.some((r) => r.state === "CLAIMED" && Number(r.rank) === 0) &&
+      openRoutes.every((r) => r.state !== "OFFERED"),
+    openRoutes.map((r) => `${r.org}#${r.rank}:${r.state}`).join(", "),
+  );
+}
+
+/* ------------------------------------------------- the second claim fails */
+
+// The main target is always claimed by this point, so this beat is
+// deterministic: no second project, and the refusal names the real reason.
+const doubleResponse = await fetch(`${BASE}/api/hei/claim`, {
+  method: "POST",
+  headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+  body: JSON.stringify({
+    trackingId: target,
+    capabilityId: capability?.id,
+    title: "Second-claim probe that must be refused",
+    ipTrack: "OPEN",
+    members: [
+      { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+      { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+      { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+    ],
+    mentorEmail: HOD,
+    mentorName: "Head of Civil Engineering, BIT Sindri",
+    citizenRole: "Domain Informant",
+    creditCitizen: true,
+    confirmCapacity: true,
+  }),
+});
+const doubleResult = (await doubleResponse.json()) as { ok: boolean; error?: string };
+record(
+  "a second claim on the same challenge is refused as already claimed",
+  !doubleResult.ok && String(doubleResult.error ?? "").includes("already been claimed"),
+  doubleResult.ok ? "UNEXPECTEDLY ACCEPTED" : doubleResult.error,
+);
+
+/* ------------------------------------------ the triage floor still holds */
+
+const [gateHeld] = await sql`
+  select tracking_id, status from challenges
+  where status in ('SUBMITTED', 'NEEDS_MORE_INFO')
+  order by tracking_id limit 1`;
+if (!gateHeld) {
+  record(
+    "an untriaged challenge refuses claiming",
+    true,
+    "no untriaged challenge on this seed — nothing to prove",
+  );
+} else {
+  const gateResponse = await fetch(`${BASE}/api/hei/claim`, {
+    method: "POST",
+    headers: { cookie: cookieHeader(), "content-type": "application/json", origin: BASE },
+    body: JSON.stringify({
+      trackingId: gateHeld.tracking_id,
+      capabilityId: capability?.id,
+      title: "Gate probe that must be refused",
+      ipTrack: "OPEN",
+      members: [
+        { name: "Priya Kumari", email: "priya.kumari@bitsindri.ac.in", declaredRole: "Field survey" },
+        { name: "Rahul Mahto", email: "rahul.mahto@bitsindri.ac.in", declaredRole: "Modelling and analysis" },
+        { name: "Aarti Singh", email: "aarti.singh@bitsindri.ac.in", declaredRole: "Design" },
+      ],
+      mentorEmail: HOD,
+      mentorName: "Head of Civil Engineering, BIT Sindri",
+      citizenRole: "Domain Informant",
+      creditCitizen: true,
+      confirmCapacity: true,
+    }),
+  });
+  const gateResult = (await gateResponse.json()) as { ok: boolean; error?: string };
+  record(
+    "an untriaged challenge refuses claiming",
+    !gateResult.ok && String(gateResult.error ?? "").includes("being checked for safety"),
+    `${gateHeld.tracking_id} (${gateHeld.status}): ${gateResult.ok ? "UNEXPECTEDLY ACCEPTED" : gateResult.error}`,
+  );
 }
 
 const failed = results.filter((r) => !r.ok);

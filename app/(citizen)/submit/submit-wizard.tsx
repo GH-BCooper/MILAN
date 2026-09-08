@@ -44,19 +44,56 @@ export interface BlockOption extends Centroid {
   districtCode: string;
 }
 
-/** Written in citizen voice, not in ours. These are what a real report sounds like. */
+/**
+ * Written in citizen voice, not in ours. These are what a real report sounds
+ * like. The bank is deliberately large and the wizard shows three at random,
+ * so a returning reporter sees fresh suggestions instead of the same three.
+ */
 const EXAMPLES = {
   hi: [
-    "हमारे गाँव के ऊपर वाले बाँध में दरार आ गई है और बरसात में पानी रिसता है।",
-    "मार्च के बाद हमारा कुआँ सूख जाता है और औरतों को तीन किलोमीटर दूर से पानी लाना पड़ता है।",
-    "बरसात में नाले पर पुलिया न होने से गाँव का रास्ता छह हफ्ते बंद रहता है।",
+    "हमारे गाँव के प्राइमरी स्कूल में पाँच कक्षाओं के लिए एक ही शिक्षक है — बच्चे ज़्यादातर दिन खाली बैठते हैं।",
+    "सरकारी स्कूल की लाइब्रेरी दो साल से बंद है; किताबें अंदर सड़ रही हैं।",
+    "हमारे प्रखंड में लड़कियाँ आठवीं के बाद पढ़ाई छोड़ देती हैं क्योंकि हाई स्कूल 9 किमी दूर है और कोई बस नहीं।",
+    "हमारे स्कूल को पिछले साल टैबलेट मिले पर किसी शिक्षक को प्रशिक्षण नहीं मिला — वे हेडमास्टर की अलमारी में पड़े हैं।",
+    "मध्याह्न भोजन की रसोई में साफ पानी नहीं है; बच्चे हर महीने बीमार पड़ते हैं।",
+    "कामकाजी बच्चों की रात की कक्षाएँ सोलर लाइट खराब होने पर बंद हो गईं — किसी ने मरम्मत नहीं की।",
+    "स्कूल के शौचालय में पानी का कनेक्शन नहीं, इसलिए किशोर लड़कियाँ आना बंद कर देती हैं।",
+    "परीक्षा फॉर्म में ऑनलाइन भुगतान चाहिए पर नज़दीकी साइबर कैफे प्रति फॉर्म ₹300 लेता है।",
+    "गाँव के स्कूल की चहारदीवारी गिर गई — मवेशी कक्षाओं में चरते हैं।",
+    "बच्चे टिन के शेड में पढ़ते हैं जो हर गर्मी में भट्ठी बन जाता है।",
+    "स्कूल में कंप्यूटर हैं पर साल में छह महीने बिजली नहीं रहती।",
+    "छात्रवृत्ति का पैसा छात्रों तक कभी नहीं पहुँचता — फॉर्म प्रखंड कार्यालय में गायब हो जाते हैं।",
+    "हमारे हाई स्कूल में तीन साल से विज्ञान शिक्षक नहीं — प्रयोग गाइड से नकल होते हैं।",
+    "आँगनबाड़ी में सीखने की कोई सामग्री नहीं — बच्चे बस फर्श पर बैठते हैं।",
+    "स्कूल बसें हमारे रूट पर नहीं आतीं — 40 बच्चे रोज़ 5 किमी पैदल चलते हैं।",
+    "आईटीआई की मशीनें 1998 की हैं — प्रशिक्षु ऐसे उपकरण पर सीखते हैं जो कोई फैक्ट्री इस्तेमाल नहीं करती।",
+    "बधिर छात्रों के लिए कोई दुभाषिया नहीं — वे ऐसे नोट्स नकल करते हैं जो समझ नहीं सकते।",
+    "खेत मज़दूरों की रात की पाठशाला में रोशनी नहीं — कक्षाएँ सूरज डूबते ही खत्म हो जाती हैं।",
   ],
   en: [
-    "There is a crack in the embankment above our village and water seeps through it in the monsoon.",
-    "Our well dries up after March and the women have to carry water from three kilometres away.",
-    "The village road is cut off for six weeks each monsoon because the stream has no culvert.",
+    "The primary school in our village has one teacher for five classes — the children sit idle most days.",
+    "The government school library has been locked for two years; the books are rotting inside.",
+    "Girls in our block drop out after Class 8 because the high school is 9 km away with no bus.",
+    "Our school got tablets last year but no teacher was trained — they sit in the headmaster's almirah.",
+    "The mid-day meal kitchen has no clean water; children fall sick every month.",
+    "Night classes for working children stopped when the solar lights broke — nobody repaired them.",
+    "The school toilet has no water connection, so adolescent girls stop coming.",
+    "Exam forms need online payment but the nearest cyber café charges ₹300 per form.",
+    "The village school boundary wall collapsed — cattle graze in the classrooms.",
+    "Children study under a tin shed that turns into an oven every summer.",
+    "The school has computers but no electricity for six months of the year.",
+    "Scholarship money never reaches students — the forms vanish at the block office.",
+    "There has been no science teacher in our high school for three years — practicals are copied from guides.",
+    "The anganwadi has no learning materials — children just sit on the floor.",
+    "School buses refuse our route — 40 children walk 5 km each way.",
+    "The ITI's machines are from 1998 — trainees learn on equipment no factory uses.",
+    "Deaf students have no interpreter — they copy notes they cannot understand.",
+    "The night school for farm workers has no lighting — classes end at sunset.",
   ],
 } as const;
+
+/** How many suggestions the wizard shows per visit, drawn at random. */
+const EXAMPLE_COUNT = 3;
 
 const selectClass =
   "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
@@ -95,6 +132,17 @@ export function SubmitWizard({
   const framingAsked = useRef(false);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
+
+  /* Three suggestions drawn at random per visit (re-drawn only when the
+   * language changes, so typing does not shuffle the buttons under the user). */
+  const examples = useMemo(() => {
+    const pool = [...EXAMPLES[state.bodyLang]];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j]!, pool[i]!];
+    }
+    return pool.slice(0, EXAMPLE_COUNT);
+  }, [state.bodyLang]);
 
   /* Restore the draft once, on mount. */
   useEffect(() => {
@@ -488,7 +536,7 @@ export function SubmitWizard({
             <div className="milan-glass rounded-xl bg-muted p-4">
               <p className="text-sm font-medium">For example</p>
               <ul className="mt-2 space-y-2">
-                {EXAMPLES[state.bodyLang].map((example) => (
+                {examples.map((example) => (
                   <li key={example}>
                     <button
                       type="button"

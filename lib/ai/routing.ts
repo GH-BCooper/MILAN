@@ -15,7 +15,7 @@
 import { keywordSetFor } from "./gazetteer";
 import type { S5ReasonInput } from "./schemas";
 
-import type { Domain, Hazard } from "@/lib/db/schema";
+import type { Domain } from "@/lib/db/schema";
 
 /** Great-circle distance in km. Used by the distance term and by S3's
  *  corroboration weighting; the earth is not flat and a village 200 km away is
@@ -42,7 +42,7 @@ export const MATCH_VERSION = "1.0.0";
 export const MATCH_WEIGHTS = {
   /** cosine(challenge embedding, capability embedding). */
   semantic: 0.45,
-  /** Jaccard of the lab's tags against the challenge's domain + hazard keywords. */
+  /** Jaccard of the lab's tags against the challenge's domain keywords. */
   tagOverlap: 0.2,
   /** exp(-km/250) over the haversine distance to the institution. */
   distance: 0.15,
@@ -69,11 +69,14 @@ export const ROUTING = {
    *  already carries an automatic annual re-review, so a challenge that
    *  clears the bar later (more corroborations, a vulnerability update)
    *  re-enters routing on its own; nothing here is a second rejection.
-   *  Lowered from 85 to 70: at 85, real seed-scored challenges almost never
-   *  cleared the bar, so /gov/routing and the challenge detail's S5 section
-   *  sat empty on the demo path — a routing pipeline nobody ever saw route.
-   *  70 still parks the genuinely thin reports; it stops parking everything. */
-  minPriorityToRoute: 70,
+   *  Lowered from 85 to 70, then 70 to 55: each cut followed a scoring
+   *  version that removed a term the old bar was tuned around, and each time
+   *  the seeds proved it — at 70 under v2 weights (no 0.20 hazard term) even
+   *  the demo hero parked, so /hei/inbox and the challenge detail's S5
+   *  section sat empty on the demo path: a routing pipeline nobody ever saw
+   *  route. 55 still parks the genuinely thin reports; it stops parking
+   *  everything. If the weights move again, re-tune this against the seeds. */
+  minPriorityToRoute: 55,
   /** The distance at which the distance term has decayed to 1/e. */
   distanceDecayKm: 250,
   /** Capacity is scaled against this many declared slots. */
@@ -122,7 +125,6 @@ export interface Match {
 export interface ScoreContext {
   embedding: number[];
   domain: Domain | null;
-  hazard: Hazard | null;
   lat: number | null;
   lng: number | null;
   /** orgId -> { delivered, total } for the challenge's domain. */
@@ -138,7 +140,7 @@ export function matchScore(capability: CapabilityRow, ctx: ScoreContext): Match 
       : 0;
 
   /* tag overlap ---------------------------------------------------------- */
-  const wanted = new Set(keywordSetFor(ctx.domain, ctx.hazard));
+  const wanted = new Set(keywordSetFor(ctx.domain));
   const has = new Set(capability.specialisationTags.map((t) => t.toLowerCase().trim()));
   const shared = [...wanted].filter((t) => has.has(t));
   const union = new Set([...wanted, ...has]).size;

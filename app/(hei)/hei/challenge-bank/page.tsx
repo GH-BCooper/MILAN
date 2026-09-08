@@ -7,13 +7,15 @@
  * problem a real person in Jharkhand reported with their name on it.
  *
  * Deliberately open to any signed-in HEI member rather than gated behind a
- * routing offer: a department that was not in the top three can still ask.
+ * routing offer: anything safety triage has cleared is claimable, so a
+ * department that was not in the top three claims exactly the same way.
  */
 import Link from "next/link";
 
 import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
+import { OPEN_CLAIMABLE_STATES } from "@/lib/db/stateMachine";
 import { challengeBank } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 
@@ -23,25 +25,20 @@ export const metadata = { title: "Challenge bank" };
 export default async function ChallengeBank({
   searchParams,
 }: {
-  searchParams: Promise<{ domain?: string; hazard?: string }>;
+  searchParams: Promise<{ domain?: string }>;
 }) {
   await requireRole("HEI_MEMBER");
   const filters = await searchParams;
 
   const all = await challengeBank();
-  const items = all.filter(
-    (i) =>
-      (!filters.domain || i.domain === filters.domain) &&
-      (!filters.hazard || i.hazard === filters.hazard),
-  );
+  const items = all.filter((i) => !filters.domain || i.domain === filters.domain);
 
   const domains = [...new Set(all.map((i) => i.domain).filter(Boolean))].sort() as string[];
-  const hazards = [...new Set(all.map((i) => i.hazard).filter((h) => h && h !== "NONE"))].sort() as string[];
 
   return (
     <RoleShell
       title="Real final-year projects"
-      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, scored and ready for a team.`}
+      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, cleared by triage and ready for a team.`}
     >
       <div className="milan-glass rounded-xl bg-accent p-4">
         <p className="text-sm font-medium text-accent-foreground">
@@ -50,28 +47,20 @@ export default async function ChallengeBank({
         <p className="mt-1 text-sm text-accent-foreground">
           Around 200,000 engineering students in India invent a final-year project every year,
           because nobody hands them a real one. These are real. They have a location, a named
-          reporter, a hazard linkage and a priority score you can check the arithmetic of — and
-          when a team finishes, the person who reported it is the one who confirms whether it
-          actually worked. That is a project a student can defend in a viva and put on a CV.
+          reporter and a thematic domain — most with a priority score you can check the arithmetic
+          of — and when a team finishes, the person who reported it is the one who confirms whether
+          it actually worked. That is a project a student can defend in a viva and put on a CV.
         </p>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2">
-        <FilterChip label="Everything" href="/hei/challenge-bank" active={!filters.domain && !filters.hazard} />
+        <FilterChip label="Everything" href="/hei/challenge-bank" active={!filters.domain} />
         {domains.map((d) => (
           <FilterChip
             key={d}
             label={d.replaceAll("_", " ").toLowerCase()}
             href={`/hei/challenge-bank?domain=${encodeURIComponent(d)}`}
             active={filters.domain === d}
-          />
-        ))}
-        {hazards.map((h) => (
-          <FilterChip
-            key={h}
-            label={h.replaceAll("_", " ").toLowerCase()}
-            href={`/hei/challenge-bank?hazard=${encodeURIComponent(h)}`}
-            active={filters.hazard === h}
           />
         ))}
       </div>
@@ -115,11 +104,6 @@ export default async function ChallengeBank({
                     {item.domain.replaceAll("_", " ").toLowerCase()}
                   </span>
                 ) : null}
-                {item.hazard && item.hazard !== "NONE" ? (
-                  <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs text-amber-800 dark:text-amber-200">
-                    {item.hazard.replaceAll("_", " ").toLowerCase()}
-                  </span>
-                ) : null}
                 <span className="text-xs text-muted-foreground">
                   {item.districtName ?? "district not given"} · {item.corroborationCount} report
                   {item.corroborationCount === 1 ? "" : "s"}
@@ -133,7 +117,7 @@ export default async function ChallengeBank({
                 >
                   Read the full report
                 </Link>
-                {item.offeredElsewhere ? (
+                {OPEN_CLAIMABLE_STATES.includes(item.status as ChallengeStatus) ? (
                   <Link
                     href={`/hei/challenges/${item.trackingId}/claim`}
                     className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -142,7 +126,7 @@ export default async function ChallengeBank({
                   </Link>
                 ) : (
                   <span className="inline-flex min-h-11 items-center text-xs text-muted-foreground">
-                    Not currently offered — it will widen on its SLA ladder
+                    Still being checked for safety — nothing can be claimed before triage clears it
                   </span>
                 )}
               </div>

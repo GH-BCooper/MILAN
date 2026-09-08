@@ -87,7 +87,7 @@ export default async function CsrPage() {
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="py-2 pr-3">Challenge</th>
                     <th className="py-2 pr-3">District</th>
-                    <th className="py-2 pr-3">Hazard</th>
+                    <th className="py-2 pr-3">Domain</th>
                     <th className="py-2 pr-3">Institution</th>
                     <th className="py-2 pr-3 text-right">Artifacts</th>
                     <th className="py-2 pr-3 text-right">Beneficiaries</th>
@@ -106,7 +106,7 @@ export default async function CsrPage() {
                           <span className="block text-xs text-muted-foreground">{r.tracking_id}</span>
                         </td>
                         <td className="py-2 pr-3 text-xs">{r.district ?? "—"}</td>
-                        <td className="py-2 pr-3 text-xs">{r.ndma_hazard?.replace(/_/g, " ").toLowerCase() ?? "—"}</td>
+                        <td className="py-2 pr-3 text-xs">{r.domain?.replace(/_/g, " ").toLowerCase() ?? "—"}</td>
                         <td className="py-2 pr-3 text-xs">{r.institution ?? "not yet claimed"}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">{r.artifacts}</td>
                         <td className="py-2 pr-3 text-right tabular-nums">{r.beneficiaries ?? "—"}</td>

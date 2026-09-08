@@ -35,68 +35,15 @@ export interface DeadlineContext {
   lastActivityAt?: Date | null;
   /** ROUTED restarting after a released claim keeps its original ladder shape. */
   escalationStage?: string | null;
-  /**
-   * Emergency Mode (hazard-pinned): every clock for a challenge linked to the
-   * pinned hazard runs this much faster. 1 is peacetime. The District
-   * Collector's flood week should not wait seven days for a WIDEN on a
-   * flood-linked embankment problem — this is the Disaster Management teeth of
-   * `/gov/emergency`, and it compresses the clocks the challenge already has
-   * rather than rewriting history: due dates move closer, they are never
-   * cancelled or re-kinded. ANNUAL_REVIEW is exempt (see below).
-   */
-  clockScale?: number;
 }
 
-/**
- * The compression factor Emergency Mode applies to a pinned hazard's clocks.
- * Halves every window: a 7-day WIDEN rung fires in 3.5 days. Chosen so the
- * demo can show a ladder climbing in one fast-forward, and so a full
- * ladder-1 escalation still takes 22.5 days of Milan time — compression must
- * not turn "nobody claimed it" into an instant bounty.
- */
-export const EMERGENCY_TIME_SCALE = 0.5;
-
-/**
- * Peacetime unless the pinned hazard is this challenge's hazard. Pure so both
- * the state machine (inside a transaction) and the reaper (once per run) can
- * compute it from the same two facts without duplicating the rule.
- */
-export function emergencyScale(
-  on: boolean,
-  emergencyHazard: string | null | undefined,
-  challengeHazard: string | null | undefined,
-): number {
-  return on &&
-    Boolean(emergencyHazard) &&
-    Boolean(challengeHazard) &&
-    challengeHazard !== "NONE" &&
-    emergencyHazard === challengeHazard
-    ? EMERGENCY_TIME_SCALE
-    : 1;
-}
-
-/** ANNUAL_REVIEW never compresses: re-review cadence is not an emergency tool,
- *  and halving a 365-day clock every flood alert would compound nonsensically. */
-const UNSCALED_KINDS: readonly SlaKind[] = ["ANNUAL_REVIEW"];
-
-function scaleFor(ctx: DeadlineContext): number {
-  const s = ctx.clockScale ?? 1;
-  // Guard the pure module against nonsense from a caller: a scale outside
-  // (0, 1] is a programming error, and peacetime is the safe degradation.
-  if (!Number.isFinite(s) || s <= 0 || s > 1) return 1;
-  return s;
-}
-
-const daysRaw = (from: Date, n: number): Date => new Date(from.getTime() + n * MS_PER_DAY);
-
-/** Scale-aware clock offsets live inside the builder, so every rung definition
- *  stays in peacetime days and the compression is applied in exactly one place. */
+/** Every rung definition stays in plain days; there is exactly one place
+ *  where a deadline date is computed, and this is it. */
 function specsFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[] {
   const { now } = ctx;
   const project = ctx.projectId ?? null;
   const activity = ctx.lastActivityAt ?? now;
-  const scale = scaleFor(ctx);
-  const days = (from: Date, n: number): Date => new Date(from.getTime() + n * scale * MS_PER_DAY);
+  const days = (from: Date, n: number): Date => new Date(from.getTime() + n * MS_PER_DAY);
 
 /**
  * The ladder table from PHASE_3_BUILD.md Task 3.2, plus full coverage.
@@ -106,8 +53,7 @@ function specsFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[]
  * +7 more days, which is day 14 from routing — the same absolute date the
  * ROUTED row named. A state change cancels open deadlines (it must: they belong
  * to the state being left), so without this the ladder would reset itself every
- * time it climbed a rung. Under Emergency Mode the whole ladder scales
- * uniformly, so those "same absolute date" guarantees keep holding at half time.
+ * time it climbed a rung.
  */
   switch (status) {
     /* --- intake and the pipeline. Nothing may stall unseen. ---------------- */
@@ -149,8 +95,7 @@ function specsFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[]
       // too it goes to an annual re-review rather than dropping off the board.
       return [
         { kind: "GRAND_CHALLENGE", dueAt: days(now, 24) },
-        // Unscaled: a re-review cadence is not an emergency tool.
-        { kind: "ANNUAL_REVIEW", dueAt: daysRaw(now, 365) },
+        { kind: "ANNUAL_REVIEW", dueAt: days(now, 365) },
       ];
 
     /* --- ladder 2: claimed, but nothing arrives --------------------------- */
@@ -193,8 +138,7 @@ function specsFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[]
     /* --- terminal ---------------------------------------------------------- */
     case "PARKED":
       // Terminal for routing, but never forgotten. Invariant 1's parenthesis.
-      // Unscaled: re-review cadence is not an emergency tool.
-      return [{ kind: "ANNUAL_REVIEW", dueAt: daysRaw(now, 365) }];
+      return [{ kind: "ANNUAL_REVIEW", dueAt: days(now, 365) }];
     case "CLOSED":
     case "MERGED":
     case "FORWARDED_EXTERNAL":
@@ -204,25 +148,9 @@ function specsFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[]
   }
 }
 
-/**
- * The public entry point: the peacetime ladder, compressed and marked when
- * Emergency Mode pins this challenge's hazard.
- *
- * The marker (`payload.emergencyClock`) is what /gov/sla and /demo render as a
- * "clock compressed ×0.5" badge, so a shorter window is explained on the screen
- * it appears on rather than looking like a bug in the ladder. Exempt kinds are
- * returned untouched, marker and all, so an annual re-review row never claims
- * compression that did not happen.
- */
+/** The public entry point: the ladder for a state, in plain days. */
 export function deadlinesFor(status: ChallengeStatus, ctx: DeadlineContext): DeadlineSpec[] {
-  const scale = scaleFor(ctx);
-  const specs = specsFor(status, ctx);
-  if (scale === 1) return specs;
-  return specs.map((s) =>
-    UNSCALED_KINDS.includes(s.kind)
-      ? s
-      : { ...s, payload: { ...(s.payload ?? {}), emergencyClock: scale } },
-  );
+  return specsFor(status, ctx);
 }
 
 /** Terminal states other than PARKED open nothing; PARKED opens the annual review. */
@@ -231,9 +159,11 @@ export function isTerminalWithoutDeadline(status: ChallengeStatus): boolean {
 }
 
 /** What the reaper falls back to if an action leaves a challenge with no clock.
- *  Peacetime by design: the backstop guards invariant 1 (a clock exists), not
- *  urgency (how soon it fires), and the reaper passes the challenge's own scale
- *  through `deadlinesFor` when it can. */
+ *  The backstop guards invariant 1 (a clock exists), not urgency. */
 export function fallbackDeadline(now: Date): DeadlineSpec {
-  return { kind: "STAGE_TIMEOUT", dueAt: daysRaw(now, 30), payload: { reason: "invariant-1 backstop" } };
+  return {
+    kind: "STAGE_TIMEOUT",
+    dueAt: new Date(now.getTime() + 30 * MS_PER_DAY),
+    payload: { reason: "invariant-1 backstop" },
+  };
 }

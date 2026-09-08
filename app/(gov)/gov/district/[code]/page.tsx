@@ -15,7 +15,7 @@ export const metadata = { title: "District" };
  * A district, from the government's side of the wall.
  *
  * The reference card names what the district IS (division, population,
- * internet reach, tribal share, per-hazard vulnerability); the three boards
+ * internet reach, tribal share, need index); the three boards
  * name what it owes right now: the SLA clocks ticking, the severity gate
  * queue, and the delivered work awaiting a citizen's confirmation. Every
  * number links through to the filtered public list so nothing on this page
@@ -111,8 +111,6 @@ export default async function DistrictPage({ params }: { params: Promise<{ code:
       .limit(6),
   ]);
 
-  const vulnerability = (district.disasterVulnerability ?? {}) as Record<string, number>;
-  const vulnChips = Object.entries(vulnerability).sort((a, b) => b[1] - a[1]);
   const totalChallenges = statusRows.reduce((sum, r) => sum + r.n, 0);
 
   return (
@@ -150,21 +148,12 @@ export default async function DistrictPage({ params }: { params: Promise<{ code:
             <dd className="mt-1 font-mono text-lg font-semibold">JH-…-{district.code}-…</dd>
           </div>
         </dl>
-        {vulnChips.length > 0 ? (
-          <div className="mt-4">
-            <p className="text-xs text-muted-foreground">Disaster vulnerability (0–1, from the reference dataset)</p>
-            <ul className="mt-2 flex flex-wrap gap-1.5">
-              {vulnChips.map(([hazard, v]) => (
-                <li
-                  key={hazard}
-                  className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200"
-                >
-                  {hazard.replaceAll("_", " ").toLowerCase()} {v.toFixed(1)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <p className="mt-4 text-xs text-muted-foreground">
+          Block need index{" "}
+          {district.vulnerabilityIndex === null ? "not recorded" : Number(district.vulnerabilityIndex).toFixed(2)}{" "}
+          (0–1, from the reference dataset) — the equity term in the priority score: an identical problem
+          here {district.vulnerabilityIndex !== null && Number(district.vulnerabilityIndex) >= 0.6 ? "outranks" : "is scored against"} one in a better-served district.
+        </p>
         <p className="mt-4 text-sm">
           <Link className="text-primary underline underline-offset-4" href={`/challenges?district=${district.code}`}>
             All {totalChallenges} challenge{totalChallenges === 1 ? "" : "s"} in this district

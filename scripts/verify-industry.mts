@@ -61,7 +61,7 @@ console.log(`target: ${target.tracking_id} (${target.status})\n`);
 const discover = await get("/industry/discover", industry);
 const discoverHtml = await discover.text();
 record("/industry/discover loads for the seeded firm", discover.status === 200, `HTTP ${discover.status}`);
-record("it filters by domain, TRL/solvability, district and hazard", /Solvability \/ TRL/.test(discoverHtml) && /NDMA hazard/.test(discoverHtml));
+record("it filters by domain, TRL/solvability and district", /Solvability \/ TRL/.test(discoverHtml) && /Domain/.test(discoverHtml));
 record(
   "the independent-innovator path is stated: a legal entity is needed to receive money, not to participate",
   /legal entity is needed to receive money, not to participate/i.test(discoverHtml),

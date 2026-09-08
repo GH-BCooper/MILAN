@@ -17,18 +17,14 @@ import {
   isSeverityBandKey,
 } from "@/components/severity-chip";
 import type { MapMarker } from "@/components/milan-map";
-import { emergencyState } from "@/lib/clock/server";
 import { db } from "@/lib/db";
-import { surgeRank } from "@/lib/emergency/surge";
 import {
   challenges,
   districts,
   domainEnum,
-  hazardEnum,
   challengeStatusEnum,
   type ChallengeStatus,
   type Domain,
-  type Hazard,
 } from "@/lib/db/schema";
 import { ChallengeMap } from "./challenge-map";
 
@@ -103,7 +99,6 @@ export default async function ChallengesPage({
   searchParams: Promise<{
     district?: string;
     domain?: string;
-    hazard?: string;
     status?: string;
     band?: string;
     severity?: string;
@@ -116,9 +111,6 @@ export default async function ChallengesPage({
   const district = filters.district?.trim().toUpperCase();
   const domain = domainEnum.enumValues.includes(filters.domain as Domain)
     ? (filters.domain as Domain)
-    : undefined;
-  const hazard = hazardEnum.enumValues.includes(filters.hazard as Hazard)
-    ? (filters.hazard as Hazard)
     : undefined;
   const status = challengeStatusEnum.enumValues.includes(
     filters.status as ChallengeStatus,
@@ -136,7 +128,6 @@ export default async function ChallengesPage({
 
   if (district) where.push(eq(challenges.districtCode, district));
   if (domain) where.push(eq(challenges.domain, domain));
-  if (hazard) where.push(eq(challenges.hazard, hazard));
   if (status) where.push(eq(challenges.status, status));
   if (band)
     where.push(inArray(challenges.status, [...LIFECYCLE_BANDS[band].statuses]));
@@ -160,14 +151,12 @@ export default async function ChallengesPage({
         title: challenges.title,
         status: challenges.status,
         domain: challenges.domain,
-        hazard: challenges.hazard,
         lat: challenges.lat,
         lng: challenges.lng,
         districtCode: challenges.districtCode,
         districtName: districts.name,
         corroborationCount: challenges.corroborationCount,
         priorityScore: challenges.priorityScore,
-        hazardStrength: challenges.hazardStrength,
         createdAt: challenges.createdAt,
       })
       .from(challenges)
@@ -181,31 +170,17 @@ export default async function ChallengesPage({
       .orderBy(asc(districts.name)),
   ]);
 
-  // Emergency Mode pins the hazard filter unless the visitor chose one
-  // explicitly, and re-sorts the list by the display surge. Honest by design:
-  // the banner explains it, each surged row is labelled, and the stored score
-  // shown on the challenge page never moved.
-  const emergency = await emergencyState();
-  const pinnedHazard = emergency.on && !hazard ? emergency.hazard : null;
-  const displayRows = (
-    pinnedHazard === null ? rows : rows.filter((r) => r.hazard === pinnedHazard)
-  )
-    .map((r) => ({
-      row: r,
-      surge: surgeRank({
-        priorityScore:
-          r.priorityScore === null ? null : Number(r.priorityScore),
-        hazard: r.hazard,
-        hazardStrength:
-          r.hazardStrength === null ? null : Number(r.hazardStrength),
-        emergencyHazard: pinnedHazard,
-      }),
-    }))
-    .sort((a, b) => b.surge.sortKey - a.surge.sortKey);
+  // Highest priority first; unscored reports sit at the end rather than the
+  // top, so an unscored page never outranks a scored one by accident.
+  const displayRows = [...rows].sort(
+    (a, b) =>
+      (b.priorityScore === null ? -1 : Number(b.priorityScore)) -
+      (a.priorityScore === null ? -1 : Number(a.priorityScore)),
+  );
 
   const markers: MapMarker[] = displayRows
-    .filter(({ row: r }) => r.lat !== null && r.lng !== null)
-    .map(({ row: r }) => ({
+    .filter((r) => r.lat !== null && r.lng !== null)
+    .map((r) => ({
       id: r.id,
       lat: Number(r.lat),
       lng: Number(r.lng),
@@ -268,28 +243,6 @@ export default async function ChallengesPage({
               {domainEnum.enumValues.map((d) => (
                 <option key={d} value={d}>
                   {d.replaceAll("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="hazard"
-              className="text-xs font-medium text-muted-foreground"
-            >
-              Hazard
-            </label>
-            <select
-              id="hazard"
-              name="hazard"
-              defaultValue={hazard ?? ""}
-              className={selectClass}
-            >
-              <option value="">All hazards</option>
-              {hazardEnum.enumValues.map((h) => (
-                <option key={h} value={h}>
-                  {h.replaceAll("_", " ")}
                 </option>
               ))}
             </select>
@@ -394,15 +347,6 @@ export default async function ChallengesPage({
             : ""}
         </p>
 
-        {pinnedHazard ? (
-          <p className="mt-2 rounded-md border border-red-400/40 bg-red-500/12 px-3 py-2 text-xs text-red-800 dark:bg-red-500/15 dark:text-red-200">
-            Emergency mode: the list is filtered to{" "}
-            {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted by a
-            display surge of up to ×1.25. That changes what is shown, never a
-            stored score. Choose a different hazard above to override the pin.
-          </p>
-        ) : null}
-
         {displayRows.length === 0 ? (
           <div className="milan-glass mt-3 rounded-xl p-5 text-sm">
             <p className="font-semibold">Nothing matches that combination.</p>
@@ -424,7 +368,7 @@ export default async function ChallengesPage({
           </div>
         ) : (
           <ul className="mt-3 divide-y divide-border milan-glass rounded-xl">
-            {displayRows.map(({ row: r, surge }) => (
+            {displayRows.map((r) => (
               <li key={r.id} className="p-4">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Link
@@ -439,17 +383,9 @@ export default async function ChallengesPage({
                       r.priorityScore === null ? null : Number(r.priorityScore)
                     }
                   />
-                  {r.hazard && r.hazard !== "NONE" ? (
-                    <span className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
-                      {r.hazard.replaceAll("_", " ")}
-                    </span>
-                  ) : null}
-                  {surge.matched ? (
-                    <span
-                      className="rounded border border-red-400/40 bg-red-500/12 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-500/15 dark:text-red-200"
-                      title={`stored score ${surge.storedScore?.toFixed(1) ?? "unscored"} × ${surge.multiplier.toFixed(2)} emergency surge = ${surge.sortKey.toFixed(1)} (display only)`}
-                    >
-                      emergency surge ×{surge.multiplier.toFixed(2)}
+                  {r.domain ? (
+                    <span className="rounded border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {r.domain.replaceAll("_", " ")}
                     </span>
                   ) : null}
                 </div>

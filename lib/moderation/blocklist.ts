@@ -171,4 +171,4 @@ export function isBlocked(text: string): boolean {
 }
 
 export const MODERATION_MESSAGE =
-  "This doesn't read like a real civic or disaster problem. Please describe what is actually happening, in your own words.";
+  "This doesn't read like a real community problem. Please describe what is actually happening, in your own words.";

@@ -49,8 +49,8 @@ const S2_CASE = {
   peopleAffected: 550,
   recurrence: "yearly",
   priors: [
-    { title: "Chandil dam water enters the village every monsoon", domain: "WATER", hazard: "FLOOD", similarity: 0.81 },
-    { title: "Harmu river overflows into the colony", domain: "URBAN_INFRA", hazard: "FLOOD", similarity: 0.74 },
+    { title: "Chandil dam water enters the village every monsoon", domain: "WATER", similarity: 0.81 },
+    { title: "Harmu river overflows into the colony", domain: "URBAN_INFRA", similarity: 0.74 },
   ],
 };
 
@@ -113,7 +113,7 @@ const CASES: Array<{
         model: out.model,
         latencyMs: out.latencyMs,
         confidence: out.value.confidence,
-        summary: `${out.value.domain}/${out.value.hazard} sev=${out.value.severity} hs=${out.value.hazard_strength}`,
+        summary: `${out.value.domain} sev=${out.value.severity} conf=${out.value.confidence}`,
       };
     },
   },

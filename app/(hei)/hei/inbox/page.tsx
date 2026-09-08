@@ -77,11 +77,6 @@ export default async function HeiInbox() {
                           {item.domain.replaceAll("_", " ")}
                         </span>
                       ) : null}
-                      {item.hazard && item.hazard !== "NONE" ? (
-                        <span className="rounded border border-amber-400/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200">
-                          {item.hazard.replaceAll("_", " ")}
-                        </span>
-                      ) : null}
                       <span className="text-xs text-muted-foreground">
                         {item.districtName ?? "District not given"} · {item.corroborationCount} report
                         {item.corroborationCount === 1 ? "" : "s"}
