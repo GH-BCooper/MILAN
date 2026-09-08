@@ -25,12 +25,20 @@ export function OtpBox({
   const action = kind === "email" ? verifyEmailCodeAction : verifyPhoneCodeAction;
   const [state, formAction, pending] = useActionState<VerifyState, FormData>(action, {});
   const [demoCode, setDemoCode] = useState<string | null>(null);
+  // A code has not actually gone out until "Send / resend code" is pressed
+  // and the request completes. Rendering "Code sent to X" before that point
+  // (as this box used to, unconditionally) tells the citizen a code exists
+  // to check against when there is none — every code they then try fails
+  // with no way to tell why, which reads as "verification is broken."
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
   const [resending, startResend] = useTransition();
 
   function resend() {
     startResend(async () => {
       const result = await resendOtpAction(kind);
       setDemoCode(result.demoCode);
+      setSent(true);
     });
   }
 
@@ -57,7 +65,13 @@ export function OtpBox({
           {resending ? "Sending…" : "Send / resend code"}
         </button>
       </div>
-      <p className="text-xs text-muted-foreground">Code sent to {destination}.</p>
+      {sent ? (
+        <p className="text-xs text-muted-foreground">Code sent to {destination}.</p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Press &ldquo;Send / resend code&rdquo; to get a code at {destination}.
+        </p>
+      )}
 
       {demoCode ? (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/12 p-2 font-mono text-sm text-amber-800 dark:text-amber-200">
@@ -69,9 +83,21 @@ export function OtpBox({
       <form action={formAction} className="flex flex-wrap items-end gap-2">
         <div className="flex-1 min-w-[8rem] space-y-1">
           <Label htmlFor={`${kind}-code`}>6-digit code</Label>
-          <Input id={`${kind}-code`} name="code" inputMode="numeric" maxLength={6} className="h-11" />
+          <Input
+            id={`${kind}-code`}
+            name="code"
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]*"
+            maxLength={6}
+            className="h-11"
+            disabled={!sent}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
         </div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" disabled={!sent || pending || code.length !== 6}>
           {pending ? "Checking…" : "Verify"}
         </Button>
       </form>

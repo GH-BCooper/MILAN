@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { setEmergency } from "./actions";
 
 export function EmergencyForm({ on, hazard, hazards }: { on: boolean; hazard: string | null; hazards: string[] }) {
@@ -16,7 +17,7 @@ export function EmergencyForm({ on, hazard, hazards }: { on: boolean; hazard: st
         id="hazard"
         name="hazard"
         defaultValue={hazard ?? "FLOOD"}
-        className="h-11 w-full max-w-sm rounded-md border border-input bg-background px-3 text-sm"
+        className={`max-w-sm ${nativeSelectClassName}`}
       >
         {hazards
           .filter((h) => h !== "NONE")

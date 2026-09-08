@@ -19,11 +19,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { DECLARED_ROLES } from "../../../claim-constants";
 import { claimChallengeAction } from "./actions";
 
-const selectClass =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const selectClass = `${nativeSelectClassName} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`;
 
 interface Member {
   /** Shown on the public credit chain. */

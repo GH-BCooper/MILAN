@@ -21,21 +21,24 @@ export const SEVERITY_BANDS: readonly SeverityBand[] = [
     label: "critical",
     min: 75,
     max: null,
-    className: "border-red-400/40 bg-red-500/15 text-red-200",
+    className:
+      "border-red-400/40 bg-red-500/12 text-red-800 dark:bg-red-500/15 dark:text-red-200",
   },
   {
     key: "high",
     label: "high",
     min: 50,
     max: 75,
-    className: "border-amber-400/40 bg-amber-500/15 text-amber-200",
+    className:
+      "border-amber-400/40 bg-amber-500/15 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
   },
   {
     key: "moderate",
     label: "moderate",
     min: 25,
     max: 50,
-    className: "border-sky-400/40 bg-sky-500/15 text-sky-200",
+    className:
+      "border-sky-400/40 bg-sky-500/12 text-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
   },
   {
     key: "low",

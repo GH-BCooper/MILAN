@@ -15,7 +15,7 @@ import { after } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { currentUser } from "@/lib/auth/guards";
-import { runOnce } from "@/lib/ai/inflight";
+import { inflightPromise, runOnce } from "@/lib/ai/inflight";
 import { runPipeline } from "@/lib/ai/pipeline";
 import { projectTrace } from "@/lib/ai/trace-projection";
 import { db } from "@/lib/db";
@@ -77,12 +77,34 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "This challenge is closed." }, { status: 403 });
   }
 
-  // The run detaches after the response: `after` keeps it alive on Vercel and
-  // runs it straight through in dev; an event-source connection going away in
-  // the old model left the run orphaned to a dead socket — this one cannot.
-  after(async () => {
-    runOnce(challenge.id, () => runPipeline(challenge.id, async () => undefined));
-  });
+  /**
+   * Start the run now, not inside `after()`.
+   *
+   * `after()` exists to keep a *serverless invocation* alive past the point
+   * where the response has been sent — it is a lifetime extension, not a
+   * scheduler. Registering the run itself inside its callback made starting
+   * the pipeline depend on that callback actually firing promptly, and in
+   * `next dev` a file-watcher recompile between the response and the
+   * deferred callback could delay or drop it — the success page would then
+   * sit on "waiting" until the citizen reloaded the page, at which point the
+   * server component re-read the (by-then-finished, or now-restarted) trace
+   * directly and looked fine. Calling `runOnce` here, synchronously, starts
+   * the pipeline in the same tick as the request — it does not block the
+   * response, because it is not awaited — and removes that dependency
+   * entirely, in dev and in production alike.
+   *
+   * `after()` is still used, but only for its real job: holding this
+   * invocation open (Vercel Fluid Compute, Node runtime) until the tracked
+   * promise settles, so the platform cannot freeze or recycle the function
+   * mid-run the way it would once the response finishes.
+   */
+  runOnce(challenge.id, () => runPipeline(challenge.id, async () => undefined));
+  const tracked = inflightPromise(challenge.id);
+  if (tracked) {
+    after(async () => {
+      await tracked;
+    });
+  }
 
   return Response.json({ ok: true, trackingId: challenge.trackingId });
 }

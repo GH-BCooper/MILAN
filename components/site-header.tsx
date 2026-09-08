@@ -26,6 +26,7 @@ const CHALLENGES_GROUP: NavLink = {
   label: "Challenges",
   children: [
     ["/challenges", "All challenges"],
+    ["/flagged", "Flagged reports"],
     ["/track", "Track"],
     ["/stats", "Statistics"],
   ],
@@ -42,12 +43,14 @@ const ROLE_NAV: Partial<Record<Role, ReadonlyArray<NavLink>>> = {
     { href: "/hei", label: "My institution" },
     { href: "/hei/inbox", label: "Routed to us" },
     { href: "/hei/challenge-bank", label: "Challenge bank" },
+    { href: "/flagged", label: "Flagged reports" },
     { href: "/submit-question", label: "Submit a question" },
   ],
   INDUSTRY: [
     { href: "/industry/discover", label: "Challenges" },
     { href: "/industry/solutions", label: "Solutions" },
     { href: "/industry/csr", label: "CSR" },
+    { href: "/flagged", label: "Flagged reports" },
     { href: "/submit-question", label: "Submit a problem" },
   ],
   GOVERNMENT: [

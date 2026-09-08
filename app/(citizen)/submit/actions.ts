@@ -9,6 +9,7 @@ import { appendEntry } from "@/lib/ledger/append";
 import { checkSubmissionRate, recordSubmission } from "@/lib/db/rateLimit";
 import { challengeMedia, challenges, creditEdges, outbox } from "@/lib/db/schema";
 import { nextTrackingId } from "@/lib/db/trackingId";
+import { MODERATION_MESSAGE, isBlocked } from "@/lib/moderation/blocklist";
 import { MediaRejectedError, processImage } from "@/lib/media/upload";
 import { putObject } from "@/lib/media/storage";
 import { runP1 } from "@/lib/ai/stages/p1_framing";
@@ -182,6 +183,19 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
   }
   const input = parsed.data;
 
+  // The same deterministic, offline check step 1 runs live in the browser
+  // (lib/moderation/blocklist.ts), rechecked here because a caller can post
+  // to this action directly and skip the wizard entirely. This is a blunt
+  // pre-filter, not the AI safety stage — S1 still runs on everything that
+  // gets past it.
+  if (isBlocked(input.bodyOriginal)) {
+    return {
+      ok: false,
+      error: MODERATION_MESSAGE,
+      fieldErrors: { bodyOriginal: [MODERATION_MESSAGE] },
+    };
+  }
+
   const user = await currentUser();
   const headerList = await headers();
   const ip =
@@ -209,6 +223,16 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
    */
   const framedStatement = input.framingApprovedByCitizen ? input.framedStatement : null;
 
+  /**
+   * Task: the citizen no longer types a name — /submit requires sign-in, so
+   * the name is already on file. The client sends only a yes/no toggle
+   * (`includeReporterName`); the actual name always comes from the
+   * authenticated session, never from client input, so a caller posting to
+   * this action directly cannot put a name on someone else's report or fake
+   * their own.
+   */
+  const reporterName = input.includeReporterName ? (user?.fullName ?? null) : null;
+
   // The title still comes from the approved framing when there is one, because
   // a research-ready first line is what a list of challenges needs. Without
   // approval it is the citizen's own first clause, as in Phase 1.
@@ -235,7 +259,7 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
           successCriteria: input.successCriteria,
           framingApprovedByCitizen: input.framingApprovedByCitizen,
           reporterId: user?.id ?? null,
-          reporterName: input.reporterName ?? user?.fullName ?? null,
+          reporterName,
           districtCode: input.districtCode,
           blockCode: input.blockCode,
           lat: input.lat === null ? null : String(input.lat),
@@ -293,7 +317,7 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
         challengeId: challenge.id,
         toUserId: user?.id ?? null,
         relation: "ORIGINATOR",
-        declaredRole: input.reporterName ?? user?.fullName ?? "Anonymous reporter",
+        declaredRole: reporterName ?? "Anonymous reporter",
         createdAt: now,
       });
 
@@ -309,7 +333,7 @@ export async function submitChallengeAction(raw: unknown): Promise<SubmitResult>
           trackingId,
           source: "web",
           bodyLang: input.bodyLang,
-          reporterName: input.reporterName ?? user?.fullName ?? null,
+          reporterName,
           mediaHashes: input.media.map((m) => m.contentHash),
           at: now.toISOString(),
         },

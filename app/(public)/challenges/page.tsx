@@ -398,7 +398,7 @@ export default async function ChallengesPage({
         </p>
 
         {pinnedHazard ? (
-          <p className="mt-2 rounded-md border border-red-400/40 bg-red-500/15 px-3 py-2 text-xs text-red-200">
+          <p className="mt-2 rounded-md border border-red-400/40 bg-red-500/12 px-3 py-2 text-xs text-red-800 dark:bg-red-500/15 dark:text-red-200">
             Emergency mode: the list is filtered to{" "}
             {pinnedHazard.replace(/_/g, " ").toLowerCase()} and re-sorted by a
             display surge of up to ×1.25. That changes what is shown, never a
@@ -449,7 +449,7 @@ export default async function ChallengesPage({
                   ) : null}
                   {surge.matched ? (
                     <span
-                      className="rounded border border-red-400/40 bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-200"
+                      className="rounded border border-red-400/40 bg-red-500/12 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-500/15 dark:text-red-200"
                       title={`stored score ${surge.storedScore?.toFixed(1) ?? "unscored"} × ${surge.multiplier.toFixed(2)} emergency surge = ${surge.sortKey.toFixed(1)} (display only)`}
                     >
                       emergency surge ×{surge.multiplier.toFixed(2)}

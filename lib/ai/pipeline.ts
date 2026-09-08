@@ -758,6 +758,38 @@ async function stageS4(ctx: Ctx, emit: Emit): Promise<void> {
   await advance(ctx, "PRIORITISED", `Scored ${result.score.total.toFixed(1)} under weights v${result.score.version}.`);
 
   const top = [...result.score.terms].sort((a, b) => b.contribution - a.contribution).slice(0, 3);
+  const topSentence =
+    `Top three terms: ` +
+    top.map((t) => `${t.label} ${(t.contribution * 100).toFixed(1)}`).join(", ") +
+    `.`;
+
+  // Below the routing bar, the challenge does not go to S5 at all: nobody's
+  // capacity is spent on a shortlist for a report that would not have cleared
+  // it. It is parked instead of held forever un-terminal (invariant 1), and
+  // its full breakdown — the same one rendered here — is what the citizen and
+  // any HEI/industry visitor sees on /flagged as "why".
+  if (result.score.total < ROUTING.minPriorityToRoute) {
+    await advance(
+      ctx,
+      "PARKED",
+      `Priority ${result.score.total.toFixed(1)} of 100 is below the ${ROUTING.minPriorityToRoute} routing bar. Parked; ${topSentence}`,
+    );
+    ctx.halted = {
+      reason: `Priority ${result.score.total.toFixed(1)} of 100 is below the ${ROUTING.minPriorityToRoute} bar for routing to a university team. Parked — it re-enters routing automatically at its annual review, or sooner if new corroborations or facts raise the score.`,
+    };
+
+    await emit({
+      type: "stage",
+      stage: "S4",
+      status: "done",
+      at: clockNow().toISOString(),
+      result: result.score,
+      rationale: topSentence,
+      decision: `Priority ${result.score.total.toFixed(1)} of 100, weights v${result.score.version} — below the ${ROUTING.minPriorityToRoute} bar, so this was flagged and parked rather than routed.`,
+      meta: null,
+    });
+    return;
+  }
 
   await emit({
     type: "stage",
@@ -765,10 +797,7 @@ async function stageS4(ctx: Ctx, emit: Emit): Promise<void> {
     status: "done",
     at: clockNow().toISOString(),
     result: result.score,
-    rationale:
-      `Top three terms: ` +
-      top.map((t) => `${t.label} ${(t.contribution * 100).toFixed(1)}`).join(", ") +
-      `.`,
+    rationale: topSentence,
     decision: `Priority ${result.score.total.toFixed(1)} of 100, weights v${result.score.version}. Every term is shown on the public page.`,
     // Deliberately null: there is no provider, no model and no confidence here,
     // and the trace footer says "deterministic" rather than inventing one.

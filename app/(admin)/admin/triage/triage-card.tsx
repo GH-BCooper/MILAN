@@ -15,13 +15,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { DOMAINS, HAZARDS } from "@/lib/ai/schemas";
 import { resolveTriageAction } from "./actions";
 
 const MIN_REASON = 12;
 
-const selectClass =
-  "h-11 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const selectClass = `${nativeSelectClassName} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring`;
 
 export interface TriageCardProps {
   challengeId: string;

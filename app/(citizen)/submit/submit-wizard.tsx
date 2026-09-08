@@ -3,16 +3,17 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Loader2, MapPin, Trash2, Upload } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Loader2, MapPin, Search, Trash2, Upload } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { resolvePoint, type Centroid } from "@/lib/geo/nearest";
+import { isWithinJharkhand, resolvePoint, type Centroid } from "@/lib/geo/nearest";
 import { proposeFramingAction, submitChallengeAction, uploadEvidenceAction } from "./actions";
 import { PhotoBlur } from "./photo-blur";
+import { MODERATION_MESSAGE, moderate } from "@/lib/moderation/blocklist";
 import { MIN_BODY_CHARS, PEOPLE_BUCKETS, RECURRENCE } from "./schema";
 import {
   FIRST_STEP,
@@ -64,12 +65,15 @@ export function SubmitWizard({
   districts,
   blocks,
   draftId,
-  defaultReporterName,
+  reporterDisplayName,
 }: {
   districts: DistrictOption[];
   blocks: BlockOption[];
   draftId: string;
-  defaultReporterName: string | null;
+  /** The signed-in citizen's own account name — display only. The server is
+   *  the one that decides what actually gets stored (see actions.ts); this is
+   *  never sent back to it as free text. */
+  reporterDisplayName: string | null;
 }) {
   const router = useRouter();
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -96,9 +100,8 @@ export function SubmitWizard({
   useEffect(() => {
     const saved = loadDraft(draftId);
     if (saved) dispatch({ type: "hydrate", state: saved });
-    else if (defaultReporterName) dispatch({ type: "set", patch: { reporterName: defaultReporterName } });
     setHydrated(true);
-  }, [draftId, defaultReporterName]);
+  }, [draftId]);
 
   /* Persist on every change. */
   useEffect(() => {
@@ -183,18 +186,22 @@ export function SubmitWizard({
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         const resolved = resolvePoint(latitude, longitude, districts, blocks);
+        const inside = isWithinJharkhand(resolved.districtCode, resolved.districtDistanceKm);
         set({
           lat: latitude,
           lng: longitude,
           locationAccuracyM: Math.round(accuracy),
           locationSource: "gps",
-          districtCode: resolved.districtCode ?? state.districtCode,
-          blockCode: resolved.blockCode,
+          districtCode: inside ? (resolved.districtCode ?? "") : "",
+          blockCode: inside ? resolved.blockCode : null,
+          locationOutsideCoverage: !inside,
         });
         setLocationNote(
-          resolved.districtCode
-            ? "We guessed the district from your location. Please check it and correct it if it is wrong."
-            : "We could not match that point to a district. Please choose one below.",
+          !inside
+            ? "This location is outside Milan's coverage area (Jharkhand only)."
+            : resolved.districtCode
+              ? "We guessed the district from your location. Please check it and correct it if it is wrong."
+              : "We could not match that point to a district. Please choose one below.",
         );
         setLocating(false);
       },
@@ -211,18 +218,71 @@ export function SubmitWizard({
   const onPinChange = useCallback(
     (lat: number, lng: number) => {
       const resolved = resolvePoint(lat, lng, districts, blocks);
+      const inside = isWithinJharkhand(resolved.districtCode, resolved.districtDistanceKm);
       set({
         lat,
         lng,
         locationAccuracyM: null,
         locationSource: "pin",
-        districtCode: resolved.districtCode ?? "",
-        blockCode: resolved.blockCode,
+        districtCode: inside ? (resolved.districtCode ?? "") : "",
+        blockCode: inside ? resolved.blockCode : null,
+        locationOutsideCoverage: !inside,
       });
-      setLocationNote("Pin moved. Check the district and block below.");
+      setLocationNote(
+        inside
+          ? "Pin moved. Check the district and block below."
+          : "This location is outside Milan's coverage area (Jharkhand only).",
+      );
     },
     [districts, blocks, set],
   );
+
+  /* --------------------------------------------------------- place search */
+
+  /**
+   * A citizen reporting on someone else's behalf may not be standing at the
+   * problem. This geocodes free text against Nominatim's public OSM API — no
+   * key, no billing account, which is exactly why it is the pragmatic choice
+   * here — and moves the pin to the first result.
+   *
+   * Invariant 8: nothing on the demo path may depend on a live third-party
+   * API succeeding. A network failure, a timeout, or an empty result list
+   * all fall through to the same message and leave the citizen free to place
+   * the pin by hand or by GPS instead; nothing here blocks the wizard.
+   */
+  const [placeQuery, setPlaceQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  async function searchPlace() {
+    const q = placeQuery.trim();
+    if (!q) return;
+    setSearching(true);
+    setSearchError(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=in&q=${encodeURIComponent(`${q}, Jharkhand, India`)}`,
+        { signal: controller.signal, headers: { Accept: "application/json" } },
+      );
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const results = (await res.json()) as Array<{ lat: string; lon: string; display_name: string }>;
+      if (results.length === 0) {
+        setSearchError("No place found by that name. You can still place the pin yourself.");
+        return;
+      }
+      const { lat, lon } = results[0];
+      onPinChange(Number(lat), Number(lon));
+    } catch {
+      setSearchError(
+        "Could not search for that place right now. Place the pin yourself, or try again.",
+      );
+    } finally {
+      clearTimeout(timeout);
+      setSearching(false);
+    }
+  }
 
   /* ---------------------------------------------------------------- upload */
 
@@ -316,7 +376,7 @@ export function SubmitWizard({
       framedStatement: state.framedStatement.trim() || null,
       successCriteria: state.successCriteria.trim() || null,
       framingApprovedByCitizen: state.framingApprovedByCitizen,
-      reporterName: state.reporterName.trim() || null,
+      includeReporterName: state.includeReporterName,
     });
 
     if (!result.ok) {
@@ -334,11 +394,18 @@ export function SubmitWizard({
   }
 
   const charCount = state.bodyOriginal.trim().length;
+  // Deterministic, offline, no model call — see lib/moderation/blocklist.ts.
+  // Only surfaced once there is enough text to judge fairly; a half-typed
+  // word must not flash a warning at the citizen.
+  const moderation = charCount >= 8 ? moderate(state.bodyOriginal) : { blocked: false, reason: null };
   const districtName = districts.find((d) => d.code === state.districtCode)?.name ?? null;
   const blockName = blocks.find((b) => b.code === state.blockCode)?.name ?? null;
 
   return (
-    <div>
+    // Step 5 (the wording review) gets the full width the page allows it, so
+    // its two textareas can sit genuinely side by side with room to read.
+    // Every other step stays a centred, phone-width-friendly column.
+    <div className={state.step === 5 ? "" : "mx-auto max-w-2xl"}>
       {/* Progress. The step count is spelled out, not implied by a bar. */}
       <ol className="flex flex-wrap gap-1.5" aria-label="Progress">
         {Array.from({ length: LAST_STEP }, (_, i) => i + 1).map((n) => (
@@ -411,6 +478,11 @@ export function SubmitWizard({
                 Your words are kept exactly as you write them and shown beside any translation. They
                 are never replaced.
               </p>
+              {moderation.blocked ? (
+                <Alert variant="destructive" role="alert">
+                  <AlertDescription>{MODERATION_MESSAGE}</AlertDescription>
+                </Alert>
+              ) : null}
             </div>
 
             <div className="milan-glass rounded-xl bg-muted p-4">
@@ -562,6 +634,38 @@ export function SubmitWizard({
         {/* ------------------------------------------------ step 3: the place */}
         {state.step === 3 ? (
           <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="place-search">Search for a place</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="place-search"
+                  value={placeQuery}
+                  onChange={(e) => setPlaceQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void searchPlace();
+                    }
+                  }}
+                  placeholder="e.g. Namkum block, Ranchi"
+                  className="h-11"
+                />
+                <Button type="button" variant="outline" onClick={() => void searchPlace()} disabled={searching || !placeQuery.trim()}>
+                  {searching ? <Loader2 aria-hidden className="size-4 animate-spin" /> : <Search aria-hidden className="size-4" />}
+                  <span className="sr-only">Search</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Useful if you are reporting on someone else&apos;s behalf and are not at the
+                location yourself.
+              </p>
+              {searchError ? (
+                <p className="text-sm text-amber-600 dark:text-amber-300" role="status">
+                  {searchError}
+                </p>
+              ) : null}
+            </div>
+
             <Button type="button" variant="outline" onClick={useMyLocation} disabled={locating}>
               {locating ? (
                 <>
@@ -593,13 +697,30 @@ export function SubmitWizard({
               are what we actually use — please correct them if the pin is wrong.
             </p>
 
+            {state.locationOutsideCoverage ? (
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>
+                  This location is outside Milan&apos;s coverage area (Jharkhand only). Move the
+                  pin back inside Jharkhand, search for a place inside the state, or choose a
+                  district below, to continue.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
             <div className="space-y-2">
               <Label htmlFor="district">District / जिला</Label>
               <select
                 id="district"
                 className={selectClass}
                 value={state.districtCode}
-                onChange={(e) => set({ districtCode: e.target.value, blockCode: null, locationSource: "dropdown" })}
+                onChange={(e) =>
+                  set({
+                    districtCode: e.target.value,
+                    blockCode: null,
+                    locationSource: "dropdown",
+                    locationOutsideCoverage: false,
+                  })
+                }
               >
                 <option value="">Select a district</option>
                 {districts.map((d) => (
@@ -714,7 +835,7 @@ export function SubmitWizard({
             Nothing is stored as the framed statement unless they tick approval,
             and if they decline their own words are used and that is recorded. */}
         {state.step === 5 ? (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {/* One line of status instead of a stacked alert per state — the
                 citizen needs to know whether to wait, not read three paragraphs. */}
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -736,12 +857,14 @@ export function SubmitWizard({
               ) : null}
             </p>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <section className="space-y-1.5">
-                <Label htmlFor="original-readonly">Your words</Label>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <section className="milan-glass space-y-3 rounded-xl p-5">
+                <Label htmlFor="original-readonly" className="text-sm font-semibold">
+                  Your words
+                </Label>
                 <Textarea
                   id="original-readonly"
-                  rows={7}
+                  rows={12}
                   lang={state.bodyLang}
                   value={state.bodyOriginal}
                   onChange={(e) => set({ bodyOriginal: e.target.value })}
@@ -749,11 +872,13 @@ export function SubmitWizard({
                 />
               </section>
 
-              <section className="space-y-1.5">
-                <Label htmlFor="framed">Milan&apos;s suggested wording</Label>
+              <section className="milan-glass space-y-3 rounded-xl p-5">
+                <Label htmlFor="framed" className="text-sm font-semibold milan-gradient-text">
+                  Milan&apos;s suggested wording
+                </Label>
                 <Textarea
                   id="framed"
-                  rows={7}
+                  rows={12}
                   lang="en"
                   value={state.framedStatement}
                   placeholder={
@@ -767,21 +892,23 @@ export function SubmitWizard({
               </section>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="success">What would success look like?</Label>
+            <section className="milan-glass space-y-3 rounded-xl p-5">
+              <Label htmlFor="success" className="text-sm font-semibold">
+                What would success look like?
+              </Label>
               <Textarea
                 id="success"
-                rows={2}
+                rows={4}
                 placeholder="How would you know the problem was actually solved?"
                 value={state.successCriteria}
                 onChange={(e) => set({ successCriteria: e.target.value })}
                 className="text-base"
               />
-            </div>
+            </section>
 
             <label
               htmlFor="approve"
-              className="flex items-start gap-3 rounded-xl border border-border p-3 text-sm"
+              className="milan-glass flex items-start gap-3 rounded-xl border border-border p-4 text-sm"
             >
               <input
                 id="approve"
@@ -837,20 +964,31 @@ export function SubmitWizard({
               ))}
             </dl>
 
-            <div className="space-y-2">
-              <Label htmlFor="reporterName">Your name (optional)</Label>
-              <p className="text-xs text-muted-foreground">
-                Leave this blank to report anonymously. Either way you are credited as the
-                originator, permanently.
-              </p>
-              <Input
-                id="reporterName"
-                value={state.reporterName}
-                onChange={(e) => set({ reporterName: e.target.value })}
-                className="h-11"
-                autoComplete="name"
+            <label
+              htmlFor="includeReporterName"
+              className="flex items-start gap-3 milan-glass rounded-xl p-3 text-sm"
+            >
+              <input
+                id="includeReporterName"
+                type="checkbox"
+                className="mt-0.5 size-5"
+                checked={state.includeReporterName}
+                onChange={(e) => set({ includeReporterName: e.target.checked })}
               />
-            </div>
+              <span>
+                Include my name on this report
+                {reporterDisplayName ? (
+                  <>
+                    {" "}
+                    <span className="font-medium">({reporterDisplayName})</span>
+                  </>
+                ) : null}
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Untick this to report anonymously. Either way you are credited as the
+                  originator, permanently — your account is never disclosed if you untick it.
+                </span>
+              </span>
+            </label>
 
             {submitError ? (
               <Alert variant="destructive" role="alert">

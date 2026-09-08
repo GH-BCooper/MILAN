@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 
 import { SiteHeader } from "@/components/site-header";
 import { STATUS_LABEL } from "@/components/status-badge";
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { execRaw } from "@/lib/db/raw";
 import { clockNow } from "@/lib/clock";
 import { syncClockOffset } from "@/lib/clock/server";
@@ -67,7 +68,7 @@ function Filters({
     <form className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" method="get">
       <label className="flex flex-col gap-1 text-xs font-medium">
         District
-        <select name="district" defaultValue={current.district ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+        <select name="district" defaultValue={current.district ?? ""} className={nativeSelectClassName}>
           <option value="">Every district</option>
           {districts.map((d) => (
             <option key={d.code} value={d.code}>
@@ -79,7 +80,7 @@ function Filters({
 
       <label className="flex flex-col gap-1 text-xs font-medium">
         Domain
-        <select name="domain" defaultValue={current.domain ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+        <select name="domain" defaultValue={current.domain ?? ""} className={nativeSelectClassName}>
           <option value="">Every domain</option>
           {domains.map((d) => (
             <option key={d} value={d}>
@@ -91,7 +92,7 @@ function Filters({
 
       <label className="flex flex-col gap-1 text-xs font-medium">
         NDMA hazard
-        <select name="hazard" defaultValue={current.hazard ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+        <select name="hazard" defaultValue={current.hazard ?? ""} className={nativeSelectClassName}>
           <option value="">Every hazard</option>
           {hazards.map((h) => (
             <option key={h} value={h}>
@@ -103,7 +104,7 @@ function Filters({
 
       <label className="flex flex-col gap-1 text-xs font-medium">
         Escalation stage
-        <select name="stage" defaultValue={current.stage ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+        <select name="stage" defaultValue={current.stage ?? ""} className={nativeSelectClassName}>
           <option value="">Any stage</option>
           {STAGE_ORDER.map((s) => (
             <option key={s} value={s}>
@@ -115,7 +116,7 @@ function Filters({
 
       <label className="flex flex-col gap-1 text-xs font-medium">
         Set
-        <select name="set" defaultValue={current.set ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+        <select name="set" defaultValue={current.set ?? ""} className={nativeSelectClassName}>
           <option value="">Everything unclaimed</option>
           <option value="grand">Jharkhand Grand Challenges</option>
         </select>

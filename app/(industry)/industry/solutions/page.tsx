@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { RoleShell } from "@/components/role-shell";
 import { UnconfirmedTag } from "@/components/impact-counter";
 import { STATUS_LABEL } from "@/components/status-badge";
+import { nativeSelectClassName } from "@/components/select-with-other";
 import { requireRole } from "@/lib/auth/guards";
 import { execRaw } from "@/lib/db/raw";
 import { domainEnum, hazardEnum, type ChallengeStatus } from "@/lib/db/schema";
@@ -84,7 +85,7 @@ export default async function IndustrySolutions({
       <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <label className="flex flex-col gap-1 text-xs font-medium">
           District
-          <select name="district" defaultValue={district ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+          <select name="district" defaultValue={district ?? ""} className={nativeSelectClassName}>
             <option value="">Every district</option>
             {districts.map((d) => (
               <option key={d.code} value={d.code}>{d.name}</option>
@@ -93,7 +94,7 @@ export default async function IndustrySolutions({
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium">
           Domain
-          <select name="domain" defaultValue={domain ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+          <select name="domain" defaultValue={domain ?? ""} className={nativeSelectClassName}>
             <option value="">Every domain</option>
             {domainEnum.enumValues.map((d) => (
               <option key={d} value={d}>{d.replace(/_/g, " ").toLowerCase()}</option>
@@ -102,7 +103,7 @@ export default async function IndustrySolutions({
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium">
           NDMA hazard
-          <select name="hazard" defaultValue={hazard ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+          <select name="hazard" defaultValue={hazard ?? ""} className={nativeSelectClassName}>
             <option value="">Every hazard</option>
             {hazardEnum.enumValues.map((h) => (
               <option key={h} value={h}>{h.replace(/_/g, " ").toLowerCase()}</option>
@@ -111,7 +112,7 @@ export default async function IndustrySolutions({
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium">
           Solvability / TRL
-          <select name="solvability" defaultValue={solvability ?? ""} className="h-11 rounded-md border border-input bg-background px-3 text-sm">
+          <select name="solvability" defaultValue={solvability ?? ""} className={nativeSelectClassName}>
             <option value="">Any</option>
             <option value="RESEARCH">Research question</option>
             <option value="ENGINEERING">Engineering build</option>
