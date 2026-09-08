@@ -1034,9 +1034,16 @@ async function main() {
   );
   // The dataset is the team's own. What is still outstanding is narrower, so
   // the reminder names it rather than crying wolf on every run.
+  // The voice half is conditional on what actually happened above: the old text
+  // cried "still empty" on every run even with a committed 257KB recording,
+  // when the real blocker is an unreachable Supabase Storage, not the mic.
   console.log(
     "\nREMINDER: the Hindi and Santali reports have not been checked by a native " +
-      "speaker (PHASE_1_LEARN.md 7.3), and seed-data/voice-note.mp3 is still empty.",
+      "speaker (PHASE_1_LEARN.md 7.3)" +
+      (mediaCount === 0
+        ? ", and the Sunita voice note was NOT attached — seed-data/voice-note.mp3 " +
+          "is missing/empty, or Supabase Storage was unreachable during the seed.",
+        : ". The Sunita voice note is attached (challenge_media row written)."),
   );
 }
 

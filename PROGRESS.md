@@ -1442,3 +1442,14 @@ All six routes within the 2000ms budget (worst 79ms).
 ### Still to run (by the user, via the checklist)
 Steps 0–14 of `docs/qualification-checklist.csv`, ending with the full
 `verify:phase3` 9/9 on a pristine reseed.
+
+## Voice-note finding — 2026-09-09
+- The Sunita recording EXISTS (257KB ID3 mp3, committed since main `a74e2d1`).
+  BACKLOG 2.2's recording task is done; the framing 9/10 was a STORAGE failure,
+  not a mic failure: the seed uploads the mp3 to Supabase Storage and writes no
+  `challenge_media` row when Storage is unreachable (all offline sandboxes).
+- Fixed two stale messages that hid this: the seed REMINDER (hardcoded "still
+  empty", now conditional on `mediaCount`) and the framing check (now stats the
+  file and says which half failed). User action: reseed where Storage is
+  reachable, listen to the mp3 once to confirm it matches the transcript, re-run
+  `verify:framing` → expect 10/10.

@@ -165,11 +165,19 @@ const media = await sql`
   where m.mime like 'audio/%'`;
 
 if (media.length === 0) {
+  // Say which half failed: a missing recording is a human task (BACKLOG 2.2),
+  // but an existing recording with no audio row means the seed could not reach
+  // Supabase Storage to upload it — reseed where Storage is reachable.
+  const { existsSync, statSync } = await import("node:fs");
+  const voiceBytes = existsSync("seed-data/voice-note.mp3") ? statSync("seed-data/voice-note.mp3").size : 0;
   record(
     "a voice note is attached to a challenge",
     false,
-    "seed-data/voice-note.mp3 is 0 bytes — the recording is a human task (BACKLOG 2.2). " +
-      "The stage, the seeded transcript and the live ASR path are all implemented and typechecked.",
+    voiceBytes === 0
+      ? "seed-data/voice-note.mp3 is missing or 0 bytes — the recording is a human task (BACKLOG 2.2). " +
+        "The stage, the seeded transcript and the live ASR path are all implemented and typechecked."
+      : `the recording exists (${voiceBytes} bytes) but no audio row is attached — ` +
+        `the seed uploads it to Supabase Storage, so reseed where Storage is reachable and re-run.`,
   );
 } else {
   const m = media[0];
