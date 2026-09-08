@@ -1453,3 +1453,18 @@ Steps 0–14 of `docs/qualification-checklist.csv`, ending with the full
   file and says which half failed). User action: reseed where Storage is
   reachable, listen to the mp3 once to confirm it matches the transcript, re-run
   `verify:framing` → expect 10/10.
+
+## Confirm-link clock bug — found by the phase3 meta, fixed 2026-09-09
+- Symptom: `verify:impact` 6/9 inside the meta ("confirmation link has expired"
+  on freshly minted tokens) while green standalone.
+- Cause (real product bug): `confirmImpact` read the in-process clock-offset
+  cell without syncing. Gov's ladder leaves the cell at +181d (its reset is
+  direct SQL, and no later request re-syncs before impact's POST), so the
+  server read real+181d against real+90d tokens. Standalone, the phase2 page
+  fetches between gov and impact happened to re-sync the cell — pure luck.
+- Fix: `confirmImpact` opens with `syncClockOffset(true)` — forced, because a
+  TTL read still races when impact runs <5s behind gov. Proven: reseed → gov
+  20/20 → impact 9/9 back-to-back with zero gap.
+- Follow-up (not done): audit other time-deciding write paths for the same
+  missing sync (claim-window checks read `clockNow()` via pages/actions that
+  do not sync either).
