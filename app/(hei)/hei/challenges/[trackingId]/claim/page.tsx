@@ -21,7 +21,7 @@ import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
 import { clockNow } from "@/lib/clock";
-import { OPEN_CLAIMABLE_STATES } from "@/lib/db/stateMachine";
+import { isOpenClaimable } from "@/lib/db/stateMachine";
 import { capabilitiesFor, challengeForClaim, offerFor } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 import { ClaimForm } from "./claim-form";
@@ -50,13 +50,13 @@ export default async function ClaimPage({
     capabilitiesFor(user.orgId),
   ]);
 
-  // Open claiming: no routed offer is fine when the challenge itself is in a
-  // claimable state (safety triage cleared it). The panel below is now only
-  // for work that genuinely cannot be taken — still untriaged, or already
-  // claimed and gone.
+  // Open claiming: no routed offer is fine when the challenge itself is
+  // claimable — safety triage cleared it, or it is untriaged with severity
+  // above the 0.30 bar. The panel below is only for work that genuinely
+  // cannot be taken: too mild to claim before triage, or already claimed.
   const openlyClaimable =
     challenge !== null &&
-    (OPEN_CLAIMABLE_STATES as readonly string[]).includes(challenge.status);
+    isOpenClaimable(challenge.status as ChallengeStatus, challenge.severity);
 
   if (!offer && !openlyClaimable) {
     return (
@@ -67,8 +67,9 @@ export default async function ClaimPage({
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             Either another institution has already claimed it, the claim window has closed, or it
-            is still being checked for safety — problems become claimable the moment triage clears
-            them. Nothing is lost — the public page shows exactly where it stands.
+            is still being checked and its severity is 0.30 or below — problems become claimable
+            the moment triage clears them, or as soon as a severity above 0.30 is recorded.
+            Nothing is lost — the public page shows exactly where it stands.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
@@ -148,9 +149,10 @@ export default async function ClaimPage({
         <section className="mt-6 milan-glass rounded-xl p-4">
           <h2 className="text-xs uppercase tracking-wide text-muted-foreground">Open claim</h2>
           <p className="mt-1 text-sm">
-            Any institution can take any problem once safety triage has cleared it — not
-            just the three the router shortlisted. The first team with declared capacity and a
-            university email takes it; claiming closes every open offer on it.
+            Any institution can take any problem once safety triage has cleared it — or while
+            it is still untriaged when its severity is above 0.30. Not just the three the
+            router shortlisted. The first team with declared capacity and a university email
+            takes it; claiming closes every open offer on it.
           </p>
         </section>
       )}

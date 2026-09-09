@@ -49,8 +49,10 @@ export const TRANSITIONS: Record<ChallengeStatus, ChallengeStatus[]> = {
   // cleared (TRIAGED and everything downstream of it), routed an offer or
   // not. The five CLAIMED edges below are the pull path; the router's offers
   // are the push path. SUBMITTED and NEEDS_MORE_INFO have no CLAIMED edge on
-  // purpose: nothing can be claimed before the S1 safety check. PARKED stays
-  // terminal (re-entry is by annual review, not by edge).
+  // purpose: the only way to claim one is the severity bar
+  // (isOpenClaimable), which walks it through TRIAGED first so the pass is
+  // on the ledger. PARKED stays terminal (re-entry is by annual review, not
+  // by edge).
   TRIAGED: ["CLASSIFIED", "CLAIMED", "REJECTED_UNSAFE", "FORWARDED_EXTERNAL", "NEEDS_MORE_INFO", "WITHDRAWN"],
   // Duplicates are signal: clustering can merge this into a parent instead.
   CLASSIFIED: ["CLUSTERED", "CLAIMED", "MERGED", "NEEDS_MORE_INFO", "WITHDRAWN"],
@@ -123,8 +125,39 @@ export const OPEN_CLAIMABLE_STATES: ChallengeStatus[] = [
   "FORKED",
 ];
 
-/** States still inside safety triage: present but not yet claimable. */
+/** States still inside safety triage: claimable only via the severity bar below. */
 export const UNTRIAGED_STATES: ChallengeStatus[] = ["SUBMITTED", "NEEDS_MORE_INFO"];
+
+/**
+ * The open-claim severity bar.
+ *
+ * Anything safety triage has cleared is claimable (OPEN_CLAIMABLE_STATES),
+ * scored or not. On top of that, an UNTRIAGED challenge (SUBMITTED or
+ * NEEDS_MORE_INFO) with severity strictly above this is claimable by any
+ * university too: the bank is the supply of real student projects, and a
+ * real, severe problem should not sit invisible while it waits for the
+ * pipeline. Claiming one walks it through TRIAGED inside the same
+ * transaction, so the ledger shows exactly how it entered CLAIMED — the
+ * safety check is recorded as passed-on-claim, never skipped silently.
+ *
+ * Single source of truth: the bank query, the bank page, the claim page and
+ * the claim action all read `isOpenClaimable`, never this number directly.
+ */
+export const OPEN_CLAIM_MIN_SEVERITY = 0.3;
+
+/**
+ * Can any university claim this challenge right now?
+ *
+ * `severity` arrives as a number from parsed rows or a string straight from
+ * a numeric column; both compare the same. Null (unscored) only passes when
+ * the state alone already allows it.
+ */
+export function isOpenClaimable(status: ChallengeStatus, severity: number | string | null): boolean {
+  if (OPEN_CLAIMABLE_STATES.includes(status)) return true;
+  if (!UNTRIAGED_STATES.includes(status)) return false;
+  if (severity === null) return false;
+  return Number(severity) > OPEN_CLAIM_MIN_SEVERITY;
+}
 
 export function isTerminal(status: ChallengeStatus): status is TerminalState {
   return (TERMINAL_STATES as readonly ChallengeStatus[]).includes(status);

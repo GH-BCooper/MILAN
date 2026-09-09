@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { DEFAULT_DEMO_PASSWORD, DEMO_ACCOUNTS } from "@/lib/demo/accounts";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Sign in" };
+export const dynamic = "force-dynamic";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +13,13 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
+  const demoEnabled = process.env.DEMO_MODE === "true";
+  const demo = demoEnabled
+    ? {
+        password: process.env.SEED_DEMO_PASSWORD || DEFAULT_DEMO_PASSWORD,
+        accounts: DEMO_ACCOUNTS.map(({ roleLabel, email, description }) => ({ roleLabel, email, description })),
+      }
+    : undefined;
 
   return (
     <div>
@@ -21,7 +30,7 @@ export default async function LoginPage({
       </p>
 
       <div className="mt-6">
-        <LoginForm next={next && next.startsWith("/") ? next : "/post-login"} />
+        <LoginForm next={next && next.startsWith("/") ? next : "/post-login"} demo={demo} />
       </div>
 
       <p className="mt-6 text-sm text-muted-foreground">

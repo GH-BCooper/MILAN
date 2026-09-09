@@ -7,6 +7,9 @@ Milan · SIH26043 · https://milan-ruddy-chi.vercel.app
 Password for **every** account below: `milan2026`
 (set by `SEED_DEMO_PASSWORD`; the seed prints whatever you set)
 
+All five accounts have verified email and phone. HEI and industry affiliation is pre-approved.
+After seeding, `pnpm verify:demo-accounts` checks every credential and verification gate.
+
 | Role | Email | What they demo |
 |---|---|---|
 | CITIZEN | `sunita@demo.milan.in` | Reports the cracked Koel embankment (Gumla) |
