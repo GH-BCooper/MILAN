@@ -109,7 +109,9 @@ pnpm seed:states                    # optional: walk a fixed cast through the re
 pnpm dev                            # http://localhost:3000
 ```
 
-Sign in with any seeded account and the password in `SEED_DEMO_PASSWORD` (default `milan2026`):
+Sign in with any seeded account and the password in `SEED_DEMO_PASSWORD` (default `milan2026`).
+All five accounts are seeded with verified email and phone; HEI and industry affiliation is also
+pre-approved. Run `pnpm verify:demo-accounts` after seeding to check the credentials and every gate:
 
 | Account | Role | Scope |
 |---|---|---|
