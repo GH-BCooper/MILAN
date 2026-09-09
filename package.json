@@ -37,6 +37,7 @@
     "verify:impact": "tsx --conditions=react-server scripts/verify-impact.mts",
     "verify:industry": "tsx --conditions=react-server scripts/verify-industry.mts",
     "verify:demo": "tsx --conditions=react-server scripts/verify-demo.mts",
+    "verify:demo-accounts": "tsx --conditions=react-server scripts/verify-demo-accounts.mts",
     "demo:offline": "next start -p 3000",
     "offline:up": "docker compose up -d",
     "offline:down": "docker compose down",

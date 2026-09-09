@@ -21,6 +21,8 @@ import { config } from "dotenv";
 import { and, eq, sql } from "drizzle-orm";
 import Papa from "papaparse";
 
+import { DEFAULT_DEMO_PASSWORD, DEMO_ACCOUNTS, demoVerification } from "@/lib/demo/accounts";
+
 config({ path: ".env.local" });
 
 const { db } = await import("@/lib/db");
@@ -45,7 +47,7 @@ const { appendEntry } = await import("@/lib/ledger/append");
 
 const DATA_DIR = join(process.cwd(), "seed-data");
 const RESET = process.argv.includes("--reset");
-const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD ?? "milan2026";
+const DEMO_PASSWORD = process.env.SEED_DEMO_PASSWORD || DEFAULT_DEMO_PASSWORD;
 
 const warnings: string[] = [];
 function warn(message: string) {
@@ -140,64 +142,6 @@ async function credentialIssuer(): Promise<string> {
   const { createLocalAccountIssuer } = await import("better-auth/db");
   return createLocalAccountIssuer("credential");
 }
-
-interface DemoAccount {
-  email: string;
-  name: string;
-  role: "CITIZEN" | "HEI_MEMBER" | "GOVERNMENT" | "INDUSTRY" | "ADMIN";
-  districtCode?: string;
-  orgSlug?: string;
-  /** A reachable number for the mock SMS/WhatsApp inbox. Never a real one. */
-  phone?: string;
-  note: string;
-}
-
-/** The five accounts we demo with. PHASE_1_LEARN.md section 7.5. */
-const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    email: "sunita@demo.milan.in",
-    name: "Sunita Devi",
-    role: "CITIZEN",
-    districtCode: "GUM",
-    // The confirmation loop is the demo's closing beat, and it arrives by SMS.
-    // These are documentation-range numbers (+91 999999xxxx), never real ones;
-    // the SMS channel is a mock inbox and nothing leaves the process.
-    phone: "+919999900001",
-    note: "reports the cracked embankment, and confirms the fix by SMS",
-  },
-  {
-    email: "hod.civil@bitsindri.demo.milan.in",
-    name: "Head of Civil Engineering, BIT Sindri",
-    role: "HEI_MEMBER",
-    orgSlug: "bit-sindri",
-    districtCode: "DHN",
-    phone: "+919999900002",
-    note: "claims routed challenges",
-  },
-  {
-    email: "dc.gumla@jh.gov.demo.milan.in",
-    name: "Deputy Commissioner, Gumla",
-    role: "GOVERNMENT",
-    districtCode: "GUM",
-    phone: "+919999900003",
-    note: "district scoped to GUM",
-  },
-  {
-    email: "csr@tatasteelfoundation.demo.milan.in",
-    name: "CSR Lead, Tata Steel Foundation",
-    role: "INDUSTRY",
-    orgSlug: "tata-steel-foundation",
-    districtCode: "ESB",
-    phone: "+919999900004",
-    note: "expresses industry interest",
-  },
-  {
-    email: "admin@milan.demo.milan.in",
-    name: "Milan Administrator",
-    role: "ADMIN",
-    note: "platform administrator",
-  },
-];
 
 /** Deterministic ids so a re-run updates the same rows instead of making new ones. */
 function stableId(kind: string, key: string): string {
@@ -556,6 +500,7 @@ async function main() {
 
   for (const acc of DEMO_ACCOUNTS) {
     const id = stableId("usr", acc.email);
+    const verification = demoVerification(acc);
 
     await db
       .insert(user)
@@ -563,11 +508,17 @@ async function main() {
         id,
         name: acc.name,
         email: acc.email,
-        emailVerified: true,
+        emailVerified: verification.emailVerified,
         createdAt: now,
         updatedAt: now,
       })
-      .onConflictDoUpdate({ target: user.email, set: { name: acc.name, updatedAt: now } });
+      // Re-running the seed repairs demo users created by an older seed which
+      // left the email flag false. Demo credentials must never land in the OTP
+      // flow after a successful sign-in.
+      .onConflictDoUpdate({
+        target: user.email,
+        set: { name: acc.name, emailVerified: verification.emailVerified, updatedAt: now },
+      });
 
     const [row] = await db.select({ id: user.id }).from(user).where(eq(user.email, acc.email)).limit(1);
     userIdByEmail.set(acc.email, row.id);
@@ -607,29 +558,41 @@ async function main() {
         role: acc.role,
         fullName: acc.name,
         preferredLang: acc.role === "CITIZEN" ? "hi" : "en",
-        phone: acc.phone ?? null,
-        districtCode: acc.districtCode ?? null,
+        phone: acc.phone,
+        phoneVerified: verification.phoneVerified,
+        districtCode: acc.districtCode,
         orgId,
         // Demo accounts are pre-verified; a real citizen starts at tier 1.
-        verifiedTier: acc.role === "CITIZEN" ? 2 : 3,
+        verifiedTier: verification.verifiedTier,
         // Migration 0012 only grandfathers rows that existed before it ran,
         // and the seed writes these rows after every migration — so without
         // this the seeded HEI/INDUSTRY accounts default to NOT_APPLICABLE and
         // requireRole bounces their dashboards to "Awaiting verification"
         // (H-02). Demo org accounts are pre-verified by design.
-        orgVerificationStatus:
-          acc.role === "HEI_MEMBER" || acc.role === "INDUSTRY" ? "APPROVED" : "NOT_APPLICABLE",
+        orgVerificationStatus: verification.orgVerificationStatus,
+        orgVerificationReason:
+          verification.orgVerificationStatus === "APPROVED" ? "Pre-approved seeded demo account." : null,
+        orgVerificationDecidedAt: verification.orgVerificationStatus === "APPROVED" ? now : null,
       })
       .onConflictDoUpdate({
         target: userProfiles.userId,
+        // Keep every verification field in this repair path. Before this was
+        // explicit, an ordinary idempotent seed left existing profiles with
+        // phone_verified=false and their old trust tier, trapping even the
+        // ADMIN persona on /verify-account with no usable phone number.
         set: {
           role: acc.role,
           fullName: acc.name,
-          districtCode: acc.districtCode ?? null,
+          preferredLang: acc.role === "CITIZEN" ? "hi" : "en",
+          districtCode: acc.districtCode,
           orgId,
-          phone: acc.phone ?? null,
-          orgVerificationStatus:
-            acc.role === "HEI_MEMBER" || acc.role === "INDUSTRY" ? "APPROVED" : "NOT_APPLICABLE",
+          phone: acc.phone,
+          phoneVerified: verification.phoneVerified,
+          verifiedTier: verification.verifiedTier,
+          orgVerificationStatus: verification.orgVerificationStatus,
+          orgVerificationReason:
+            verification.orgVerificationStatus === "APPROVED" ? "Pre-approved seeded demo account." : null,
+          orgVerificationDecidedAt: verification.orgVerificationStatus === "APPROVED" ? now : null,
         },
       });
 
@@ -1019,7 +982,7 @@ async function main() {
   console.log("\nDemo accounts (password: " + DEMO_PASSWORD + ")");
   console.log("-".repeat(78));
   for (const a of DEMO_ACCOUNTS) {
-    console.log(`${a.role.padEnd(12)} ${a.email.padEnd(42)} ${a.note}`);
+    console.log(`${a.role.padEnd(12)} ${a.email.padEnd(42)} ${a.description}`);
   }
 
   if (warnings.length) {
