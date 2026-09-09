@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, isNotNull, isNull, or, sql } from "drizzle-orm";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
@@ -13,7 +13,12 @@ import {
   projects,
   routes,
 } from "@/lib/db/schema";
-import { OPEN_CLAIMABLE_STATES, TERMINAL_STATES } from "@/lib/db/stateMachine";
+import {
+  OPEN_CLAIM_MIN_SEVERITY,
+  OPEN_CLAIMABLE_STATES,
+  TERMINAL_STATES,
+  UNTRIAGED_STATES,
+} from "@/lib/db/stateMachine";
 
 /**
  * Everything the university workspace reads.
@@ -132,6 +137,7 @@ export interface ClaimChallenge {
   status: string;
   districtName: string | null;
   domain: string | null;
+  severity: number | null;
   priorityBreakdown: unknown;
   corroborationCount: number;
 }
@@ -149,6 +155,7 @@ export async function challengeForClaim(trackingId: string): Promise<ClaimChalle
       status: challenges.status,
       districtName: districts.name,
       domain: challenges.domain,
+      severity: challenges.severity,
       priorityBreakdown: challenges.priorityBreakdown,
       corroborationCount: challenges.corroborationCount,
     })
@@ -156,7 +163,8 @@ export async function challengeForClaim(trackingId: string): Promise<ClaimChalle
     .leftJoin(districts, eq(districts.code, challenges.districtCode))
     .where(eq(challenges.trackingId, trackingId.toUpperCase()))
     .limit(1);
-  return row ?? null;
+  if (!row) return null;
+  return { ...row, severity: row.severity === null ? null : Number(row.severity) };
 }
 
 /* ------------------------------------------------------------- the capacity */
@@ -259,6 +267,7 @@ export interface BankItem {
   successCriteria: string | null;
   domain: string | null;
   districtName: string | null;
+  severity: number | null;
   priorityScore: number | null;
   corroborationCount: number;
   status: string;
@@ -272,6 +281,11 @@ export interface BankItem {
  * deliberately open to any signed-in HEI member rather than gated behind a
  * routing offer — anything safety triage has cleared is claimable, so a
  * department that was not in the top three claims exactly the same way.
+ *
+ * Plus the severity bar: an untriaged challenge (SUBMITTED, NEEDS_MORE_INFO)
+ * with severity above OPEN_CLAIM_MIN_SEVERITY is listed too, so a real,
+ * severe problem never sits invisible while it waits for the pipeline.
+ * Claiming one records the triage pass on the ledger — see the claim action.
  */
 export async function challengeBank(limit = 60): Promise<BankItem[]> {
   const rows = await db
@@ -283,6 +297,7 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
       successCriteria: challenges.successCriteria,
       domain: challenges.domain,
       districtName: districts.name,
+      severity: challenges.severity,
       priorityScore: challenges.priorityScore,
       corroborationCount: challenges.corroborationCount,
       status: challenges.status,
@@ -291,7 +306,15 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     .leftJoin(districts, eq(districts.code, challenges.districtCode))
     .where(
       and(
-        inArray(challenges.status, OPEN_CLAIMABLE_STATES),
+        or(
+          inArray(challenges.status, OPEN_CLAIMABLE_STATES),
+          // The severity bar, mirroring isOpenClaimable: strictly above the
+          // bar, compared as numeric so 0.30 itself does not pass.
+          and(
+            inArray(challenges.status, UNTRIAGED_STATES),
+            gt(challenges.severity, OPEN_CLAIM_MIN_SEVERITY.toFixed(2)),
+          ),
+        ),
         isNull(challenges.parentId),
       ),
     )
@@ -302,7 +325,8 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
 
   // Claimability is a property of the challenge's state now, not of who was
   // routed an offer: any institution can claim anything safety triage has
-  // cleared. No per-row offer lookup needed.
+  // cleared, plus anything untriaged above the severity bar. No per-row
+  // offer lookup needed.
   return rows.map((r) => ({
     trackingId: r.trackingId,
     title: r.title,
@@ -310,6 +334,7 @@ export async function challengeBank(limit = 60): Promise<BankItem[]> {
     successCriteria: r.successCriteria,
     domain: r.domain,
     districtName: r.districtName,
+    severity: r.severity === null ? null : Number(r.severity),
     priorityScore: r.priorityScore === null ? null : Number(r.priorityScore),
     corroborationCount: r.corroborationCount,
     status: r.status,

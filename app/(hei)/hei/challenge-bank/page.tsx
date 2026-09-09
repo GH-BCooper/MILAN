@@ -9,13 +9,16 @@
  * Deliberately open to any signed-in HEI member rather than gated behind a
  * routing offer: anything safety triage has cleared is claimable, so a
  * department that was not in the top three claims exactly the same way.
+ * Plus the severity bar: anything untriaged with severity above 0.30 is
+ * claimable too, so a severe problem never sits invisible while it waits
+ * for the pipeline.
  */
 import Link from "next/link";
 
 import { RoleShell } from "@/components/role-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { requireRole } from "@/lib/auth/guards";
-import { OPEN_CLAIMABLE_STATES } from "@/lib/db/stateMachine";
+import { isOpenClaimable } from "@/lib/db/stateMachine";
 import { challengeBank } from "@/lib/hei/queries";
 import type { ChallengeStatus } from "@/lib/db/schema";
 
@@ -38,7 +41,7 @@ export default async function ChallengeBank({
   return (
     <RoleShell
       title="Real final-year projects"
-      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"}, cleared by triage and ready for a team.`}
+      subtitle={`${items.length} unclaimed problem${items.length === 1 ? "" : "s"} ready for a team — triage-cleared, or severe enough to claim right away.`}
     >
       <div className="milan-glass rounded-xl bg-accent p-4">
         <p className="text-sm font-medium text-accent-foreground">
@@ -104,6 +107,14 @@ export default async function ChallengeBank({
                     {item.domain.replaceAll("_", " ").toLowerCase()}
                   </span>
                 ) : null}
+                {item.severity !== null ? (
+                  <span
+                    className="rounded border border-border bg-muted px-2 py-0.5 text-xs"
+                    title="Severity 0 to 1. Anything above 0.30 is claimable by any university, even before triage."
+                  >
+                    severity {item.severity.toFixed(2)}
+                  </span>
+                ) : null}
                 <span className="text-xs text-muted-foreground">
                   {item.districtName ?? "district not given"} · {item.corroborationCount} report
                   {item.corroborationCount === 1 ? "" : "s"}
@@ -117,7 +128,7 @@ export default async function ChallengeBank({
                 >
                   Read the full report
                 </Link>
-                {OPEN_CLAIMABLE_STATES.includes(item.status as ChallengeStatus) ? (
+                {isOpenClaimable(item.status as ChallengeStatus, item.severity) ? (
                   <Link
                     href={`/hei/challenges/${item.trackingId}/claim`}
                     className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground"
@@ -126,7 +137,7 @@ export default async function ChallengeBank({
                   </Link>
                 ) : (
                   <span className="inline-flex min-h-11 items-center text-xs text-muted-foreground">
-                    Still being checked for safety — nothing can be claimed before triage clears it
+                    Still being checked — it becomes claimable when triage clears it or a severity above 0.30 is recorded
                   </span>
                 )}
               </div>

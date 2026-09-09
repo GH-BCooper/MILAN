@@ -11,8 +11,9 @@
  * together.
  *
  * Open claiming: a routed offer is honoured when one exists (its window is
- * checked), but any institution can claim anything past the human gate with a
- * team and a university email. An open claim writes its own CLAIMED route row
+ * checked), but any institution can claim anything triage-cleared — or still
+ * untriaged with severity above 0.30 — with a team and a university email.
+ * An open claim writes its own CLAIMED route row
  * (rank 0) so the per-institution counts stay honest, and closes every other
  * open offer exactly the way a routed claim does.
  *
@@ -27,7 +28,13 @@ import { z } from "zod";
 
 import { clockNow } from "@/lib/clock";
 import { db } from "@/lib/db";
-import { OPEN_CLAIMABLE_STATES, UNTRIAGED_STATES, transition } from "@/lib/db/stateMachine";
+import {
+  IllegalTransitionError,
+  OPEN_CLAIM_MIN_SEVERITY,
+  UNTRIAGED_STATES,
+  isOpenClaimable,
+  transition,
+} from "@/lib/db/stateMachine";
 import { appendEntry } from "@/lib/ledger/append";
 import {
   capabilities,
@@ -81,9 +88,10 @@ export async function claimChallengeAction(raw: unknown): Promise<ClaimResult> {
 
 /**
  * Open claiming: any institution can claim anything safety triage has cleared
- * (OPEN_CLAIMABLE_STATES) — routed an offer or not. The router's offers are
- * the push path; this is the pull path. The only states that hold are the
- * untriaged ones: nothing can be claimed before the S1 safety check.
+ * — routed an offer or not — plus anything untriaged with severity above the
+ * 0.30 bar. The router's offers are the push path; this is the pull path.
+ * The only states that hold are untriaged-and-mild ones: below the bar,
+ * nothing can be claimed before the S1 safety check.
  */
 
 /** Freemail domains a claimant's own account email may not come from. */
@@ -160,6 +168,7 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
       id: challenges.id,
       trackingId: challenges.trackingId,
       status: challenges.status,
+      severity: challenges.severity,
       title: challenges.title,
       reporterId: challenges.reporterId,
       reporterName: challenges.reporterName,
@@ -170,11 +179,11 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
 
   if (!challenge) return { ok: false, error: "That challenge does not exist." };
 
-  // Claimability is a property of the challenge's state, for offered and open
-  // claims alike. Without this gate an offer row on an unreleased challenge
-  // would die later in transition() with an IllegalTransitionError instead of
-  // a sentence a professor can act on.
-  if (!OPEN_CLAIMABLE_STATES.includes(challenge.status)) {
+  // Claimability is a property of the challenge's state and severity, for
+  // offered and open claims alike. Without this gate an offer row on an
+  // unreleased challenge would die later in transition() with an
+  // IllegalTransitionError instead of a sentence a professor can act on.
+  if (!isOpenClaimable(challenge.status, challenge.severity)) {
     // The untriaged list is explicit; every other non-claimable state —
     // already claimed, in research, merged away, parked, withdrawn, rejected —
     // is past the point where a team can take it, and says so.
@@ -182,7 +191,7 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
     return {
       ok: false,
       error: untriaged
-        ? "This challenge is still being checked for safety — it becomes claimable the moment triage clears it. Nothing can be claimed before that check."
+        ? `This challenge is still being checked and its severity is ${challenge.severity ?? "not recorded yet"} — it becomes claimable the moment triage clears it, or as soon as a severity above ${OPEN_CLAIM_MIN_SEVERITY.toFixed(2)} is recorded.`
         : "This challenge has already been claimed — it is past the point where a team can take it.",
     };
   }
@@ -237,6 +246,29 @@ export async function claimAs(user: MilanUser, raw: unknown): Promise<ClaimResul
   const at = clockNow();
   try {
     const projectId = await db.transaction(async (tx) => {
+      // Severity-bar claims arrive here still untriaged, and SUBMITTED and
+      // NEEDS_MORE_INFO deliberately have no CLAIMED edge. Walk through
+      // TRIAGED first so the ledger shows the pass explicitly: the safety
+      // check is recorded as passed-on-claim, never skipped silently.
+      if ((UNTRIAGED_STATES as readonly string[]).includes(challenge.status)) {
+        try {
+          await transition(tx, {
+            challengeId: challenge.id,
+            to: "TRIAGED",
+            actorId: user.id,
+            reason:
+              `Opened to claiming on severity ${Number(challenge.severity).toFixed(2)}: above the ` +
+              `${OPEN_CLAIM_MIN_SEVERITY.toFixed(2)} open-claim bar, recorded as triaged on claim.`,
+            meta: { openClaimSeverityPass: true, severity: challenge.severity },
+          });
+        } catch (e) {
+          if (!(e instanceof IllegalTransitionError)) throw e;
+          // Raced with the pipeline: triage landed between our read and this
+          // write. The CLAIMED transition below re-validates the true state,
+          // so carry on rather than failing a claim that is still valid.
+        }
+      }
+
       const [project] = await tx
         .insert(projects)
         .values({
